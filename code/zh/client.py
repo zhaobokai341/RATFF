@@ -98,8 +98,9 @@ async def client_loop():
                             # 在后台运行命令
                             await websocket.send(execute_command.background(command[11:]))
 
-        except Exception:
+        except Exception as e:
             # 发生异常时等待10秒后重试
+            print(e)
             await asyncio.sleep(10)
         except KeyboardInterrupt:
             exit()

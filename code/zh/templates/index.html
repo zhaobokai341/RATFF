@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>设备控制台</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #logout {
+            float: right;
+            margin-top: -30px;
+            margin-right: 20px;
+            text-decoration: none;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .device-list {
+            margin-top: 20px;
+        }
+        .device{
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .device a {
+            text-decoration: none;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>设备控制台</h1>
+        <a id="logout" href="javascript:logout()">退出登录</a>
+        <div class="device-list" id="deviceList">
+            <h2>已连接设备</h2>
+            <div id="devices"></div>
+        </div>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        function loadDevices() {
+            fetch('api/devices')
+                .then(response => response.json())
+                .then(data => {
+                    const devicesDiv = document.getElementById('devices');
+                    if (Array.isArray(data)) {
+                        devicesDiv.innerHTML = data.map(device => `
+                            <div class="device">
+                                <a href="device/${device.id}" alt="进入此设备">
+                                    <p>设备ID: ${device.id}</p>
+                                    <p>IP地址: ${device.ip}</p>
+                                    <p>状态: ${device.status}</p>
+                                    <p>系统信息: ${device.systeminfo}</p>
+                                </a>
+                                <button onclick="deleteDevice('${device.id}')">删除</button>
+                            </div>
+                        `).join('');
+                    } else {
+                        devicesDiv.innerHTML = '<p>' + data + '</p>';
+                    }
+                });
+        }
+
+        function deleteDevice(id) {
+            if (confirm('确定要删除这个设备吗？')) {
+                fetch(`api/delete/${id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                        loadDevices();
+                    });
+            }
+        }
+
+        function logout(){
+            window.location.href = 'api/logout';
+        }
+        // 定期刷新设备列表
+        setInterval(loadDevices, 5000);
+        // 初始加载
+        loadDevices();
+    </script>
+</body>
+</html>

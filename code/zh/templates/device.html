@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>设备控制台</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #logout {
+            float: right;
+            margin-top: -30px;
+            margin-right: 20px;
+            text-decoration: none;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        #command_box {
+            background-color: black;
+            width: 1000px;
+            height: 300px;
+        }
+        #command_input {
+            top: 93%;
+            background-color: black;
+        }
+        #command_input input {
+            width: 99%;
+            background-color: #000010;
+            border: none;
+            color: green;
+        }
+        #command_result {
+            position: relative;
+            width: 99%;
+            height: 90%;
+            background-color: black;
+            color: green;
+            border: none;
+        }
+        #background input, #change_directory input {
+            width: 500px;
+            height: 30px;
+            border: 5px solid grey;
+            background-color: #f0f0f0;
+        }
+        #background button, #change_directory button {
+            width: 100px;
+            height: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <center>
+            <h1>设备控制台，现在在控制编号为{{id}}的设备</h1>
+            <a id="logout" href="javascript:logout()">退出登录</a>
+            <h2>命令执行</h2>
+            <div id="command_box">
+                <textarea id="command_result" readonly></textarea>
+                <div id="command_input">
+                    <input type="text" onkeypress="if (event.keyCode == 13) { executeCommand(); }" id="commandInput" placeholder="输入命令并回车执行">
+                </div>
+            </div>
+            <h2>命令后台执行</h2>
+            <div id="background">
+                <input type="text" id="backgroundInput" placeholder="输入后台执行的命令">
+                <button onclick="executeCommandBackground()">执行</button>
+            </div>
+            <h2>切换工作目录</h2>
+            <div id="change_directory">
+                <input type="text" id="directoryInput" placeholder="输入工作目录">
+                <button onclick="changeDirectory()">切换</button>
+            </div>
+        </center>
+    </div>
+
+    <script>
+        function executeCommand() {
+            const command = document.getElementById('commandInput').value;
+            if (!command) return;
+
+            fetch('../api/command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: "{{id}}", command: command })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('command_result');
+                if (data.error) {
+                    resultDiv.textContent = '错误: ' + data.error;
+                } else {
+                    console.log(data.result);
+                    resultDiv.textContent = data.result;
+                }
+            });
+        }
+
+        function executeCommandBackground() {
+            const command = document.getElementById('backgroundInput').value;
+            if (!command) return;
+
+            fetch('../api/background', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: "{{id}}", command: command, background: true })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('错误: ' + data.error);
+                } else {
+                    alert(data.message);
+                }
+            }
+            )
+        }
+
+        function changeDirectory() {
+            const directory = document.getElementById('directoryInput').value;
+            if (!directory) return;
+
+            fetch('../api/cd', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: "{{id}}", directory: directory })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('错误: ' + data.error);
+                } else {
+                    alert(data.message);
+                }
+            })
+        }
+
+        function logout(){
+            window.location.href = 'api/logout';
+        }
+    </script>
+</body>
+</html>
