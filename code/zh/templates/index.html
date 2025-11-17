@@ -51,27 +51,35 @@
     </div>
 
     <script>
+        var headers = {
+            'Content-Type': 'application/json',
+            'Cookie': document.cookie
+        }
         function loadDevices() {
-            fetch('api/devices')
-                .then(response => response.json())
-                .then(data => {
-                    const devicesDiv = document.getElementById('devices');
-                    if (Array.isArray(data)) {
-                        devicesDiv.innerHTML = data.map(device => `
-                            <div class="device">
-                                <a href="device/${device.id}" alt="进入此设备">
-                                    <p>设备ID: ${device.id}</p>
-                                    <p>IP地址: ${device.ip}</p>
-                                    <p>状态: ${device.status}</p>
-                                    <p>系统信息: ${device.systeminfo}</p>
-                                </a>
-                                <button onclick="deleteDevice('${device.id}')">删除</button>
-                            </div>
-                        `).join('');
-                    } else {
-                        devicesDiv.innerHTML = '<p>' + data + '</p>';
-                    }
-                });
+            fetch('{{ url_root }}/function', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({function: 'get_devices'})
+            })
+            .then(response => response.json())
+            .then(data => {
+                const devicesDiv = document.getElementById('devices');
+                if (Array.isArray(data)) {
+                    devicesDiv.innerHTML = data.map(device => `
+                        <div class="device">
+                            <a href="device/${device.id}" alt="进入此设备">
+                                <p>设备ID: ${device.id}</p>
+                                <p>IP地址: ${device.ip}</p>
+                                <p>状态: ${device.status}</p>
+                                <p>系统信息: ${device.systeminfo}</p>
+                            </a>
+                            <button onclick="deleteDevice('${device.id}')">删除</button>
+                        </div>
+                    `).join('');
+                } else {
+                    devicesDiv.innerHTML = '<p>' + data + '</p>';
+                }
+            });
         }
 
         function deleteDevice(id) {
