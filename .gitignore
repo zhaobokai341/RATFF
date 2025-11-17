@@ -1,3 +1,4 @@
 *.pem
 *.zip
 draft*
+__pycache__/
