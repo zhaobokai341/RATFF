@@ -26,7 +26,7 @@ url_root = f'http://localhost:{API_PORT}/{SECURITY_PATH}'
 
 # --- Quart 网页端逻辑和异步请求处理 ---
 def check(cookie):
-    if requests.post(f"{url_root}/function", verify=False, cookies=cookie).status_code == 401:
+    if requests.post(f"{url_root}/function/", verify=False, cookies=cookie).status_code == 401:
         return False
     return True
 
@@ -51,7 +51,6 @@ async def login():
 
 @app.route(f'/{SECURITY_PATH}/logout')
 async def logout():
-    global headers
     resp = await make_response(redirect(url_for('index')))
     resp.delete_cookie('Cookie')
     return resp

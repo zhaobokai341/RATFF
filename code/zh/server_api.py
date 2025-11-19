@@ -2,6 +2,7 @@ __author__ = "赵博凯"
 __license__ = "GPL v3"
 
 from quart import Quart, redirect, url_for, request, make_response, render_template, jsonify, websocket
+from quart_cors import cors
 import asyncio
 import websockets
 import hashlib
@@ -18,7 +19,7 @@ rich.traceback.install(show_locals=True)
 
 # --- 基础配置 ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-app = Quart(__name__)
+app = cors(Quart(__name__), allow_origin="*")
 HOST = '0.0.0.0' 
 PORT = 8765
 WEB_PORT = 5000  # Web界面端口
@@ -132,19 +133,19 @@ async def function():
     if not check(): return jsonify({'error': '未授权'}), 401
     # 处理请求
     json = await request.get_json()
-    if "func_name" not in json: return jsonify({'error': '未提供函数名'}), 400
+    if json is None or "func_name" not in json: return jsonify({'error': '未提供函数名'}), 400
     func_name = json["func_name"]
-    if ["device_list", 
-        "delete", 
-        "execute_command", 
-        "background", 
-        "change_directory"] not in func_name:
+    if func_name not in ["device_list",
+        "delete",
+        "execute_command",
+        "background",
+        "change_directory"]:
         return jsonify({'error': '未提供有效的函数名'}), 400
 
     server = Server()
 
     try:
-        if func_name == "device_list": return jsonify(await server.device_list())
+        if func_name == "device_list": return jsonify(server.client_list())
         if "id" not in json: return jsonify({'error': '未提供设备ID'}), 400
         device_id = json["id"]
         if device_id not in server.client_list(): return jsonify({'error': '设备ID不存在'}), 400

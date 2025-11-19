@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>设备控制台</title>
+    <meta charset="utf-8">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -56,10 +57,10 @@
             'Cookie': document.cookie
         }
         function loadDevices() {
-            fetch('{{ url_root }}/function', {
+            fetch('{{ url_root }}/function/', {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify({function: 'get_devices'})
+                body: JSON.stringify({function: 'device_list'})
             })
             .then(response => response.json())
             .then(data => {
@@ -84,12 +85,16 @@
 
         function deleteDevice(id) {
             if (confirm('确定要删除这个设备吗？')) {
-                fetch(`api/delete/${id}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        alert(data.message);
-                        loadDevices();
-                    });
+                fetch('{{ device_list }}/function/', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({function: 'delete', id: id})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    loadDevices();
+                });
             }
         }
 
