@@ -53,14 +53,13 @@
 
     <script>
         var headers = {
-            'Content-Type': 'application/json',
-            'Cookie': document.cookie
+            'Content-Type': 'application/json'
         }
         function loadDevices() {
-            fetch('{{ url_root }}/function/', {
+            fetch('requests_to_function', {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify({function: 'device_list'})
+                body: JSON.stringify({func_name: 'device_list'})
             })
             .then(response => response.json())
             .then(data => {
@@ -85,15 +84,18 @@
 
         function deleteDevice(id) {
             if (confirm('确定要删除这个设备吗？')) {
-                fetch('{{ device_list }}/function/', {
+                fetch('requests_to_function', {
                     method: 'POST',
                     headers: headers,
-                    body: JSON.stringify({function: 'delete', id: id})
+                    body: JSON.stringify({func_name: 'delete', id: id})
                 })
                 .then(response => response.json())
                 .then(data => {
-                    alert(data.message);
-                    loadDevices();
+                    if(data.message){
+                        alert(data.message);
+                    }else{
+                        alert(data.error)
+                    }
                 });
             }
         }

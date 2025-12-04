@@ -53,17 +53,17 @@ class Execute_command:
         """切换工作目录"""
         try:
             os.chdir(directory)
-            return "[bold green]切换工作目录成功[/bold green]"
+            return "切换工作目录成功"
         except Exception as e:
-            return "[bold red]切换工作目录失败[/bold red]: " + str(e)
+            return "切换工作目录失败：" + str(e)
     
     def background(self, command):
         """在后台执行命令"""
         try:
             subprocess.Popen(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            return "[bold green]命令已在后台运行[/bold green]"
+            return "命令已在后台运行"
         except Exception as e:
-            return "[bold red]后台运行命令失败[/bold red]: " + str(e)
+            return "后台运行命令失败: " + str(e)
 
 # --- 客户端逻辑 ---
 async def client_loop():
