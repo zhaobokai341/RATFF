@@ -114,7 +114,7 @@ class ControlClient:
     async def change_directory(self, directory):
         logging.info(f"切换目录：{directory}")
         try:
-            await self.websocket.send(f"cd:{directory}")
+            await self.websocket.send(f"change_directory:{directory}")
             result = await self.websocket.recv()
             logging.info(f"目录切换结果：{result}")
             return result

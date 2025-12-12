@@ -16,7 +16,7 @@ rich.traceback.install(show_locals=True)
 # 基础配置
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 app = Quart(__name__)
-WEB_HOST = "127.0.0.1"
+WEB_HOST = "0.0.0.0"
 WEB_PORT = 8000
 API_SITE = 'http://localhost:5000'
 SECURITY_PATH = 'fuck'  # 安全路径

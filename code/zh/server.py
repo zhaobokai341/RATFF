@@ -130,7 +130,7 @@ class Server:
         result = response.json()
         if not response.ok: 
             raise Exception(f"请求失败：{response.status_code} {result["error"]}")
-        if "已" in result["message"]:
+        if "sent and executed" in result["message"]:
             output(f"已成功在后台运行命令：{command}", type="success")
         else:
             output(f"命令执行失败：{result["message"]}", type="error")
@@ -144,7 +144,7 @@ class Server:
         result = response.json()
         if not response.ok: 
             raise Exception(f"请求失败：{response.status_code} {result["error"]}")
-        if "成功" in result["message"]:
+        if "successfully" in result["message"]:
             output(f"已切换工作目录：{directory}", type="success")
         else:
             output(f"切换工作目录失败：{result["message"]}", type="error")
@@ -180,7 +180,7 @@ def command_input():
                         select_device = Server.select_device(command.split(" ", 1)[1])
                     case command if command.startswith("command"): 
                         Server.command(select_device)
-                    case command if command.startswith("background "): 
+                    case command if command.startswith("bg "): 
                         Server.background(select_device, command.split(" ", 1)[1])
                     case command if command.startswith("cd "): 
                         Server.cd(select_device, command.split(" ", 1)[1])

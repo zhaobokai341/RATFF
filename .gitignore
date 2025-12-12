@@ -2,3 +2,5 @@
 *.zip
 draft*
 __pycache__/
+*.mod
+*.sum
