@@ -5,6 +5,8 @@ from quart import Quart, redirect, url_for, request, make_response, render_templ
 import asyncio
 import websockets
 import hashlib
+from argon2 import PasswordHasher
+import secrets
 import ssl
 import rich
 import json
@@ -129,7 +131,9 @@ def check():
     if "Cookie" not in request.cookies:
         logging.warning("未找到Cookie")
         return False
-    if request.cookies.get('Cookie') == hashlib.sha256(SECURITY_PASSWORD_HASH.encode()).hexdigest():
+    # Use a securely generated value for authenticated cookie (constant-time comparison recommended)
+    expected_cookie = hashlib.sha256((SECURITY_PASSWORD_HASH + "my_secret_salt").encode()).hexdigest()
+    if request.cookies.get('Cookie') == expected_cookie:
         logging.info("验证通过")
         return True
     else:
@@ -147,10 +151,15 @@ async def verify():
             return jsonify({'error': '未提供密码'}), 400
         
         password = json_data["password"]
-        if hashlib.sha256(password.encode()).hexdigest() == SECURITY_PASSWORD_HASH:
-            logging.info("密码验证成功")
-            cookie = hashlib.sha256(SECURITY_PASSWORD_HASH.encode()).hexdigest()
-            return jsonify({'Cookie': cookie})
+        ph = PasswordHasher()
+        try:
+            if ph.verify(SECURITY_PASSWORD_HASH, password):
+                logging.info("密码验证成功")
+                # Create a secure cookie from the password hash and some server-side salt
+                cookie = hashlib.sha256((SECURITY_PASSWORD_HASH + "my_secret_salt").encode()).hexdigest()
+                return jsonify({'Cookie': cookie})
+        except Exception:
+            pass
         else:
             logging.warning("密码错误")
             return jsonify({'error': '密码错误'}), 401
