@@ -70,7 +70,6 @@
                             <a href="device/${device.id}" alt="进入此设备">
                                 <p>设备ID: ${device.id}</p>
                                 <p>IP地址: ${device.ip}</p>
-                                <p>状态: ${device.status}</p>
                                 <p>系统信息: ${device.systeminfo}</p>
                             </a>
                             <button onclick="deleteDevice('${device.id}')">删除</button>
@@ -101,7 +100,7 @@
         }
 
         function logout(){
-            window.location.href = 'api/logout';
+            window.location.href = 'logout';
         }
         // 定期刷新设备列表
         setInterval(loadDevices, 5000);

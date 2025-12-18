@@ -74,12 +74,10 @@ class Server:
         Table = rich.table.Table(title="设备列表")
         Table.add_column("设备ID", justify="center", style="cyan")
         Table.add_column("设备IP", justify="center", style="magenta")
-        Table.add_column("设备状态", justify="center", style="yellow")
         Table.add_column("设备信息", justify="center", style="green")
         for i in result:
             Table.add_row(rich.text.Text(i["id"], overflow="fold"), 
                             rich.text.Text(i["ip"], overflow="fold"), 
-                            rich.text.Text(i["status"], overflow="fold"), 
                             rich.text.Text(i["systeminfo"], overflow="fold"))
         output(Table)
 

@@ -109,11 +109,11 @@
         }
 
         function logout(){
-            window.location.href = 'api/logout';
+            window.location.href = '../logout';
         }
 
         document.getElementById('commandInput').addEventListener('keypress', function(event) {
-            if (event.keyCode === 13) {
+            if (event.key === 'Enter' || event.code === 'Enter'|| event.keyCode === 13) {
                 requests_to_function(
                     json={ func_name: "command", id: "{{id}}", command: this.value},
                     callback=function(data){

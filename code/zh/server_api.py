@@ -58,7 +58,6 @@ class Server:
                 devices.append({
                     'id': device[0],
                     'ip': device[1]['ip'],
-                    'status': device[1]['status'],
                     'systeminfo': device[1]['systeminfo']
                 })
             logging.info(f"设备列表：{devices}")
@@ -240,7 +239,6 @@ async def handle_client(websocket):
     
     control_list[str(websocket.id)] = {
         "ip": ip,
-        "status": "connected",
         "websocket": websocket,
         "systeminfo": systeminfo
     }
@@ -254,28 +252,6 @@ async def handle_client(websocket):
         if str(websocket.id) in control_list:
             del control_list[str(websocket.id)]
             logging.info(f"客户端 {ip} 断开连接")
-
-# 客户端连接状态检查
-async def check_clients_connection():
-    logging.info("启动连接状态检查")
-    while True:
-        try:
-            if len(control_list) > 0:
-                logging.debug("检查客户端状态")
-                for device_id, device_info in list(control_list.items()):
-                    try:
-                        await device_info['websocket'].ping()
-                        if device_info['status'] != "connected":
-                            logging.info(f"设备 {device_id} 重连")
-                            device_info['status'] = "connected"
-                    except Exception as e:
-                        if device_info['status'] != "disconnected":
-                            logging.warning(f"设备 {device_id} 断开：{str(e)}")
-                            device_info['status'] = "disconnected"
-            await asyncio.sleep(10)
-        except Exception as e:
-            logging.error(f"状态检查错误：{str(e)}")
-            await asyncio.sleep(10)
 
 # 服务器主循环
 async def server_loop():
