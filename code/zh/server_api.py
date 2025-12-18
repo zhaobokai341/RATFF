@@ -298,9 +298,10 @@ async def server_loop():
         async with websockets.serve(handle_client, HOST, PORT, ssl=ssl_context):
             logging.info("服务器启动成功")
             try:
-                await asyncio.Event().wait()
+                quit_event = asyncio.Event()
+                await quit_event.wait()
             except KeyboardInterrupt:
-                logging.info("服务器关闭中...")
+                logging.warning("服务器被用户中断")
     except Exception as e:
         logging.error(f"服务器启动失败：{str(e)}")
         exit(1)
@@ -309,11 +310,17 @@ async def server_loop():
 async def main():
     logging.info("程序启动")
     try:
-        await asyncio.gather(
-            server_loop(),
-            check_clients_connection(),
-            app.run_task(host='0.0.0.0', port=WEB_PORT)
+        # 创建任务
+        server_task = asyncio.create_task(server_loop())
+        web_task = asyncio.create_task(app.run_task(host='0.0.0.0', port=WEB_PORT))
+
+        # 等待任意一个任务完成或出错
+        _, tasks = await asyncio.wait(
+            [server_task, web_task],
+            return_when=asyncio.FIRST_COMPLETED
         )
+        for task in tasks:
+            task.cancel()
     except Exception as e:
         logging.error(f"程序错误：{str(e)}")
         exit(1)

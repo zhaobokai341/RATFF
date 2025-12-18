@@ -130,7 +130,7 @@ class Server:
         result = response.json()
         if not response.ok: 
             raise Exception(f"请求失败：{response.status_code} {result["error"]}")
-        if "sent and executed" in result["message"]:
+        if "已发送" in result["message"]:
             output(f"已成功在后台运行命令：{command}", type="success")
         else:
             output(f"命令执行失败：{result["message"]}", type="error")
