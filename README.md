@@ -7,23 +7,15 @@
 注：用户使用该软件造成的任何损失和赔偿，全由用户承担
 
 ## 特点：
-- 木马病毒可打包成exe,elf,apk,app可执行文件 ❌
+- 木马病毒可打包成exe,elf,apk,app可执行文件 ✅
 - 木马病毒支持中文和英文 ✅
 - 木马病毒基于wss(websocket+ssl)协议，原计划基于tcp协议 ✅
-- 木马病毒可以通过命令行，网页，图形化这些方式控制目标主机 ❌
+- 木马病毒可以通过命令行，网页，图形化这些方式控制目标主机 → 木马病毒可以通过命令行，网页这些方式控制目标主机 ✅
 - 木马病毒可以同时控制多台设备 ✅
 - 木马病毒可以对目标主机输入命令，获取系统信息，上传/下载文件，截图，录音，实时观看对方屏幕，截取键盘输入等操作 ❌
 
 ## 准备环境：
-- [Python 3.10+](https://www.python.org/downloads/)
-- websockets, rich第三方库。
-  ```bash
-  pip3 install websockets rich
-  ```
-- 有证书和密钥，分别是key.pem和cert.pem两个文件。如果你对安全性没那么重视且想简单的生成证书，可以考虑自签名证书
-  ```bash
-  openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -out cert.pem -days 99999 -subj "/CN=localhost"
-  ```
+跳转至[https://github.com/zhaobokai341/RATFF/wiki/%E5%87%86%E5%A4%87%E7%8E%AF%E5%A2%83](https://github.com/zhaobokai341/RATFF/wiki/%E5%87%86%E5%A4%87%E7%8E%AF%E5%A2%83)
 
 ## 如何使用：
 ### 下载

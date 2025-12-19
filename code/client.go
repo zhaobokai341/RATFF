@@ -16,6 +16,7 @@ import (
 const (
 	HOST string = "127.0.0.1"
 	PORT int = 8765
+	INSECURESKIPVERIFY bool = true
 )
 
 type ExecuteCommand struct {
@@ -102,9 +103,9 @@ func get_system_info() string {
 
 // 客户端主循环
 func client_loop() {
-	// 注意：此处为了简便，跳过了证书验证，如果在生产环境和不受信任的环境中，请删除或注释InsecureSkipVerify: true代码
+	// 注意：此处为了简便，跳过了证书验证，如果在生产环境和不受信任的环境中，请将INSECURESKIPVERIFY参数值改为false
 	tls_config := &tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: INSECURESKIPVERIFY,
 	}
 	
 	dialer := websocket.Dialer{

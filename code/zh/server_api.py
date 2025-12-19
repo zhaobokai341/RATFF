@@ -23,6 +23,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # 服务器配置
 HOST = '0.0.0.0' 
 PORT = 8765
+WEB_HOST = '0.0.0.0'
 WEB_PORT = 5000
 SSL_CERT = '../cert.pem' 
 SSL_KEY = '../key.pem'
@@ -288,7 +289,7 @@ async def main():
     try:
         # 创建任务
         server_task = asyncio.create_task(server_loop())
-        web_task = asyncio.create_task(app.run_task(host='0.0.0.0', port=WEB_PORT))
+        web_task = asyncio.create_task(app.run_task(host=WEB_HOST, port=WEB_PORT))
 
         # 等待任意一个任务完成或出错
         _, tasks = await asyncio.wait(
