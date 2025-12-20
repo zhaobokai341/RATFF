@@ -4,3 +4,4 @@ draft*
 __pycache__/
 *.mod
 *.sum
+systeminfo.json

@@ -25,34 +25,10 @@ git clone https://github.com/zhaobokai341/remote_access_trojan.git
 cd remote_access_trojan
 ```
 方法2：直接通过浏览器下载压缩包然后解压，且进入该目录
-方法3：进入[Releases](https://github.com/zhaobokai341/remote_access_trojan/releases),选择合适的版本，下载名为code.zip的文件并解压，且进入该目录
+方法3：进入[Releases](https://github.com/zhaobokai341/remote_access_trojan/releases)，选择合适的版本，下载名为code.zip的文件并解压，且进入该目录
 
 ### 配置
-进入code目录，有两个文件夹（zh,en），zh是中文版本，en是英文版本，选择合适的文件夹即可，这里以zh为例
-
-进入zh文件夹， 打开server.py文件，找到与它类似的代码
-```python
-HOST = '0.0.0.0' 
-PORT = 8765
-SSL_CERT = '../cert.pem' 
-SSL_KEY = '../key.pem'
-```
-配置HOST和PORT，HOST要连接的主机，PORT是端口，保持默认即可
-
-配置SSL_CERT和SSL_KEY，改成你生成的证书密钥路径
-
-接着打开client.py文件，找到与它类似的代码
-```python
-HOST = '127.0.0.1' 
-PORT = 8765
-```
-HOST修改成服务端IP，PORT与服务器设置的PORT相同
+跳转至[https://github.com/zhaobokai341/RATFF/wiki/%E9%85%8D%E7%BD%AE%E9%A1%B9%E7%9B%AE](https://github.com/zhaobokai341/RATFF/wiki/%E9%85%8D%E7%BD%AE%E9%A1%B9%E7%9B%AE)
 
 ### 运行
-在同级目录下，打开command,输入：
-```bash
-python server.py
-```
-这将启动服务器，他用于控制所有受害者的设备。
-
-而client.py是客户端，你可以自行打包成可执行文件，然后让受害者打开，如果配置正确，你将能随意控制他的设备。
+跳转至[https://github.com/zhaobokai341/RATFF/wiki/%E8%BF%90%E8%A1%8C](https://github.com/zhaobokai341/RATFF/wiki/%E8%BF%90%E8%A1%8C)

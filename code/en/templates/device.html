@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>设备控制台</title>
+    <title>Device Console</title>
     <meta charset="UTF-8">
     <style>
         body {
@@ -77,29 +77,29 @@
 <body>
     <div class="container">
         <center>
-            <h1>设备控制台，现在在控制编号为{{id}}的设备</h1>
-            <a id="logout" href="javascript:logout()">退出登录</a>
-            <h2>获取系统信息</h2>
+            <h1>Device Console, now controlling device with ID {{id}}</h1>
+            <a id="logout" href="javascript:logout()">Logout</a>
+            <h2>Get System Information</h2>
             <div id="get_systeminfo">
                 <textarea readonly></textarea>
-                <button>获取</button>
+                <button>Get</button>
             </div>
-            <h2>命令执行</h2>
+            <h2>Command Execution</h2>
             <div id="command_box">
                 <textarea id="command_result" readonly></textarea>
                 <div id="command_input">
-                    <input type="text" id="commandInput" placeholder="输入命令并回车执行">
+                    <input type="text" id="commandInput" placeholder="Enter command and press Enter to execute">
                 </div>
             </div>
-            <h2>命令后台执行</h2>
+            <h2>Background Command Execution</h2>
             <div id="background">
-                <input type="text" id="backgroundInput" placeholder="输入后台执行的命令">
-                <button>执行</button>
+                <input type="text" id="backgroundInput" placeholder="Enter command to execute in background">
+                <button>Execute</button>
             </div>
-            <h2>切换工作目录</h2>
+            <h2>Change Working Directory</h2>
             <div id="change_directory">
-                <input type="text" id="directoryInput" placeholder="输入工作目录">
-                <button>切换</button>
+                <input type="text" id="directoryInput" placeholder="Enter working directory">
+                <button>Change</button>
             </div>
         </center>
     </div>
@@ -132,7 +132,7 @@
                     let result = document.getElementById("get_systeminfo").getElementsByTagName('textarea')[0];
                     result.value = "";
                     if (data.error) {
-                        result.value += "错误: " + data.error + "\n";
+                        result.value += "Error: " + data.error + "\n";
                         return ;
                     }
                     data = JSON.parse(data.message);
@@ -150,12 +150,12 @@
                         let result = document.getElementById("command_result");
                         result.value = "";
                         if (data.error) {
-                            result.value += "错误: " + data.error + "\n";
+                            result.value += "Error: " + data.error + "\n";
                             return ;
                         }
                         data = JSON.parse(data.message);
                         for(let i in data){
-                            result.value += `${i}：${data[i]}\n`;
+                            result.value += `${i}: ${data[i]}\n`;
                         }
                     }
                 );

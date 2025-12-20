@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Device Console</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #logout {
+            float: right;
+            margin-top: -30px;
+            margin-right: 20px;
+            text-decoration: none;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .device-list {
+            margin-top: 20px;
+        }
+        .device{
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .device a {
+            text-decoration: none;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Device Console</h1>
+        <a id="logout" href="javascript:logout()">Logout</a>
+        <div class="device-list" id="deviceList">
+            <h2>Connected Devices</h2>
+            <div id="devices"></div>
+        </div>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        var headers = {
+            'Content-Type': 'application/json'
+        }
+        function loadDevices() {
+            fetch('requests_to_function', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({func_name: 'device_list'})
+            })
+            .then(response => response.json())
+            .then(data => {
+                const devicesDiv = document.getElementById('devices');
+                if (Array.isArray(data)) {
+                    devicesDiv.innerHTML = data.map(device => `
+                        <div class="device">
+                            <a href="device/${device.id}" alt="Access this device">
+                                <p>Device ID: ${device.id}</p>
+                                <p>IP Address: ${device.ip}</p>
+                                <p>System Info: ${device.systeminfo}</p>
+                            </a>
+                            <button onclick="deleteDevice('${device.id}')">Delete</button>
+                        </div>
+                    `).join('');
+                } else {
+                    devicesDiv.innerHTML = '<p>' + data + '</p>';
+                }
+            });
+        }
+
+        function deleteDevice(id) {
+            if (confirm('Are you sure you want to delete this device?')) {
+                fetch('requests_to_function', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({func_name: 'delete', id: id})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.message){
+                        alert(data.message);
+                    }else{
+                        alert(data.error)
+                    }
+                });
+            }
+        }
+
+        function logout(){
+            window.location.href = 'logout';
+        }
+        // Periodically refresh device list
+        setInterval(loadDevices, 5000);
+        // Initial load
+        loadDevices();
+    </script>
+</body>
+</html>
