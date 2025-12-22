@@ -147,6 +147,13 @@ def check():
         logging.warning("验证失败")
         return False
 
+# 禁止所有爬虫爬取所有页面
+@app.route("robots.txt")
+async def robots():
+    return '''User-Agent: *
+    Disallow: /
+    '''
+
 # 密码验证路由
 @app.route(f"/{SECURITY_PATH}/verify", methods=['POST'])
 async def verify():
