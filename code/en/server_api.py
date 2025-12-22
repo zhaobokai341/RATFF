@@ -147,6 +147,13 @@ def check():
         logging.warning("Verification failed")
         return False
 
+# Deny all agent scrape all pages
+@app.route("robots.txt")
+async def robots():
+    return '''User-Agent: *
+    Disallow: /
+    '''
+
 # Password verification route
 @app.route(f"/{SECURITY_PATH}/verify", methods=['POST'])
 async def verify():
