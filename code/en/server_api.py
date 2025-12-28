@@ -25,8 +25,8 @@ HOST = '0.0.0.0'
 PORT = 8765
 WEB_HOST = '0.0.0.0'
 WEB_PORT = 5000
-SSL_CERT = '../cert.pem' 
-SSL_KEY = '../key.pem'
+SSL_CERT = '../../../cert.pem' 
+SSL_KEY = '../../../key.pem'
 SECURITY_PATH = 'fuck'
 SECURITY_PASSWORD_HASH = '6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e' 
 
@@ -148,7 +148,7 @@ def check():
         return False
 
 # Deny all agent scrape all pages
-@app.route("robots.txt")
+@app.route("/robots.txt")
 async def robots():
     return '''User-Agent: *
     Disallow: /
@@ -211,8 +211,12 @@ async def function():
         
         device_id = json_data["id"]
         logging.info(f"Target device: {device_id}")
-        
-        if not any(device_id in device.values() for device in server.client_list()):
+
+        client_list = server.client_list()
+        if "No" in client_list:
+            logging.warning(f"Device does not exist: {device_id}")
+            return jsonify({'error': 'Device ID does not exist'}), 400
+        if not any(device_id in device.values() for device in client_list):
             logging.warning(f"Device does not exist: {device_id}")
             return jsonify({'error': 'Device ID does not exist'}), 400
         
