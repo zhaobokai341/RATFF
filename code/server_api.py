@@ -6,9 +6,9 @@ from sys import exit
 
 import load_lang_pack
 
+import bcrypt
 import asyncio
 import websockets
-import hashlib
 import ssl
 import rich
 import logging
@@ -30,7 +30,7 @@ WEB_PORT = 5000
 SSL_CERT = 'cert.pem' 
 SSL_KEY = 'key.pem'
 SECURITY_PATH = 'fuck'
-SECURITY_PASSWORD_HASH = '6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e' 
+SECURITY_PASSWORD_HASH = b'$2b$04$T8NZ.WUIuO05WyVpLrQYiOdgqc2zbx7E9ysF03696dYvwGohCFzwC' 
 
 # 全局变量
 app = Quart(__name__)
@@ -139,7 +139,7 @@ def check():
     if "Cookie" not in request.cookies:
         logging.warning(lp.g("cookie_not_found"))
         return False
-    if request.cookies.get('Cookie') == hashlib.sha256(SECURITY_PASSWORD_HASH.encode()).hexdigest():
+    if bcrypt.checkpw(SECURITY_PASSWORD_HASH, request.cookies["Cookie"].encode()):
         logging.info(lp.g("verification_passed"))
         return True
     else:
@@ -164,9 +164,10 @@ async def verify():
             return jsonify({'error': lp.g('password_not_provided')}), 400
         
         password = json_data["password"]
-        if hashlib.sha256(password.encode()).hexdigest() == SECURITY_PASSWORD_HASH:
+        if bcrypt.checkpw(password.encode(), SECURITY_PASSWORD_HASH):
             logging.info(lp.g("password_verification_successful"))
-            cookie = hashlib.sha256(SECURITY_PASSWORD_HASH.encode()).hexdigest()
+            salt = bcrypt.gensalt(rounds=4)
+            cookie = bcrypt.hashpw(SECURITY_PASSWORD_HASH, salt).decode()
             return jsonify({'Cookie': cookie})
         else:
             logging.warning(lp.g("incorrect_password"))

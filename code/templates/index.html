@@ -82,7 +82,7 @@
         }
 
         function deleteDevice(id) {
-            if (confirm(langData.confirm_delete_device[language])) {
+            if (confirm('{{ lp.g("confirm_delete_device") }}')) {
                 fetch('requests_to_function', {
                     method: 'POST',
                     headers: headers,
