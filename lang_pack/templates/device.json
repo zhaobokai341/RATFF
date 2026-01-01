@@ -7,6 +7,10 @@
         "zh": "设备控制台，现在在控制编号为",
         "en": "Device Console, now controlling device with ID"
     },
+    "device": {
+        "zh": "的设备", 
+        "en": "device"
+    },
     "logout": {
         "zh": "退出登录",
         "en": "Logout"

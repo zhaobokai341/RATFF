@@ -11,5 +11,5 @@ class LanguagePack:
         with open(self.file, 'r') as f:
             self.data = json.load(f)
     
-    def get(self, key):
+    def g(self, key):
         return self.data[key][self.language]

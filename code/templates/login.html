@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>登录</title>
+    <title>{{ lp.g("title") }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -26,10 +26,10 @@
 </head>
 <body>
     <div class="login-form">
-        <h2>登录</h2>
+        <h2>{{ lp.g("heading") }}</h2>
         <form method="POST">
-            <input type="password" name="password" placeholder="输入密码" required>
-            <button type="submit">登录</button>
+            <input type="password" name="password" placeholder='{{ lp.g("password_placeholder") }}' required>
+            <button type="submit">{{ lp.g("submit_button") }}</button>
         </form>
         {% if error %}
             <div class="error">{{ error }}</div>

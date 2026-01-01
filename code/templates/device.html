@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>设备控制台</title>
+    <title>{{ lp.g("title") }}</title>
     <meta charset="UTF-8">
     <style>
         body {
@@ -77,29 +77,29 @@
 <body>
     <div class="container">
         <center>
-            <h1>设备控制台，现在在控制编号为{{id}}的设备</h1>
-            <a id="logout" href="javascript:logout()">退出登录</a>
-            <h2>获取系统信息</h2>
+            <h1>{{ lp.g("controlling_device") }}{{id}}{{ lp.g("device") }}</h1>
+            <a id="logout" href="javascript:logout()">{{ lp.g("logout") }}</a>
+            <h2>{{ lp.g("get_system_info") }}</h2>
             <div id="get_systeminfo">
                 <textarea readonly></textarea>
-                <button>获取</button>
+                <button>{{ lp.g("get") }}</button>
             </div>
-            <h2>命令执行</h2>
+            <h2>{{ lp.g("command_execution") }}</h2>
             <div id="command_box">
                 <textarea id="command_result" readonly></textarea>
                 <div id="command_input">
-                    <input type="text" id="commandInput" placeholder="输入命令并回车执行">
+                    <input type="text" id="commandInput" placeholder='{{ lp.g("enter_command") }}' enterkeyhint="enter">
                 </div>
             </div>
-            <h2>命令后台执行</h2>
+            <h2>{{ lp.g("background_command_execution") }}</h2>
             <div id="background">
-                <input type="text" id="backgroundInput" placeholder="输入后台执行的命令">
-                <button>执行</button>
+                <input type="text" id="backgroundInput" placeholder='{{ lp.g("enter_background_command") }}'>
+                <button>{{ lp.g("execute") }}</button>
             </div>
-            <h2>切换工作目录</h2>
+            <h2>{{ lp.g("change_working_directory") }}</h2>
             <div id="change_directory">
-                <input type="text" id="directoryInput" placeholder="输入工作目录">
-                <button>切换</button>
+                <input type="text" id="directoryInput" placeholder='{{ lp.g("enter_directory") }}'>
+                <button>{{ lp.g("change") }}</button>
             </div>
         </center>
     </div>
@@ -132,7 +132,7 @@
                     let result = document.getElementById("get_systeminfo").getElementsByTagName('textarea')[0];
                     result.value = "";
                     if (data.error) {
-                        result.value += "错误: " + data.error + "\n";
+                        result.value += '{{ lp.g("error") }}' + ": " + data.error + "\n";
                         return ;
                     }
                     data = JSON.parse(data.message);
@@ -142,15 +142,18 @@
             );
         })
 
-        document.getElementById('commandInput').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter' || event.code === 'Enter'|| event.keyCode === 13) {
+        document.getElementById('commandInput').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' || 
+                event.KeyCode == 13
+            ) {
+                event.preventDefault();
                 requests_to_function(
                     json={ func_name: "command", id: "{{id}}", command: this.value},
                     callback=function(data) {
                         let result = document.getElementById("command_result");
                         result.value = "";
                         if (data.error) {
-                            result.value += "错误: " + data.error + "\n";
+                            result.value += '{{ lp.g("error") }}' + ": " + data.error + "\n";
                             return ;
                         }
                         data = JSON.parse(data.message);

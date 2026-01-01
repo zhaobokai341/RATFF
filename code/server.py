@@ -74,15 +74,15 @@ class Server:
                                 json={"func_name": "device_list"}, 
                                 cookies=cookie)
         if not response.ok: 
-            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {response.json()}")
+            raise Exception(f"{lp.g('request_failed')}：{response.status_code} {response.json()}")
         result = response.json()
         if type(result) != list:
             output(result, type="info")
             return
-        Table = rich.table.Table(title=lp.get("device_list_title"))
-        Table.add_column(lp.get("device_id"), justify="center", style="cyan")
-        Table.add_column(lp.get("device_ip"), justify="center", style="magenta")
-        Table.add_column(lp.get("device_info"), justify="center", style="green")
+        Table = rich.table.Table(title=lp.g("device_list_title"))
+        Table.add_column(lp.g("device_id"), justify="center", style="cyan")
+        Table.add_column(lp.g("device_ip"), justify="center", style="magenta")
+        Table.add_column(lp.g("device_info"), justify="center", style="green")
         for i in result:
             Table.add_row(rich.text.Text(i["id"], overflow="fold"), 
                             rich.text.Text(i["ip"], overflow="fold"), 
@@ -96,8 +96,8 @@ class Server:
                                     json={"func_name": "command", "id": id, "command": "echo hello world"}, 
                                     cookies=cookie)
         if not response.ok: 
-            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {response.json()}")
-        output(f"{lp.get('selected_device')}：{id}", type="success")
+            raise Exception(f"{lp.g('request_failed')}：{response.status_code} {response.json()}")
+        output(f"{lp.g('selected_device')}：{id}", type="success")
         return id
 
     @staticmethod   
@@ -107,8 +107,8 @@ class Server:
                                     json={"func_name": "delete", "id": id}, 
                                     cookies=cookie)
         if not response.ok: 
-            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {response.json()}")
-        output(f"{lp.get('deleted_device')}：{id}", type="success")
+            raise Exception(f"{lp.g('request_failed')}：{response.status_code} {response.json()}")
+        output(f"{lp.g('deleted_device')}：{id}", type="success")
         
     @staticmethod
     def systeminfo(id):
@@ -117,12 +117,12 @@ class Server:
                                 json={"func_name": "systeminfo", "id": id}, 
                                 cookies=cookie)
         if not response.ok: 
-            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {response.json()}")
+            raise Exception(f"{lp.g('request_failed')}：{response.status_code} {response.json()}")
         system_info = json.loads(response.json()["message"])
         with open("systeminfo.json", "w") as f:
             json.dump(system_info, f, indent=4, ensure_ascii=False)
         rich.print_json(data=system_info)
-        output(lp.get("system_info_saved"), type="success")
+        output(lp.g("system_info_saved"), type="success")
 
     @staticmethod
     def command(id):
@@ -136,7 +136,7 @@ class Server:
                                      cookies=cookie)
             result = response.json()
             if not response.ok: 
-                raise Exception(f"{lp.get('request_failed')}：{response.status_code} {result["error"]}")
+                raise Exception(f"{lp.g('request_failed')}：{response.status_code} {result["error"]}")
             result = json.loads(result["message"])
             for i in result.items():
                 output(f"{i[0]}: {i[1]}", type="info")
@@ -149,11 +149,11 @@ class Server:
                                 cookies=cookie)
         result = response.json()
         if not response.ok: 
-            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {result["error"]}")
-        if "已发送" in result["message"]:
-            output(f"{lp.get('command_executed_in_background')}：{command}", type="success")
+            raise Exception(f"{lp.g('request_failed')}：{response.status_code} {result["error"]}")
+        if "已发送" in result["message"] or "sent" in result["message"]:
+            output(f"{lp.g('command_executed_in_background')}：{command}", type="success")
         else:
-            output(f"{lp.get('command_execution_failed')}：{result["message"]}", type="error")
+            output(f"{lp.g('command_execution_failed')}：{result["message"]}", type="error")
     
     @staticmethod
     def cd(id, directory):
@@ -163,11 +163,11 @@ class Server:
                                 cookies=cookie)
         result = response.json()
         if not response.ok: 
-            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {result["error"]}")
+            raise Exception(f"{lp.g('request_failed')}：{response.status_code} {result["error"]}")
         if "successfully" in result["message"]:
-            output(f"{lp.get('directory_changed')}：{directory}", type="success")
+            output(f"{lp.g('directory_changed')}：{directory}", type="success")
         else:
-            output(f"{lp.get('directory_change_failed')}：{result["message"]}", type="error")
+            output(f"{lp.g('directory_change_failed')}：{result["message"]}", type="error")
 
 def command_input():
     """命令行交互主循环"""
@@ -181,7 +181,7 @@ def command_input():
                 match command:
                     case "": pass
                     case "help": 
-                        output(lp.get("console_help_info"), type="info")
+                        output(lp.g("console_help_info"), type="info")
                     case "back": 
                         select_device = None
                     case "clear": 
@@ -199,7 +199,7 @@ def command_input():
                     case command if command.startswith("cd "): 
                         Server.cd(select_device, command.split(" ", 1)[1])
                     case _: 
-                        output(f"{lp.get('unknown_command')}：{command}", type="error")
+                        output(f"{lp.g('unknown_command')}：{command}", type="error")
                 continue
 
             # 服务器控制模式
@@ -210,11 +210,11 @@ def command_input():
                 case "exit": 
                     exit(0)
                 case "help":
-                    output(lp.get("server_help_info"), type="info")
+                    output(lp.g("server_help_info"), type="info")
                 case "clear": 
                     print("\033c")
                 case "about": 
-                    output(lp.get("about_info"), type="info")
+                    output(lp.g("about_info"), type="info")
                 case "list": 
                     Server.device_list()
                 case command if command.startswith("select "): 
@@ -222,33 +222,33 @@ def command_input():
                 case command if command.startswith("delete "): 
                     Server.delete_device(command.split(" ", 1)[1])
                 case _: 
-                    output(f"{lp.get('unknown_command')}：{command}", type="error")
+                    output(f"{lp.g('unknown_command')}：{command}", type="error")
         except Exception as e:
-            output(f"{lp.get('error_occurred')}: {type(e).__name__}：{e}", type="error")
+            output(f"{lp.g('error_occurred')}: {type(e).__name__}：{e}", type="error")
 
 if __name__ == "__main__":
     # 程序入口
-    output(lp.get("copyright"), type="info")
-    output(lp.get("program_starting"), type="info")
-    output(lp.get("verifying_password"), type="info")
+    output(lp.g("copyright"), type="info")
+    output(lp.g("program_starting"), type="info")
+    output(lp.g("verifying_password"), type="info")
     try:
         # 验证服务器密码
         response = requests.post(f"{APT_SITE}/{API_PATH}/verify", json={"password": APT_PASSWORD})
         if response.status_code == 200:
             cookie = response.json()
-            output(f"{lp.get('verification_successful')}: {cookie}", type="success")
+            output(f"{lp.g('verification_successful')}: {cookie}", type="success")
         else:
-            output(f"{lp.get('verification_failed')}：{response.status_code} {response.json()}", type="error")
+            output(f"{lp.g('verification_failed')}：{response.status_code} {response.json()}", type="error")
             exit(1)
     except Exception as e:
-        output(f"{lp.get('verification_failed')}: {type(e).__name__}：{e}", type="error")
+        output(f"{lp.g('verification_failed')}: {type(e).__name__}：{e}", type="error")
         exit(1)
 
     try:
         # 启动命令行交互
         command_input()
     except Exception as e:
-        output(f"{lp.get('error_occurred')}: {type(e).__name__}：{e}", type="error")
+        output(f"{lp.g('error_occurred')}: {type(e).__name__}：{e}", type="error")
     except KeyboardInterrupt:
-        output(lp.get("user_interrupted"), type="warning")
+        output(lp.g("user_interrupted"), type="warning")
         exit(1)

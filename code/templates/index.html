@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>设备控制台</title>
+    <title>{{ lp.g("title") }}</title>
     <meta charset="utf-8">
     <style>
         body {
@@ -42,10 +42,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>设备控制台</h1>
-        <a id="logout" href="javascript:logout()">退出登录</a>
+        <h1>{{ lp.g("heading") }}</h1>
+        <a id="logout" href="javascript:logout()">{{ lp.g("logout") }}</a>
         <div class="device-list" id="deviceList">
-            <h2>已连接设备</h2>
+            <h2>{{ lp.g("connected_devices") }}</h2>
             <div id="devices"></div>
         </div>
         <div class="result" id="result"></div>
@@ -67,12 +67,12 @@
                 if (Array.isArray(data)) {
                     devicesDiv.innerHTML = data.map(device => `
                         <div class="device">
-                            <a href="device/${device.id}" alt="进入此设备">
-                                <p>设备ID: ${device.id}</p>
-                                <p>IP地址: ${device.ip}</p>
-                                <p>系统信息: ${device.systeminfo}</p>
+                            <a href="device/${device.id}" alt="${'{{ lp.g("access_this_device") }}'}">
+                                <p>${'{{ lp.g("device_id") }}'}: ${device.id}</p>
+                                <p>${'{{ lp.g("ip_address")}}'}: ${device.ip}</p>
+                                <p>${'{{ lp.g("system_info") }}'}: ${device.systeminfo}</p>
                             </a>
-                            <button onclick="deleteDevice('${device.id}')">删除</button>
+                            <button onclick="deleteDevice('${device.id}')">${'{{ lp.g("delete") }}'}</button>
                         </div>
                     `).join('');
                 } else {
@@ -82,7 +82,7 @@
         }
 
         function deleteDevice(id) {
-            if (confirm('确定要删除这个设备吗？')) {
+            if (confirm(langData.confirm_delete_device[language])) {
                 fetch('requests_to_function', {
                     method: 'POST',
                     headers: headers,
