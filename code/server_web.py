@@ -8,7 +8,8 @@ from sys import exit
 import logging
 import requests
 
-import rich.traceback 
+import rich.traceback
+import load_lang_pack 
 
 # 配置Rich的回溯追踪功能
 rich.traceback.install(show_locals=True)
@@ -24,6 +25,8 @@ SECURITY_PASSWORD_HASH = '6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed5069
 
 # 全局变量
 url_root = f'{API_SITE}/{SECURITY_PATH}'  # API根URL
+lp = load_lang_pack.LanguagePack("server_web.json", "zh")
+lp.load()
 
 # 安全验证函数
 def check(cookie):
@@ -53,7 +56,7 @@ async def login():
             resp = await make_response(redirect(url_for('index')))
             resp.set_cookie('Cookie', response.json()["Cookie"])
             return resp
-        return await render_template('login.html', error='密码错误')
+        return await render_template('login.html', error=lp.get('password_error'))
     return await render_template('login.html')
 
 # 登出路由
@@ -85,7 +88,7 @@ async def requests_to_function():
 # 主程序入口
 async def main():
     """启动Web服务"""
-    logging.info("正在启动程序...")
+    logging.info(lp.get("starting_program"))
     await asyncio.gather(
         app.run_task(host=WEB_HOST, port=WEB_PORT)
     )
@@ -93,10 +96,10 @@ async def main():
 if __name__ == '__main__':
     try:
         print("\033[H\033[J")
-        logging.info("版权所有：Copyright © 赵博凯, All Rights Reserved.")
+        logging.info(lp.get("copyright"))
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.warning("用户手动中断程序。")
+        logging.warning(lp.get("user_manually_interrupted"))
         exit()
     except Exception as e:
-        logging.error(f"错误: {e}，请报告到[link=https://github.com/zhaobokai341/remote_access_trojan/issues]Issues[/link]")
+        logging.error(f"{lp.get('error_report')}: {e}")

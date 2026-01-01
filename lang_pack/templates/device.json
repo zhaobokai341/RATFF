@@ -1,0 +1,58 @@
+{
+    "title": {
+        "zh": "设备控制台",
+        "en": "Device Console"
+    },
+    "controlling_device": {
+        "zh": "设备控制台，现在在控制编号为",
+        "en": "Device Console, now controlling device with ID"
+    },
+    "logout": {
+        "zh": "退出登录",
+        "en": "Logout"
+    },
+    "get_system_info": {
+        "zh": "获取系统信息",
+        "en": "Get System Information"
+    },
+    "get": {
+        "zh": "获取",
+        "en": "Get"
+    },
+    "command_execution": {
+        "zh": "命令执行",
+        "en": "Command Execution"
+    },
+    "enter_command": {
+        "zh": "输入命令并回车执行",
+        "en": "Enter command and press Enter to execute"
+    },
+    "background_command_execution": {
+        "zh": "命令后台执行",
+        "en": "Background Command Execution"
+    },
+    "enter_background_command": {
+        "zh": "输入后台执行的命令",
+        "en": "Enter command to execute in background"
+    },
+    "execute": {
+        "zh": "执行",
+        "en": "Execute"
+    },
+    "change_working_directory": {
+        "zh": "切换工作目录",
+        "en": "Change Working Directory"
+    },
+    "enter_directory": {
+        "zh": "输入工作目录",
+        "en": "Enter working directory"
+    },
+    "change": {
+        "zh": "切换",
+        "en": "Change"
+    },
+    "error": {
+        "zh": "错误",
+        "en": "Error"
+    }
+}

