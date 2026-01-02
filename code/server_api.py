@@ -35,7 +35,7 @@ SECURITY_PASSWORD_HASH = b'$2b$04$T8NZ.WUIuO05WyVpLrQYiOdgqc2zbx7E9ysF03696dYvwG
 # 全局变量
 app = Quart(__name__)
 control_list = {}
-lp = load_lang_pack.LanguagePack("server_api.json", "zh")
+lp = load_lang_pack.LanguagePack("server_api.json", "en")
 lp.load()
 
 # 服务器核心类

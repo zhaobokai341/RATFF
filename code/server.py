@@ -17,51 +17,25 @@ API_PATH = "fuck"  # API路径
 APT_PASSWORD = "fuck"  # 访问密码
 
 # 初始化语言包
-lp = load_lang_pack.LanguagePack("server.json", "zh")
+lp = load_lang_pack.LanguagePack("server.json", "en")
 lp.load()
 
-# 日志输出类
-class Printer:
-    """自定义日志打印器，支持彩色输出"""
-    def __init__(self):
-        self.console = rich.console.Console()
-    
-    def log_info(self, message: str):
-        """打印信息日志"""
-        self.console.log(f"[white on blue][*][/white on blue]", message, style="white")
-
-    def log_warning(self, message: str):
-        """打印警告日志"""
-        self.console.log(f"[white on yellow][!][/white on yellow]", message, style="yellow")
-
-    def log_error(self, message: str):
-        """打印错误日志"""
-        self.console.log(f"[white on red][-][/white on red]", message, style="bold red")
-
-    def log_success(self, message: str):
-        """打印成功日志"""
-        self.console.log(f"[white on green][+][/white on green]", message, style="green")
-    
-    def log_debug(self, message: str):
-        """打印调试日志"""
-        self.console.log(f"[grey50][|][/grey50]", message, style="grey50")
-
+# 输出函数
 def output(*args, type=""):
-    """统一日志输出接口"""
-    printer = Printer()
+    console = rich.console.Console()
     if type.strip() == "":
-        printer.console.log(*args)
+        print(*args)
     else:
         if type == "info":
-            printer.log_info(*args)
+            console.log(f"[white on blue][*][/white on blue]", *args, style="white")
         elif type == "warning":
-            printer.log_warning(*args)
+            console.log(f"[white on blue][*][/white on blue]", *args, style="white")
         elif type == "error":
-            printer.log_error(*args)
+            console.log(f"[white on red][-][/white on red]", *args, style="bold red")
         elif type == "success":
-            printer.log_success(*args)
+            console.log(f"[white on green][+][/white on green]", *args, style="green")
         elif type == "debug":
-            printer.log_debug(*args)
+            console.log(f"[grey50][|][/grey50]", *args, style="grey50")
         else:
             raise ValueError(f"Invalid type: {type}")
 
