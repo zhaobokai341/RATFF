@@ -29,7 +29,7 @@ def output(*args, type=""):
         if type == "info":
             console.log(f"[white on blue][*][/white on blue]", *args, style="white")
         elif type == "warning":
-            console.log(f"[white on blue][*][/white on blue]", *args, style="white")
+            console.log(f"[white on blue][!][/white on blue]", *args, style="white")
         elif type == "error":
             console.log(f"[white on red][-][/white on red]", *args, style="bold red")
         elif type == "success":
