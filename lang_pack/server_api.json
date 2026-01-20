@@ -195,6 +195,66 @@
         "zh": "未提供目录",
         "en": "Directory not provided"
     },
+    "file_not_provided": {
+        "zh": "未提供文件",
+        "en": "File not provided"
+    },
+    "path_not_provided": {
+        "zh": "未提供路径",
+        "en": "Path not provided"
+    },
+    "uploading_file": {
+        "zh": "正在上传文件",
+        "en": "Uploading file"
+    },
+    "file_upload_failed": {
+        "zh": "文件上传失败",
+        "en": "File upload failed"
+    },
+    "rewriting_file": {
+        "zh": "正在重写文件",
+        "en": "Rewriting file"
+    },
+    "sending_chunk": {
+        "zh": "正在发送文件块",
+        "en": "Sending chunk"
+    },
+    "upload_result": {
+        "zh": "上传结果",
+        "en": "Upload result"
+    },
+    "file_uploaded_successfully": {
+        "zh": "文件上传成功",
+        "en": "File uploaded successfully"
+    },
+    "generated_random_file_name": {
+        "zh": "生成随机文件名",
+        "en": "Generated random file name"
+    },
+    "downloading_file": {
+        "zh": "正在下载文件",
+        "en": "Downloading file"
+    },
+    "received_chunk_length": {
+        "zh": "收到文件块长度",
+        "en": "Received chunk length"
+    },
+    "file_download_failed": {
+        "zh": "文件下载失败",
+        "en": "File download failed"
+    },
+    "file_downloaded_successfully": {
+        "zh": "文件下载成功",
+        "en": "File downloaded successfully"
+    },
+    "received_file_download_request": {
+        "zh": "收到文件下载请求",
+        "en": "Received file download request"
+    },
+    "download_file_deleted": {
+        "zh": "下载文件已删除",
+        "en": "Download file deleted"
+    },
     "request_processing_error": {
         "zh": "请求处理错误",
         "en": "Request processing error"
@@ -262,6 +322,14 @@
     "server_startup_failed": {
         "zh": "服务器启动失败",
         "en": "Server startup failed"
+    },
+    "download_directory_created": {
+        "zh": "下载目录已创建",
+        "en": "Download directory created"
+    },
+    "failed_to_create_download_directory": {
+        "zh": "创建下载目录失败",
+        "en": "Failed to create download directory"
     },
     "program_starting": {
         "zh": "程序启动",
