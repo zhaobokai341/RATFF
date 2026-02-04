@@ -251,6 +251,10 @@
         "zh": "收到文件下载请求",
         "en": "Received file download request"
     },
+    "download_file_delete_failed": {
+        "zh": "文件删除失败",
+	"en": "File deletion failed"
+    },
     "download_file_deleted": {
         "zh": "下载文件已删除",
         "en": "Download file deleted"

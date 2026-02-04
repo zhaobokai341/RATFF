@@ -1,6 +1,7 @@
 __author__ = "赵博凯"
 __license__ = "GPL v3"
 
+import os
 import requests
 import json
 
@@ -207,7 +208,7 @@ def command_input():
                     case "back": 
                         select_device = None
                     case "clear": 
-                        print("\033c")
+                        os.system("cls") if os.name == "nt" else os.system("clear")
                     case "list": 
                         Server.device_list()
                     case "systeminfo":
@@ -252,7 +253,7 @@ def command_input():
                 case "help":
                     output(lp.g("server_help_info"), type="info")
                 case "clear": 
-                    print("\033c")
+                    os.system("cls") if os.name == "nt" else os.system("clear")
                 case "about": 
                     output(lp.g("about_info"), type="info")
                 case "list": 

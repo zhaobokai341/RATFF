@@ -165,6 +165,7 @@ func (e *ExecuteCommand) change_directory(directory string) string {
 // 上传文件
 func (e *ExecuteCommand) upload_file(file_path string, contents string) string {
 	message := "ok"
+	retry := 0
 	if contents == "" {
 		// Create a new file and close it
 		file, err := os.Create(file_path)
@@ -176,9 +177,16 @@ func (e *ExecuteCommand) upload_file(file_path string, contents string) string {
 		}
 	} else {
 		// Open or create the file with write permissions
-		file, err := os.OpenFile(file_path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		// 增加重试机制是为了解决Windows上文件被占用的问题，等待占用的锁被释放
+		retry_code:
+			file, err := os.OpenFile(file_path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			message = err.Error()
+			if retry > 3 {
+				message = err.Error()
+			}
+			time.Sleep(5 * time.Second)
+			retry++
+			goto retry_code
 		} else {
 			// Decode base64 encoded content
 			decoded_content, err := base64.StdEncoding.DecodeString(contents)
@@ -187,7 +195,7 @@ func (e *ExecuteCommand) upload_file(file_path string, contents string) string {
 			} else if _, err := file.Write(decoded_content); err != nil {
 				message = err.Error()
 			}
-			defer file.Close()
+			file.Close()
 		}
 	}
 	return message
@@ -307,7 +315,6 @@ func client_loop() {
 				if err != nil {
 					message = err.Error()
 				}
-				defer file.Close()
 				bufio.NewReader(file)
 				buffer := make([]byte, 4096)
 				for {
@@ -324,6 +331,7 @@ func client_loop() {
 						break
 					}
 				}
+				file.Close()
 				if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 					conn.Close()
 					break
