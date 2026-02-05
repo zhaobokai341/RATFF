@@ -1,5 +1,5 @@
 __author__ = "赵博凯"
-__license__ = "GPL v3"
+__license__ = "MIT"
 
 import os
 import requests
