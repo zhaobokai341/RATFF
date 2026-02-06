@@ -1,0 +1,14 @@
+*
+
+!code/templates/
+!code/client.go
+!code/load_lang_pack.py
+!code/server_api.py
+!code/server_web.py
+!code/server.py
+
+!lang_pack/
+!LICENSE
+!README*.md
+!requirements.txt
+!SECURITY.md

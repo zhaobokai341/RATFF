@@ -1,0 +1,18 @@
+{
+    "title": {
+        "zh": "登录",
+        "en": "Login"
+    },
+    "heading": {
+        "zh": "登录",
+        "en": "Login"
+    },
+    "password_placeholder": {
+        "zh": "输入密码",
+        "en": "Enter password"
+    },
+    "submit_button": {
+        "zh": "登录",
+        "en": "Login"
+    }
+}
