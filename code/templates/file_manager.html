@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ lp.g("title") }}</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #logout {
+            float: right;
+            margin-top: -30px;
+            margin-right: 20px;
+            text-decoration: none;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <center>
+            <h1>{{id}}{{ lp.g("file_manager") }}</h1>
+            <a id="logout" href="javascript:logout()">{{ lp.g("logout") }}</a>
+        </center>
+    </div>
+
+    <script>
+        function requests_to_function(json, callback)
+        {
+            fetch("../requests_to_function", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(json)
+            })
+            .then(response => response.json())
+            .then(data => {
+                callback(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function logout(){
+            window.location.href = '../logout';
+        }
+
+        document.getElementById('change_directory').getElementsByTagName('button')[0].addEventListener('click', function(event) {
+            requests_to_function(
+                json={ func_name: "change_directory", id: "{{id}}", directory: document.getElementById('directoryInput').value},
+                callback=function(data){
+                    data.error?alert(data.error):alert(data.message);
+                }
+            );
+        });
+    </script>
+</body>
+</html>

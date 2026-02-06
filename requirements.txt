@@ -1,5 +1,0 @@
-Quart==0.20.0
-requests==2.32.5
-rich==14.1.0
-websockets==15.0.1
-bcrypt==5.0.0
