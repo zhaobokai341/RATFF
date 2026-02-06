@@ -98,6 +98,30 @@ class Server:
             json.dump(system_info, f, indent=4, ensure_ascii=False)
         rich.print_json(data=system_info)
         output(lp.g("system_info_saved"), type="success")
+    
+    @staticmethod
+    def ls(id):
+        """列出设备当前目录文件"""
+        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
+                                data={"func_name": "get_list_file", "id": id}, 
+                                cookies=cookie)
+        if not response.ok: 
+            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
+        result = response.json()
+        result = result["message"]
+        result = json.loads(result)
+        rich.print_json(data=result)
+    
+    @staticmethod
+    def pwd(id):
+        """获取设备当前工作目录"""
+        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
+                                data={"func_name": "get_pwd", "id": id}, 
+                                cookies=cookie)
+        if not response.ok: 
+            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
+        result = response.json()
+        output(result["message"], type="info")
 
     @staticmethod
     def command(id):
@@ -213,6 +237,10 @@ def command_input():
                         Server.device_list()
                     case "systeminfo":
                         Server.systeminfo(select_device)
+                    case "ls":
+                        Server.ls(select_device)
+                    case "pwd":
+                        Server.pwd(select_device)
                     case command if command.startswith("select "): 
                         select_device = Server.select_device(command.split(" ", 1)[1])
                     case command if command.startswith("command"): 

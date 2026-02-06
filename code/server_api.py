@@ -30,8 +30,8 @@ HOST = '0.0.0.0'
 PORT = 8765
 WEB_HOST = '0.0.0.0'
 WEB_PORT = 5000
-SSL_CERT = '../../cert.pem' 
-SSL_KEY = '../../key.pem'
+SSL_CERT = 'cert.pem' 
+SSL_KEY = 'key.pem'
 SECURITY_PATH = 'fuck'
 SECURITY_PASSWORD_HASH = b'$2b$04$T8NZ.WUIuO05WyVpLrQYiOdgqc2zbx7E9ysF03696dYvwGohCFzwC'
 
@@ -124,6 +124,28 @@ class ControlClient:
             return lp.g("command_sent")
         except Exception as e:
             logging.error(f"{lp.g('background_command_execution_failed')}: {str(e)}")
+            raise
+
+    async def get_file_list(self):
+        logging.info(lp.g("getting_file_list"))
+        try:
+            await self.websocket.send("ls")
+            result = await self.websocket.recv()
+            logging.info(f"{lp.g('file_list')}: {result}")
+            return result
+        except Exception as e:
+            logging.error(f"{lp.g('failed_to_get_file_list')}: {str(e)}")
+            raise
+
+    async def get_pwd(self):
+        logging.info(lp.g("getting_current_directory"))
+        try:
+            await self.websocket.send("pwd")
+            result = await self.websocket.recv()
+            logging.info(f"{lp.g('current_directory')}: {result}")
+            return result
+        except Exception as e:
+            logging.error(f"{lp.g('failed_to_get_current_directory')}: {str(e)}")
             raise
 
     async def change_directory(self, directory):
@@ -288,7 +310,16 @@ async def function():
         func_name = json_data["func_name"]
         logging.info(f"{lp.g('requested_function')}: {func_name}")
 
-        if func_name in ["device_list", "delete", "systeminfo", "command", "background", "change_directory", "upload", "download"]:
+        if func_name in ["device_list",
+                        "delete",
+                        "systeminfo",
+                        "command",
+                        "background",
+                        "change_directory", 
+                        "upload", 
+                        "download", 
+                        "get_list_file", 
+                        "get_pwd"]:
             server = Server()
             if func_name == "device_list":
                 return jsonify(await server.client_list())
@@ -322,6 +353,10 @@ async def function():
                                 return jsonify({"message": await control_client.execute_command(command)})
                             else:
                                 return jsonify({"message": await control_client.background(command)})
+                        elif func_name == "get_list_file":
+                            return jsonify({"message": await control_client.get_file_list()})
+                        elif func_name == "get_pwd":
+                            return jsonify({"message": await control_client.get_pwd()})
                         elif func_name == "change_directory":
                             if "directory" not in json_data:
                                 logging.warning(lp.g("directory_not_provided"))

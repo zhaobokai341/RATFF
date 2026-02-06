@@ -55,6 +55,30 @@
         "zh": "初始化客户端控制器",
         "en": "Initializing client controller"
     },
+    "getting_file_list": {
+        "zh": "正在获取文件列表",
+        "en": "Getting file list"
+    },
+    "file_list": {
+        "zh": "文件列表",
+        "en": "File list"
+    },
+    "failed_to_get_file_list": {
+        "zh": "获取文件列表失败",
+        "en": "Failed to get file list"
+    },
+    "getting_current_directory": {
+        "zh": "正在获取当前目录",
+        "en": "Getting current directory"
+    },
+    "current_directory": {
+        "zh": "当前工作目录",
+        "en": "Current working directory"
+    },
+    "failed_to_get_current_directory": {
+        "zh": "获取当前目录失败",
+        "en": "Failed to get current directory"
+    },
     "getting_device_system_information": {
         "zh": "获取设备的系统信息",
         "en": "Getting device system information"

