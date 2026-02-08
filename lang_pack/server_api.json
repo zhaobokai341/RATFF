@@ -382,5 +382,33 @@
     "please_report_to_issues": {
         "zh": "请报告到[link=https://github.com/zhaobokai341/remote_access_trojan/issues]Issues[/link]",
         "en": "Please report to [link=https://github.com/zhaobokai341/remote_access_trojan/issues]Issues[/link]"
+    },
+    "deleting_file": {
+        "zh": "正在删除文件",
+        "en": "Deleting file"
+    },
+    "file_deletion_result": {
+        "zh": "文件删除结果",
+        "en": "File deletion result"
+    },
+    "failed_to_delete_file": {
+        "zh": "删除文件失败",
+        "en": "Failed to delete file"
+    },
+    "renaming_file": {
+        "zh": "正在重命名文件",
+        "en": "Renaming file"
+    },
+    "file_rename_result": {
+        "zh": "文件重命名结果",
+        "en": "File rename result"
+    },
+    "failed_to_rename_file": {
+        "zh": "重命名文件失败",
+        "en": "Failed to rename file"
+    },
+    "file_name_not_provided": {
+        "zh": "未提供文件名",
+        "en": "File name not provided"
     }
 }

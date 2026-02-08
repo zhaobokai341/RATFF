@@ -113,6 +113,24 @@ func (e *ExecuteCommand) get_systeminfo() map[string]interface{} {
 	return system_info
 }
 
+// 删除文件
+func (e *ExecuteCommand) delete_file(path string) string {
+	err := os.RemoveAll(path)
+	if err != nil {
+		return err.Error()
+	}
+	return "ok"
+}
+
+// 重命名文件或文件夹
+func (e *ExecuteCommand) rename_file(old_path, new_path string) string {
+	err := os.Rename(old_path, new_path)
+	if err != nil {
+		return err.Error()
+	}
+	return "ok"
+}
+
 // 执行命令并返回结果
 func (e *ExecuteCommand) execute_command(command string) map[string]interface{} {
 	host_info, _ := host.Info()
@@ -178,7 +196,7 @@ func (e *ExecuteCommand) get_file_list() map[string]interface{} {
 			"name":      file_info.Name(),
 			"mode_time": file_info.ModTime().String(),
 			"mode":      file_info.Mode().String(),
-			"size":      file_info.Size(),
+			"size":      fmt.Sprintf("%dB", file_info.Size()),
 		}
 		if file.IsDir() {
 			file_json["directories"] = append(file_json["directories"].([]map[string]interface{}), file_map)
@@ -195,7 +213,7 @@ func (e *ExecuteCommand) change_directory(directory string) string {
 	if err != nil {
 		return err.Error()
 	}
-	return "Directory changed successfully"
+	return "ok"
 }
 
 // 上传文件
@@ -324,6 +342,23 @@ func client_loop() {
 					conn.Close()
 					break
 				}
+			} else if strings.HasPrefix(command, "delete:") {
+				// 删除文件或文件夹
+				file_path := command[len("delete:"):]
+				message := Executecommand.delete_file(file_path)
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+					conn.Close()
+					break
+				}
+			} else if strings.HasPrefix(command, "rename:") {
+				// 重命名文件或文件夹
+				file_info := command[len("rename:"):]
+				file_info_list := strings.SplitN(file_info, "(*.*)", 2)
+				message := Executecommand.rename_file(file_info_list[0], file_info_list[1])
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+					conn.Close()
+					break
+				}
 			} else if strings.HasPrefix(command, "command:") {
 				// 执行命令
 				command = command[len("command:"):]
@@ -336,7 +371,7 @@ func client_loop() {
 				// 后台执行命令
 				command = command[len("background:"):]
 				go Executecommand.execute_bg_command(command)
-				if err := conn.WriteMessage(websocket.TextMessage, []byte("Command has been sent and executed.")); err != nil {
+				if err := conn.WriteMessage(websocket.TextMessage, []byte("ok")); err != nil {
 					conn.Close()
 					break
 				}

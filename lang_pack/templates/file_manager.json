@@ -1,4 +1,8 @@
 {
+    "title": {
+        "zh": "文件管理器",
+        "en": "File Manager"
+    },
     "file_manager": {
         "zh": "的文件管理器",
         "en": "'s file manager"
@@ -6,5 +10,21 @@
     "logout": {
         "zh": "退出登录",
         "en": "Logout"
+    },
+    "delete": {
+        "zh": "删除",
+        "en": "Delete"
+    },
+    "rename": {
+        "zh": "重命名",
+        "en": "Rename"
+    },
+    "download_or_preview": {
+        "zh": "下载/预览",
+        "en": "Download/Preview"
+    },
+    "directory_changed_successfully": {
+        "zh": "Directory changed successfully",
+        "en": "Directory changed successfully"
     }
 }

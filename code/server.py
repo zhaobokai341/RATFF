@@ -18,7 +18,7 @@ API_PATH = "fuck"  # API路径
 APT_PASSWORD = "fuck"  # 访问密码
 
 # 初始化语言包
-lp = load_lang_pack.LanguagePack("server.json", "en")
+lp = load_lang_pack.LanguagePack("server.json", "zh")
 lp.load()
 
 # 输出函数
@@ -68,7 +68,7 @@ class Server:
     def select_device(id):
         """选择要控制的设备"""
         response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                    data={"func_name": "command", "id": id, "command": "echo hello world"}, 
+                                    data={"func_name": "command", "id": id, "command": "echo"}, 
                                     cookies=cookie)
         if not response.ok: 
             raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
@@ -124,6 +124,34 @@ class Server:
         output(result["message"], type="info")
 
     @staticmethod
+    def delete(id, file_path):
+        """删除设备上的文件"""
+        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
+                                data={"func_name": "delete_file", "id": id, "path": file_path}, 
+                                cookies=cookie)
+        if not response.ok: 
+            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
+        result = response.json()
+        if result["message"] == "ok":
+            output(f"{lp.g('deleted_file')}: {file_path}", type="success")
+        else:
+            output(f"{lp.g('delete_file_failed')}: {result['message']}", type="error")
+    
+    @classmethod
+    def rename(id, old_path, new_path):
+        """重命名设备上的文件"""
+        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
+                                data={"func_name": "rename_file", "id": id, "old_path": old_path, "new_path": new_path}, 
+                                cookies=cookie)
+        if not response.ok: 
+            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
+        result = response.json()
+        if result["message"] == "ok":
+            output(f"{lp.g('renamed_file')}: {old_path} -> {new_path}", type="success")
+        else:
+            output(f"{lp.g('rename_file_failed')}: {result['message']}", type="error")
+
+    @staticmethod
     def command(id):
         """进入设备命令模式"""
         while True:
@@ -149,7 +177,7 @@ class Server:
         result = response.json()
         if not response.ok: 
             raise Exception(f"{lp.g('request_failed')}: {response.status_code} {result["error"]}")
-        if "已发送" in result["message"] or "sent" in result["message"]:
+        if "ok" in result["message"]:
             output(f"{lp.g('command_executed_in_background')}: {command}", type="success")
         else:
             output(f"{lp.g('command_execution_failed')}: {result["message"]}", type="error")
@@ -163,7 +191,7 @@ class Server:
         result = response.json()
         if not response.ok: 
             raise Exception(f"{lp.g('request_failed')}: {response.status_code} {result["error"]}")
-        if "successfully" in result["message"]:
+        if result["message"] == "ok":
             output(f"{lp.g('directory_changed')}: {directory}", type="success")
         else:
             output(f"{lp.g('directory_change_failed')}: {result["message"]}", type="error")
@@ -243,12 +271,23 @@ def command_input():
                         Server.pwd(select_device)
                     case command if command.startswith("select "): 
                         select_device = Server.select_device(command.split(" ", 1)[1])
+                    case command if command.startswith("delete "):
+                        Server.delete(select_device, command.split(" ", 1)[1])
                     case command if command.startswith("command"): 
                         Server.command(select_device)
                     case command if command.startswith("bg "): 
                         Server.background(select_device, command.split(" ", 1)[1])
                     case command if command.startswith("cd "): 
                         Server.cd(select_device, command.split(" ", 1)[1])
+                    case command if command.startswith("rename "):
+                        file_info = command.split(" ", 1)[1]
+                        file_info = file_info.split("(*.*)")
+                        if len(file_info) != 2:
+                            output(f"{lp.g('invalid_file_info')}", type="error")
+                            continue
+                        old_name = file_info[0]
+                        new_name = file_info[1]
+                        Server.rename(select_device, old_name, new_name)
                     case command if command.startswith("upload "):
                         file_info = command.split(" ", 1)[1]
                         file_info = file_info.split("(*.*)")

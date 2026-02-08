@@ -72,6 +72,11 @@
             width: 100px;
             height: 40px;
         }
+        #enter_file_manager {
+            display: block;
+            font-size: 20px;
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
@@ -101,6 +106,7 @@
                 <input type="text" id="directoryInput" placeholder='{{ lp.g("enter_directory") }}'>
                 <button>{{ lp.g("change") }}</button>
             </div>
+            <a href="../file_manager/{{ id }}" id="enter_file_manager", target="_blank">{{ lp.g("file_manager") }}</a>
         </center>
     </div>
 
@@ -158,7 +164,7 @@
                         }
                         data = JSON.parse(data.message);
                         for(let i in data){
-                            result.value += `${i}：${data[i]}\n`;
+                            result.value += `${i}: ${data[i]}\n`;
                         }
                     }
                 );

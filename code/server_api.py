@@ -40,7 +40,7 @@ app = Quart(__name__)
 app.config['MAX_CONTENT_LENGTH'] = None
 control_list = {}
 delete_file = ""
-lp = load_lang_pack.LanguagePack("server_api.json", "en")
+lp = load_lang_pack.LanguagePack("server_api.json", "zh")
 lp.load()
 
 # 服务器核心类
@@ -104,6 +104,32 @@ class ControlClient:
             logging.error(f"{lp.g('failed_to_get_system_information')}: {str(e)}")
             raise
     
+    async def delete_file(self, file):
+        logging.info(f"{lp.g('deleting_file')}: {file}")
+        try:
+            await self.websocket.send(f"delete:{file}")
+            result = await self.websocket.recv()
+            if result != "ok":
+                raise Exception(result)
+            logging.info(f"{lp.g('file_deletion_result')}: {result}")
+            return result
+        except Exception as e:
+            logging.error(f"{lp.g('failed_to_delete_file')}: {str(e)}")
+            raise
+    
+    async def rename_file(self, old_file, new_file):
+        logging.info(f"{lp.g('renaming_file')}: {old_file} -> {new_file}")
+        try:
+            await self.websocket.send(f"rename:{old_file}(*.*){new_file}")
+            result = await self.websocket.recv()
+            if result != "ok":
+                raise Exception(result)
+            logging.info(f"{lp.g('file_rename_result')}: {result}")
+            return result
+        except Exception as e:
+            logging.error(f"{lp.g('failed_to_rename_file')}: {str(e)}")
+            raise
+
     async def execute_command(self, command):
         logging.info(f"{lp.g('executing_command')}: {command}")
         try:
@@ -121,7 +147,7 @@ class ControlClient:
             await self.websocket.send(f"background:{command}")
             await self.websocket.recv()
             logging.info(lp.g("background_command_sent_successfully"))
-            return lp.g("command_sent")
+            return "ok"
         except Exception as e:
             logging.error(f"{lp.g('background_command_execution_failed')}: {str(e)}")
             raise
@@ -313,7 +339,9 @@ async def function():
         if func_name in ["device_list",
                         "delete",
                         "systeminfo",
+                        "delete_file",
                         "command",
+                        "rename_file",
                         "background",
                         "change_directory", 
                         "upload", 
@@ -330,7 +358,7 @@ async def function():
                 device_id = json_data["id"]
                 logging.info(f"{lp.g('target_device')}: {device_id}")
                 client_list = await server.client_list()
-                if "没有" in client_list or "No" in client_list:
+                if isinstance(client_list, str):
                     logging.warning(f"{lp.g('device_does_not_exist')}: {device_id}")
                     return jsonify({'error': f"{lp.g('device_with_id_does_not_exist')}{device_id}"}), 400
                 if not any(device_id in device.values() for device in client_list):
@@ -353,6 +381,19 @@ async def function():
                                 return jsonify({"message": await control_client.execute_command(command)})
                             else:
                                 return jsonify({"message": await control_client.background(command)})
+                        elif func_name == "delete_file":
+                            if "path" not in json_data:
+                                logging.warning(lp.g("path_not_provided"))
+                                return jsonify({'error': lp.g('path_not_provided')}), 400
+                            target_path = json_data["path"]
+                            return jsonify({"message": await control_client.delete_file(target_path)})
+                        elif func_name == "rename_file":
+                            if "old_path" not in json_data or "new_path" not in json_data:
+                                logging.warning(lp.g("file_name_not_provided"))
+                                return jsonify({'error': lp.g('file_name_not_provided')}), 400
+                            old_name = json_data["old_path"]
+                            new_name = json_data["new_path"]
+                            return jsonify({"message": await control_client.rename_file(old_name, new_name)})
                         elif func_name == "get_list_file":
                             return jsonify({"message": await control_client.get_file_list()})
                         elif func_name == "get_pwd":

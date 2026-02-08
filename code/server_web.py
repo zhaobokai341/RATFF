@@ -17,7 +17,7 @@ rich.traceback.install(show_locals=True)
 # 基础配置
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 app = Quart(__name__)
-LANGUAGE = "en"
+LANGUAGE = "zh"
 WEB_HOST = "0.0.0.0"
 WEB_PORT = 8000
 API_SITE = 'http://localhost:5000'
@@ -34,6 +34,8 @@ lp_index = load_lang_pack.LanguagePack("templates/index.json", LANGUAGE)  # 主�
 lp_index.load()
 lp_device = load_lang_pack.LanguagePack("templates/device.json", LANGUAGE)  # 设备页面语言包
 lp_device.load()
+lp_file_manager = load_lang_pack.LanguagePack("templates/file_manager.json", LANGUAGE)  # 文件管理器页面语言包
+lp_file_manager.load()
 
 # 安全验证函数
 def check(cookie):
@@ -74,13 +76,21 @@ async def logout():
     resp.delete_cookie('Cookie')
     return resp
 
-# 设备页面路由
+# 设备管理页面路由
 @app.route(f'/{SECURITY_PATH}/device/<id>')
 async def device(id):
     """显示设备控制页面"""
     if not check(request.cookies): 
         return redirect(url_for('login'))
     return await render_template('device.html', id=id, url_root=url_root, lp=lp_device, language=LANGUAGE)
+
+# 设备文件管理器页面路由
+@app.route(f'/{SECURITY_PATH}/file_manager/<id>')
+async def file_manager(id):
+    """显示文3件管理器页面"""
+    if not check(request.cookies): 
+        return redirect(url_for('login'))
+    return await render_template('file_manager.html', id=id, url_root=url_root, lp=lp_file_manager, language=LANGUAGE)
 
 # API请求转发路由
 @app.route(f'/{SECURITY_PATH}/requests_to_function', methods=['POST'])
@@ -89,7 +99,7 @@ async def requests_to_function():
     if not check(request.cookies): 
         return redirect(url_for('login'))
     json = await request.json
-    response = requests.post(f"{url_root}/function", json=json, verify=False, cookies=request.cookies)
+    response = requests.post(f"{url_root}/function", data=json, verify=False, cookies=request.cookies)
     return jsonify(response.json())
 
 # 主程序入口

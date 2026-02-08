@@ -8,22 +8,102 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f0f0f0;
+            background-color: #f5f5f5;
         }
+
         #logout {
             float: right;
             margin-top: -30px;
             margin-right: 20px;
             text-decoration: none;
         }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
             background: white;
-            padding: 20px;
+            padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        #file_manager {
+            margin-top: 20px;
+        }
+
+        #file_path {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        tr {
+            display: block;
+            margin: 5px 0;
+            background: white;
+            border-left: 3px solid #4CAF50;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        tr:hover {
+            background: #f8f8f8;
+            transform: translateX(5px);
+        }
+
+        td {
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        li {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        /* 文件夹样式 */
+        #directories li::before {
+            content: "📁";
+            font-size: 1.2em;
+        }
+
+        #directories li:hover {
+            cursor: pointer;
+        }
+
+        /* 文件样式 */
+        #files li::before {
+            content: "📄";
+            font-size: 1.2em;
+        }
+
+        /* 文件信息样式 */
+        .file-info {
+            color: #666;
+            font-size: 0.9em;
+            margin-left: auto;
+            padding-left: 20px;
+        }
+
+        #error {
+            background-color: red;
+            margin-top: 20px;
+        } 
     </style>
 </head>
 <body>
@@ -31,39 +111,161 @@
         <center>
             <h1>{{id}}{{ lp.g("file_manager") }}</h1>
             <a id="logout" href="javascript:logout()">{{ lp.g("logout") }}</a>
-            
+            <div id="file_manager">
+                <input id="file_path" enterkeyhint="enter">
+                <div id="directories"></div>
+                <div id="files"></div>
+                <div id="error"></div>
+            </div>
         </center>
     </div>
 
     <script>
-        function requests_to_function(json, callback)
-        {
-            fetch("../requests_to_function", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(json)
-            })
-            .then(response => response.json())
-            .then(data => {
-                callback(data);
-            })
-            .catch(error => {
+        async function requests_to_function(json) {
+            try {
+                const response = await fetch("../requests_to_function", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(json)
+                });
+                return await response.json();
+            } catch (error) {
                 console.error('Error:', error);
-            });
+                return { error: error.message };
+            }
         }
 
         function logout(){
             window.location.href = '../logout';
         }
 
-        document.getElementById('change_directory').getElementsByTagName('button')[0].addEventListener('click', function(event) {
-            requests_to_function(
-                json={ func_name: "change_directory", id: "{{id}}", directory: document.getElementById('directoryInput').value},
-                callback=function(data){
-                    data.error?alert(data.error):alert(data.message);
+        async function load_file_manager(){
+            const data = await get_list_file();
+            var directories = data["directories"];
+            var files = data["files"];
+            var directories_element = document.getElementById('directories');
+            var files_element = document.getElementById('files');
+
+            // 清空现有内容
+            directories_element.innerHTML = '';
+            files_element.innerHTML = '';
+
+            // 添加目录
+            for (let i = -1; i < directories.length; i++) {
+                var tr = document.createElement('tr');
+                var td = document.createElement('td');
+                var directoryData = directories[i];
+                var directoryName = '';
+                var directoryInfo = [];
+                
+                if (i == -1) {
+                    // 显示返回上级目录
+                    directoryName = "..";
                 }
+                else {
+                    // 分离文件名和其他信息
+                    for (let key in directoryData) {
+                        if (key === 'name') {
+                            directoryName = directoryData[key];
+                        } else {
+                            directoryInfo.push(`${key}: ${directoryData[key]}`);
+                        }
+                    }
+                }
+                
+                // 创建文件元素
+                td.innerHTML = `
+                    <li onclick="change_directory('${directoryName}')">${directoryName}</li>
+                    ${directoryInfo.length ? `<span class="file-info">${directoryInfo.join(' | ')}</span>` : ''}
+                    <button>{{ lp.g("delete") }}</button>
+                    <button>{{ lp.g("rename") }}</button>
+                    <button>{{ lp.g("download_or_preview") }}</button>
+                `;
+                tr.appendChild(td);
+                directories_element.appendChild(tr);
+            }
+
+            // 添加文件
+            for (let i = 0; i < files.length; i++) {
+                var tr = document.createElement('tr');
+                var td = document.createElement('td');
+                var fileData = files[i];
+                var fileName = '';
+                var fileInfo = [];
+                
+                // 分离文件名和其他信息
+                for (let key in fileData) {
+                    if (key === 'name') {
+                        fileName = fileData[key];
+                    } else {
+                        fileInfo.push(`${key}: ${fileData[key]}`);
+                    }
+                }
+                
+                // 创建文件元素
+                td.innerHTML = `
+                    <li>${fileName}</li>
+                    ${fileInfo.length ? `<span class="file-info">${fileInfo.join(' | ')}</span>` : ''}
+                    <button>{{ lp.g("delete") }}</button>
+                    <button>{{ lp.g("rename") }}</button>
+                    <button>{{ lp.g("download_or_preview") }}</button>
+                `;
+                tr.appendChild(td);
+                files_element.appendChild(tr);
+            }
+            if (data["error"]) {
+                document.getElementById('error').innerHTML = data["error"];
+            }
+        }
+
+        async function get_list_file() {
+            const data = await requests_to_function(
+                { func_name: "get_list_file", id: "{{id}}"}
             );
+            if (data.error) {
+                alert(data.error);
+                return ;
+            }
+            return JSON.parse(data["message"]);
+        }
+
+        async function get_pwd() {
+            const data = await requests_to_function(
+                { func_name: "get_pwd", id: "{{id}}"}
+            );
+            if (data.error) {
+                alert(data.error);
+                return ;
+            }
+            return data["message"];
+        }
+
+        async function change_directory(directory) {
+            const data = await requests_to_function(
+                { func_name: "change_directory", id: "{{id}}", directory: directory}
+            );
+            if (data.error) {
+                alert(data.error);
+            }
+            if (data["message"] != "{{ lp.g('directory_changed_successfully') }}") {
+                alert(data["message"]);
+            }
+            await load_file_manager();
+            document.getElementById('file_path').value = await get_pwd();
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await load_file_manager();
+            document.getElementById('file_path').value = await get_pwd();
         });
+
+        document.getElementById("file_path").addEventListener("keydown", async function(event) {
+            if (event.key === 'Enter' || 
+                event.KeyCode == 13) {
+                    await change_directory(document.getElementById('file_path').value);
+                }
+            }
+        );
     </script>
 </body>
 </html>
