@@ -137,19 +137,33 @@ class Server:
         else:
             output(f"{lp.g('delete_file_failed')}: {result['message']}", type="error")
     
-    @classmethod
-    def rename(id, old_path, new_path):
-        """重命名设备上的文件"""
+    @staticmethod
+    def move(id, old_path, new_path):
+        """移动该设备上的文件"""
         response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "rename_file", "id": id, "old_path": old_path, "new_path": new_path}, 
+                                data={"func_name": "move_file", "id": id, "old_path": old_path, "new_path": new_path}, 
                                 cookies=cookie)
         if not response.ok: 
             raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
         result = response.json()
         if result["message"] == "ok":
-            output(f"{lp.g('renamed_file')}: {old_path} -> {new_path}", type="success")
+            output(f"{lp.g('moved_file')}: {old_path} -> {new_path}", type="success")
         else:
-            output(f"{lp.g('rename_file_failed')}: {result['message']}", type="error")
+            output(f"{lp.g('move_file_failed')}: {result['message']}", type="error")
+
+    @staticmethod
+    def copy_file(id, source_path, target_path):
+        """复制文件"""
+        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
+                                data={"func_name": "copy_file", "id": id, "old_path": source_path, "new_path": target_path}, 
+                                cookies=cookie)
+        if not response.ok:
+            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
+        result = response.json()
+        if result["message"] == "ok":
+            output(f"{lp.g('copied_file')}: {source_path} -> {target_path}", type="success")
+        else:
+            output(f"{lp.g('copy_file_failed')}: {result['message']}", type="error")
 
     @staticmethod
     def command(id):
@@ -271,7 +285,7 @@ def command_input():
                         Server.pwd(select_device)
                     case command if command.startswith("select "): 
                         select_device = Server.select_device(command.split(" ", 1)[1])
-                    case command if command.startswith("delete "):
+                    case command if command.startswith("rm "):
                         Server.delete(select_device, command.split(" ", 1)[1])
                     case command if command.startswith("command"): 
                         Server.command(select_device)
@@ -279,7 +293,7 @@ def command_input():
                         Server.background(select_device, command.split(" ", 1)[1])
                     case command if command.startswith("cd "): 
                         Server.cd(select_device, command.split(" ", 1)[1])
-                    case command if command.startswith("rename "):
+                    case command if command.startswith("mv "):
                         file_info = command.split(" ", 1)[1]
                         file_info = file_info.split("(*.*)")
                         if len(file_info) != 2:
@@ -287,7 +301,16 @@ def command_input():
                             continue
                         old_name = file_info[0]
                         new_name = file_info[1]
-                        Server.rename(select_device, old_name, new_name)
+                        Server.move(select_device, old_name, new_name)
+                    case command if command.startswith("cp "):
+                        file_info = command.split(" ", 1)[1]
+                        file_info = file_info.split("(*.*)")
+                        if len(file_info) != 2:
+                            output(f"{lp.g('invalid_file_info')}", type="error")
+                            continue
+                        source_path = file_info[0]
+                        target_path = file_info[1]
+                        Server.copy_file(select_device, source_path, target_path)
                     case command if command.startswith("upload "):
                         file_info = command.split(" ", 1)[1]
                         file_info = file_info.split("(*.*)")

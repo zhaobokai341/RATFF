@@ -1,4 +1,12 @@
 {
+    "download_directory_created": {
+        "zh": "下载目录已创建",
+        "en": "Download directory created"
+    },
+    "failed_to_create_download_directory": {
+        "zh": "创建下载目录失败",
+        "en": "Failed to create download directory"
+    },
     "starting_program": {
         "zh": "正在启动程序...",
         "en": "Starting program..."

@@ -51,7 +51,6 @@
             background: white;
             border-left: 3px solid #4CAF50;
             border-radius: 4px;
-            transition: all 0.3s;
         }
 
         tr:hover {
@@ -173,14 +172,19 @@
                     }
                 }
                 
-                // 创建文件元素
-                td.innerHTML = `
-                    <li onclick="change_directory('${directoryName}')">${directoryName}</li>
-                    ${directoryInfo.length ? `<span class="file-info">${directoryInfo.join(' | ')}</span>` : ''}
-                    <button>{{ lp.g("delete") }}</button>
-                    <button>{{ lp.g("rename") }}</button>
-                    <button>{{ lp.g("download_or_preview") }}</button>
-                `;
+                if (i == -1) {
+                    td.innerHTML = `
+                        <li onclick="change_directory('${directoryName}')">${directoryName}</li>
+                    `
+                } else {
+                    td.innerHTML = `
+                        <li onclick="change_directory('${directoryName}')">${directoryName}</li>
+                        ${directoryInfo.length ? `<span class="file-info">${directoryInfo.join(' | ')}</span>` : ''}
+                        <button onclick="delete_file('${directoryName}')">{{ lp.g("delete") }}</button>
+                        <button onclick="move('${directoryName}', prompt('{{ lp.g("move") }} ${directoryName} {{ lp.g("to") }}:'))">{{ lp.g("move") }}</button>
+                        <button onclick="copy('${directoryName}', prompt('{{ lp.g("copy_and_paste") }} ${directoryName} {{ lp.g("to") }}:'))">{{ lp.g("copy_and_paste") }}</button>
+                    `;
+                }
                 tr.appendChild(td);
                 directories_element.appendChild(tr);
             }
@@ -201,14 +205,15 @@
                         fileInfo.push(`${key}: ${fileData[key]}`);
                     }
                 }
-                
+
                 // 创建文件元素
                 td.innerHTML = `
                     <li>${fileName}</li>
                     ${fileInfo.length ? `<span class="file-info">${fileInfo.join(' | ')}</span>` : ''}
-                    <button>{{ lp.g("delete") }}</button>
-                    <button>{{ lp.g("rename") }}</button>
-                    <button>{{ lp.g("download_or_preview") }}</button>
+                    <button onclick="delete_file('${fileName}')">{{ lp.g("delete") }}</button>
+                    <button onclick="move('${fileName}', prompt('{{ lp.g("move") }} ${fileName} {{ lp.g("to") }}:'))">{{ lp.g("move") }}</button>
+                    <button onclick="download('${fileName}')">{{ lp.g("download_or_preview") }}</button>
+                    <button onclick="copy('${fileName}', prompt('{{ lp.g("copy_and_paste") }} ${fileName} {{ lp.g("to") }}:'))">{{ lp.g("copy_and_paste") }}</button>
                 `;
                 tr.appendChild(td);
                 files_element.appendChild(tr);
@@ -240,6 +245,17 @@
             return data["message"];
         }
 
+        async function download(file) {
+            const data = await requests_to_function(
+                { func_name: "download", id: "{{id}}", path: file}
+            );
+            if (data.error) {
+                alert(data.error);
+                return ;
+            }
+            open(data["message"], '_blank');
+        }
+
         async function change_directory(directory) {
             const data = await requests_to_function(
                 { func_name: "change_directory", id: "{{id}}", directory: directory}
@@ -247,11 +263,35 @@
             if (data.error) {
                 alert(data.error);
             }
-            if (data["message"] != "{{ lp.g('directory_changed_successfully') }}") {
+            if (data["message"] != "ok") {
                 alert(data["message"]);
             }
             await load_file_manager();
             document.getElementById('file_path').value = await get_pwd();
+        }
+
+        async function delete_file(file) {
+            const data = await requests_to_function(
+                { func_name: "delete_file", id: "{{id}}", path: file}
+            );
+            (data.error)?alert(data.error):alert(data["message"]);
+            await load_file_manager();
+        }
+
+        async function move(old_path, new_path) {
+            const data = await requests_to_function(
+                { func_name: "move_file", id: "{{id}}", old_path: old_path, new_path: new_path}
+            );
+            (data.error) ? alert(data.error) : alert(data["message"]);
+            await load_file_manager();
+        }
+
+        async function copy(source_path, target_path) {
+            const data = await requests_to_function(
+                { func_name: "copy_file", id: "{{id}}", old_path: source_path, new_path: target_path}
+            );
+            (data.error) ? alert(data.error) : alert(data["message"]);
+            await load_file_manager();
         }
 
         document.addEventListener('DOMContentLoaded', async function() {
@@ -261,7 +301,8 @@
 
         document.getElementById("file_path").addEventListener("keydown", async function(event) {
             if (event.key === 'Enter' || 
-                event.KeyCode == 13) {
+
+            event.KeyCode == 13) {
                     await change_directory(document.getElementById('file_path').value);
                 }
             }

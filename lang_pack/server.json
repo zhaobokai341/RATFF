@@ -76,16 +76,70 @@
         "en": "Failed to change working directory"
     },
     "console_help_info": {
-        "zh": "帮助信息：\n    [u bold yellow]help[/u bold yellow]：[green]显示帮助信息[/green]\n    [u bold yellow]back[/u bold yellow]：[green]退出到上一级[/green]\n    [u bold yellow]clear[/u bold yellow]：[green]清空终端屏幕[/green]\n    [u bold yellow]list[/u bold yellow]：[green]显示已连接的设备列表[/green]\n    [u bold yellow]select <id>[/u bold yellow]：[green]选择一个设备进行控制[/green]\n    [u bold yellow]systeminfo[/u bold yellow]：[green]显示设备系统信息[/green]\n    [u bold yellow]ls[/u bold yellow]：[green]展示目标设备上当前工作目录的文件列表[/green]\n    [u bold yellow]pwd[/u bold yellow]：[green]获取目标设备当前工作目录\n    [u bold yellow]command[/u bold yellow]：[green]进入command,可在对方下命令并返回结果[/green]\n    [u bold yellow]background <command>[/u bold yellow]：[green]在后台运行命令，不返回结果[/green]\n    [u bold yellow]cd <dir>[/u bold yellow]：[green]切换工作目录[/green]\n    [u bold yellow]upload <local file path>(*.*)<target file path>[/u bold yellow]：[green]上传文件到目标设备[/green]\n    [u bold yellow]download <target file path>(*.*)<local file path>[/u bold yellow]：[green]从目标设备下载文件[/green]\n",
-        "en": "Help Information:\n    [u bold yellow]help[/u bold yellow]: [green]Show help information[/green]\n    [u bold yellow]back[/u bold yellow]: [green]Return to previous level[/green]\n    [u bold yellow]clear[/u bold yellow]: [green]Clear terminal screen[/green]\n    [u bold yellow]list[/u bold yellow]: [green]Show connected device list[/green]\n    [u bold yellow]select <id>[/u bold yellow]: [green]Select a device to control[/green]\n    [u bold yellow]systeminfo[/u bold yellow]: [green]Display device system information[/green]\n    [u bold yellow]ls[/u bold yellow]: [green]Show file list in current working directory on target device[/green]\n    [u bold yellow]pwd[/u bold yellow]: [green]Get current working directory on target device[/green]\n    [u bold yellow]command[/u bold yellow]: [green]Enter command mode to execute commands and get results[/green]\n    [u bold yellow]background <command>[/u bold yellow]: [green]Run command in background without returning results[/green]\n    [u bold yellow]cd <dir>[/u bold yellow]: [green]Change working directory[/green]\n    [u bold yellow]upload <local file path>(*.*)<target file path>[/u bold yellow]: [green]Upload file to target device[/green]\n    [u bold yellow]download <target file path>(*.*)<local file path>[/u bold yellow]: [green]Download file from target device[/green]\n"
+        "zh": [
+            "帮助信息：\n",
+            "[u bold yellow]help[/u bold yellow]：[green]显示帮助信息[/green]\n",
+            "[u bold yellow]back[/u bold yellow]：[green]退出到上一级[/green]\n",
+            "[u bold yellow]clear[/u bold yellow]：[green]清空终端屏幕[/green]\n",
+            "[u bold yellow]list[/u bold yellow]：[green]显示已连接的设备列表[/green]\n",
+            "[u bold yellow]select <id>[/u bold yellow]：[green]选择一个设备进行控制[/green]\n",
+            "[u bold yellow]systeminfo[/u bold yellow]：[green]显示设备系统信息[/green]\n",
+            "[u bold yellow]ls[/u bold yellow]：[green]展示目标设备上当前工作目录的文件列表[/green]\n",
+            "[u bold yellow]pwd[/u bold yellow]：[green]获取目标设备当前工作目录\n",
+            "[u bold yellow]command[/u bold yellow]：[green]进入command,可在对方下命令并返回结果[/green]\n",
+            "[u bold yellow]bg <command>[/u bold yellow]：[green]在后台运行命令，不返回结果[/green]\n",
+            "[u bold yellow]cd <dir>[/u bold yellow]：[green]切换工作目录[/green]\n",
+            "[u bold yellow]rm <path>[/u bold yellow]：[green]删除文件或目录[/green]\n",
+            "[u bold yellow]mv <old path>(*.*)<new path>[/u bold yellow]：[green]移动文件或目录[/green]\n",
+            "[u bold yellow]cp <source path> <target path>[/u bold yellow]：[green]复制文件或目录[/green]\n",
+            "[u bold yellow]upload <local file path>(*.*)<target file path>[/u bold yellow]：[green]上传文件到目标设备[/green]\n",
+            "[u bold yellow]download <target file path>(*.*)<local file path>[/u bold yellow]：[green]从目标设备下载文件[/green]\n"
+        ],
+        "en": [
+            "Help Information:\n",
+            "[u bold yellow]help[/u bold yellow]: [green]Show help information[/green]\n",
+            "[u bold yellow]back[/u bold yellow]: [green]Return to previous level[/green]\n",
+            "[u bold yellow]clear[/u bold yellow]: [green]Clear terminal screen[/green]\n",
+            "[u bold yellow]list[/u bold yellow]: [green]Show connected device list[/green]\n",
+            "[u bold yellow]select <id>[/u bold yellow]: [green]Select a device to control[/green]\n",
+            "[u bold yellow]systeminfo[/u bold yellow]: [green]Display device system information[/green]\n",
+            "[u bold yellow]ls[/u bold yellow]: [green]Show file list in current working directory on target device[/green]\n",
+            "[u bold yellow]pwd[/u bold yellow]: [green]Get current working directory on target device[/green]\n",
+            "[u bold yellow]command[/u bold yellow]: [green]Enter command mode to execute commands and get results[/green]\n",
+            "[u bold yellow]bg <command>[/u bold yellow]: [green]Run command in background without returning results[/green]\n",
+            "[u bold yellow]cd <dir>[/u bold yellow]: [green]Change working directory[/green]\n",
+            "[u bold yellow]rm <path>[/u bold yellow]: [green]Delete file or directory[/green]\n",
+            "[u bold yellow]mv <old path>(*.*)<new path>[/u bold yellow]: [green]Move file or directory[/green]\n",
+            "[u bold yellow]cp <source path> <target path>[/u bold yellow]: [green]Copy file or directory[/green]\n",
+            "[u bold yellow]upload <local file path>(*.*)<target file path>[/u bold yellow]: [green]Upload file to target device[/green]\n",
+            "[u bold yellow]download <target file path>(*.*)<local file path>[/u bold yellow]: [green]Download file from target device[/green]\n"
+        ]
     },
     "unknown_command": {
         "zh": "未知命令，输入help查看帮助",
         "en": "Unknown command, type help for help"
     },
     "server_help_info": {
-        "zh": "帮助信息：\n    [u bold yellow]help[/u bold yellow]：[green]显示帮助信息[/green]\n    [u bold yellow]about[/u bold yellow]：[green]显示关于信息[/green]\n    [u bold yellow]exit[/u bold yellow]：[green]退出程序[/green]\n    [u bold yellow]clear[/u bold yellow]：[green]清空终端屏幕[/green]\n    [u bold yellow]list[/u bold yellow]：[green]显示已连接的设备列表[/green]\n    [u bold yellow]select <id>[/u bold yellow]：[green]选择一个设备进行控制[/green]\n    [u bold yellow]delete <id>[/u bold yellow]：[green]删除已连接的设备[/green]",
-        "en": "Help Information:\n    [u bold yellow]help[/u bold yellow]: [green]Show help information[/green]\n    [u bold yellow]about[/u bold yellow]: [green]Show about information[/green]\n    [u bold yellow]exit[/u bold yellow]: [green]Exit program[/green]\n    [u bold yellow]clear[/u bold yellow]: [green]Clear terminal screen[/green]\n    [u bold yellow]list[/u bold yellow]: [green]Show connected device list[/green]\n    [u bold yellow]select <id>[/u bold yellow]: [green]Select a device to control[/green]\n    [u bold yellow]delete <id>[/u bold yellow]: [green]Delete connected device[/green]"
+        "zh": [
+            "帮助信息：\n",
+            "[u bold yellow]help[/u bold yellow]：[green]显示帮助信息[/green]\n",
+            "[u bold yellow]about[/u bold yellow]：[green]显示关于信息[/green]\n",
+            "[u bold yellow]exit[/u bold yellow]：[green]退出程序[/green]\n",
+            "[u bold yellow]clear[/u bold yellow]：[green]清空终端屏幕[/green]\n",
+            "[u bold yellow]list[/u bold yellow]：[green]显示已连接的设备列表[/green]\n",
+            "[u bold yellow]select <id>[/u bold yellow]：[green]选择一个设备进行控制[/green]\n",
+            "[u bold yellow]delete <id>[/u bold yellow]：[green]删除已连接的设备[/green]"
+        ],
+        "en": [
+            "Help Information:\n",
+            "[u bold yellow]help[/u bold yellow]: [green]Show help information[/green]\n",
+            "[u bold yellow]about[/u bold yellow]: [green]Show about information[/green]\n",
+            "[u bold yellow]exit[/u bold yellow]: [green]Exit program[/green]\n",
+            "[u bold yellow]clear[/u bold yellow]: [green]Clear terminal screen[/green]\n",
+            "[u bold yellow]list[/u bold yellow]: [green]Show connected device list[/green]\n",
+            "[u bold yellow]select <id>[/u bold yellow]: [green]Select a device to control[/green]\n",
+            "[u bold yellow]delete <id>[/u bold yellow]: [green]Delete connected device[/green]"
+        ]
     },
     "about_info": {
         "zh": "关于：\n作者：赵博凯\n版权：Copyright © 赵博凯, All Rights Reserved.\n此为开源软件，链接：[link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]\n使用MIT协议，请自觉遵守协议",
@@ -127,13 +181,21 @@
         "zh": "删除文件失败",
         "en": "Failed to delete file"
     },
-    "renamed_file": {
-        "zh": "文件重命名成功",
-        "en": "File renamed successfully"
+    "moved_file": {
+        "zh": "文件移动成功",
+        "en": "File moved successfully"
     },
-    "rename_file_failed": {
-        "zh": "文件重命名失败",
-        "en": "Failed to rename file"
+    "move_file_failed": {
+        "zh": "文件移动失败",
+        "en": "Failed to move file"
+    },
+    "copied_file": {
+        "zh": "文件复制成功",
+        "en": "File copied successfully"
+    },
+    "copy_file_failed": {
+        "zh": "复制文件失败",
+        "en": "Failed to copy file"
     },
     "successfully": {
         "zh": "successfully",

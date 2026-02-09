@@ -275,13 +275,17 @@
         "zh": "收到文件下载请求",
         "en": "Received file download request"
     },
-    "download_file_delete_failed": {
-        "zh": "文件删除失败",
-	"en": "File deletion failed"
+    "copying_file": {
+        "zh": "正在复制文件",
+        "en": "Copying file"
     },
-    "download_file_deleted": {
-        "zh": "下载文件已删除",
-        "en": "Download file deleted"
+    "file_copy_result": {
+        "zh": "文件复制结果",
+        "en": "File copy result"
+    },
+    "failed_to_copy_file": {
+        "zh": "文件复制失败",
+        "en": "File copy failed"
     },
     "request_processing_error": {
         "zh": "请求处理错误",
@@ -395,17 +399,17 @@
         "zh": "删除文件失败",
         "en": "Failed to delete file"
     },
-    "renaming_file": {
-        "zh": "正在重命名文件",
-        "en": "Renaming file"
+    "moving_file": {
+        "zh": "正在移动文件",
+        "en": "moving file"
     },
-    "file_rename_result": {
-        "zh": "文件重命名结果",
-        "en": "File rename result"
+    "file_move_result": {
+        "zh": "文件移动结果",
+        "en": "File move result"
     },
-    "failed_to_rename_file": {
-        "zh": "重命名文件失败",
-        "en": "Failed to rename file"
+    "failed_to_move_file": {
+        "zh": "移动文件失败",
+        "en": "Failed to move file"
     },
     "file_name_not_provided": {
         "zh": "未提供文件名",

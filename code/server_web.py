@@ -1,8 +1,9 @@
 __author__ = "赵博凯"
 __license__ = "GPL v3"
 
-from quart import Quart, redirect, url_for, request, make_response, render_template, jsonify, websocket
+from quart import Quart, redirect, url_for, request, make_response, render_template, jsonify, send_file
 import asyncio
+import os
 import rich
 from sys import exit
 import logging
@@ -25,6 +26,7 @@ SECURITY_PATH = 'fuck'  # 安全路径
 SECURITY_PASSWORD_HASH = '6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e'  # 密码哈希值
 
 # 全局变量
+download_directory_name = "web_download"
 url_root = f'{API_SITE}/{SECURITY_PATH}'  # API根URL
 lp = load_lang_pack.LanguagePack("server_web.json", LANGUAGE)  # 语言包
 lp.load()
@@ -100,17 +102,48 @@ async def requests_to_function():
         return redirect(url_for('login'))
     json = await request.json
     response = requests.post(f"{url_root}/function", data=json, verify=False, cookies=request.cookies)
+    if json["func_name"] == "download":
+        random_file_name = response.json()["message"]
+        file_url = f"{url_root}/download/{random_file_name}"
+        file_name = json["path"].split("/")[-1]
+        response = requests.get(file_url, cookies=request.cookies)
+        with open(f"{download_directory_name}/{file_name}", "wb") as f:
+            f.write(response.content)
+        file_url = f"/{SECURITY_PATH}/download/{file_name}"
+        return jsonify({"message": file_url})
     return jsonify(response.json())
+
+# 下载文件路由
+@app.route(f'/{SECURITY_PATH}/download/<filename>')
+async def download(filename):
+    """下载文件"""
+    if not check(request.cookies):
+        return redirect(url_for('login'))
+    return await send_file(f"{download_directory_name}/{filename}")
 
 # 主程序入口
 async def main():
     """启动Web服务"""
     logging.info(lp.g("starting_program"))
-    await asyncio.gather(
-        app.run_task(host=WEB_HOST, port=WEB_PORT)
+
+    web_task = asyncio.create_task(app.run_task(host=WEB_HOST, port=WEB_PORT))
+
+    # 等待任意一个任务完成或出错
+    _, tasks = await asyncio.wait(
+        [web_task,],
+        return_when=asyncio.FIRST_COMPLETED
     )
+    for task in tasks:
+        task.cancel()
 
 if __name__ == '__main__':
+    try:
+        if not os.path.exists(download_directory_name):
+            os.mkdir("web_download")
+        logging.info(lp.g("download_directory_created"))
+    except Exception as e:
+        logging.error(f"{lp.g('failed_to_create_download_directory')}: {str(e)}")
+        exit(1)
     try:
         print("\033[H\033[J")
         logging.info(lp.g("copyright"))

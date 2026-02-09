@@ -13,6 +13,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -26,7 +27,7 @@ import (
 )
 
 const (
-	HOST               string = "127.0.0.1"
+	HOST               string = "192.168.1.39"
 	PORT               int    = 8765
 	INSECURESKIPVERIFY bool   = true
 )
@@ -115,15 +116,97 @@ func (e *ExecuteCommand) get_systeminfo() map[string]interface{} {
 
 // 删除文件
 func (e *ExecuteCommand) delete_file(path string) string {
-	err := os.RemoveAll(path)
+	file_info, err := os.Stat(path)
 	if err != nil {
 		return err.Error()
+	}
+	if file_info.IsDir() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			return err.Error()
+		}
+	} else {
+		err := os.Remove(path)
+		if err != nil {
+			return err.Error()
+		}
+	}
+	return "ok"
+}
+
+// 复制文件
+func copy_file(old_path, new_path string) error {
+	old_file, err := os.Open(old_path)
+	if err != nil {
+		return err
+	}
+	defer old_file.Close()
+	new_file, err := os.Create(new_path)
+	if err != nil {
+		return err
+	}
+	defer new_file.Close()
+	_, err = io.Copy(new_file, old_file)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// 递归复制文件夹
+func copy_dir(old_path, new_path string) error {
+	old_info, err := os.Stat(old_path)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(new_path, old_info.Mode())
+	if err != nil {
+		return err
+	}
+	entries, err := os.ReadDir(old_path)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		src_path := filepath.Join(old_path, entry.Name())
+		dst_path := filepath.Join(new_path, entry.Name())
+		if entry.IsDir() {
+			err = copy_dir(src_path, dst_path)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = copy_file(src_path, dst_path)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// 复制文件或文件夹
+func (e *ExecuteCommand) copy_file(old_path, new_path string) string {
+	file_info, err := os.Stat(old_path)
+	if err != nil {
+		return err.Error()
+	}
+	if file_info.IsDir() {
+		err = copy_dir(old_path, new_path)
+		if err != nil {
+			return err.Error()
+		}
+	} else {
+		err = copy_file(old_path, new_path)
+		if err != nil {
+			return err.Error()
+		}
 	}
 	return "ok"
 }
 
 // 重命名文件或文件夹
-func (e *ExecuteCommand) rename_file(old_path, new_path string) string {
+func (e *ExecuteCommand) move_file(old_path, new_path string) string {
 	err := os.Rename(old_path, new_path)
 	if err != nil {
 		return err.Error()
@@ -350,11 +433,19 @@ func client_loop() {
 					conn.Close()
 					break
 				}
-			} else if strings.HasPrefix(command, "rename:") {
-				// 重命名文件或文件夹
-				file_info := command[len("rename:"):]
+			} else if strings.HasPrefix(command, "cp:") {
+				// 复制文件或文件夹
+				file_info := command[len("cp:"):]
 				file_info_list := strings.SplitN(file_info, "(*.*)", 2)
-				message := Executecommand.rename_file(file_info_list[0], file_info_list[1])
+				message := Executecommand.copy_file(file_info_list[0], file_info_list[1])
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+					conn.Close()
+				}
+			} else if strings.HasPrefix(command, "mv:") {
+				// 重命名文件或文件夹
+				file_info := command[len("mv:"):]
+				file_info_list := strings.SplitN(file_info, "(*.*)", 2)
+				message := Executecommand.move_file(file_info_list[0], file_info_list[1])
 				if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 					conn.Close()
 					break

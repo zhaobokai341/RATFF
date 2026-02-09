@@ -40,6 +40,7 @@ app = Quart(__name__)
 app.config['MAX_CONTENT_LENGTH'] = None
 control_list = {}
 delete_file = ""
+download_directory_name = "download"
 lp = load_lang_pack.LanguagePack("server_api.json", "zh")
 lp.load()
 
@@ -117,17 +118,30 @@ class ControlClient:
             logging.error(f"{lp.g('failed_to_delete_file')}: {str(e)}")
             raise
     
-    async def rename_file(self, old_file, new_file):
-        logging.info(f"{lp.g('renaming_file')}: {old_file} -> {new_file}")
+    async def move_file(self, old_file, new_file):
+        logging.info(f"{lp.g('moving_file')}: {old_file} -> {new_file}")
         try:
-            await self.websocket.send(f"rename:{old_file}(*.*){new_file}")
+            await self.websocket.send(f"mv:{old_file}(*.*){new_file}")
             result = await self.websocket.recv()
             if result != "ok":
                 raise Exception(result)
-            logging.info(f"{lp.g('file_rename_result')}: {result}")
+            logging.info(f"{lp.g('file_move_result')}: {result}")
             return result
         except Exception as e:
-            logging.error(f"{lp.g('failed_to_rename_file')}: {str(e)}")
+            logging.error(f"{lp.g('failed_to_move_file')}: {str(e)}")
+            raise
+
+    async def copy_file(self, old_file, new_file):
+        logging.info(f"{lp.g('copying_file')}: {old_file} -> {new_file}")
+        try:
+            await self.websocket.send(f"cp:{old_file}(*.*){new_file}")
+            result = await self.websocket.recv()
+            if result != "ok":
+                raise Exception(result)
+            logging.info(f"{lp.g('file_copy_result')}: {result}")
+            return result
+        except Exception as e:
+            logging.error(f"{lp.g('failed_to_copy_file')}: {str(e)}")
             raise
 
     async def execute_command(self, command):
@@ -200,12 +214,12 @@ class ControlClient:
                 chunk = file.read(chunk_size)
                 if not chunk:
                     break
-                logging.info(f"{lp.g('sending_chunk')}: {len(chunk)} bytes")
+                # logging.info(f"{lp.g('sending_chunk')}: {len(chunk)} bytes")
                 # Encode the chunk as base64 to safely send over WebSocket
                 encoded_chunk = base64.b64encode(chunk).decode('utf-8')
                 await self.websocket.send(f"upload:{file_path}(*.*){encoded_chunk}")
                 result = await self.websocket.recv()
-                logging.info(f"{lp.g('upload_result')}: {result}")
+                #logging.info(f"{lp.g('upload_result')}: {result}")
                 if result != "ok":
                     raise Exception(result)
             
@@ -224,14 +238,14 @@ class ControlClient:
             await self.websocket.send(f"download:{file_path}")
             while True:
                 result = await self.websocket.recv()
-                logging.info(f"{lp.g('received_chunk_length')}: {len(result)}")
+                #logging.info(f"{lp.g('received_chunk_length')}: {len(result)}")
                 if result.startswith("error:zhaobokai"):
                     logging.error(f"{lp.g('file_download_failed')}: {result}")
                     raise Exception(result)
                 if result == "finish:zhaobokai":
                     logging.info(lp.g("file_downloaded_successfully"))
                     return random_file_name
-                with open(f"download/{random_file_name}", "ab") as f:
+                with open(f"{download_directory_name}/{random_file_name}", "ab") as f:
                     f.write(base64.b64decode(result))
         except Exception as e:
             logging.error(f"{lp.g('file_download_failed')}: {str(e)}")
@@ -254,23 +268,9 @@ def check():
 # 禁止所有爬虫爬取所有页面
 @app.route("/robots.txt")
 async def robots():
-    return '''User-Agent: *
-    Disallow: /
+    return '''<pre>User-Agent: *
+Disallow: /</pre>
     '''
-
-# 清理下载文件
-async def clean_download_file():
-    global delete_file
-    while True:
-        try:
-            # 为了解决Windows文件占用问题
-            if delete_file != "":
-                os.remove(f"download/{delete_file}")
-                logging.info(f"{lp.g("download_file_deleted")}: {delete_file}")
-                delete_file = ""
-        except Exception as e:
-            logging.info(f"{lp.g("download_file_delete_failed")}: {e}")
-        await asyncio.sleep(5)
 
 # 密码验证路由
 @app.route(f"/{SECURITY_PATH}/verify", methods=['POST'])
@@ -303,16 +303,7 @@ async def download(filename: str):
         if not check():
             logging.warning(lp.g("unauthorized_request"))
             return jsonify({'error': lp.g('unauthorized_request')}), 401
-        
-        @app.after_request
-        def cleanup(response):
-            global delete_file
-            while delete_file != "":
-                pass
-            delete_file = filename
-            return response
-
-        return await send_file(f"download/{filename}")
+        return await send_file(f"{download_directory_name}/{filename}")
     except Exception as e:
         logging.error(f"{lp.g('file_download_failed')}: {str(e)}")
         return jsonify({'error': lp.g('server_error')}), 500
@@ -339,10 +330,11 @@ async def function():
         if func_name in ["device_list",
                         "delete",
                         "systeminfo",
-                        "delete_file",
                         "command",
-                        "rename_file",
                         "background",
+                        "delete_file",
+                        "copy_file",
+                        "move_file",
                         "change_directory", 
                         "upload", 
                         "download", 
@@ -381,19 +373,25 @@ async def function():
                                 return jsonify({"message": await control_client.execute_command(command)})
                             else:
                                 return jsonify({"message": await control_client.background(command)})
-                        elif func_name == "delete_file":
+                        elif func_name in ["delete_file", "download"]:
                             if "path" not in json_data:
                                 logging.warning(lp.g("path_not_provided"))
                                 return jsonify({'error': lp.g('path_not_provided')}), 400
                             target_path = json_data["path"]
-                            return jsonify({"message": await control_client.delete_file(target_path)})
-                        elif func_name == "rename_file":
+                            if func_name == "delete_file":
+                                return jsonify({"message": await control_client.delete_file(target_path)})
+                            elif func_name == "download":
+                                return jsonify({"message": await control_client.download_file(target_path)})
+                        elif func_name in ["copy_file", "move_file"]:
                             if "old_path" not in json_data or "new_path" not in json_data:
                                 logging.warning(lp.g("file_name_not_provided"))
                                 return jsonify({'error': lp.g('file_name_not_provided')}), 400
                             old_name = json_data["old_path"]
                             new_name = json_data["new_path"]
-                            return jsonify({"message": await control_client.rename_file(old_name, new_name)})
+                            if func_name == "copy_file":
+                                return jsonify({"message": await control_client.copy_file(old_name, new_name)})
+                            elif func_name == "move_file":
+                                return jsonify({"message": await control_client.move_file(old_name, new_name)})
                         elif func_name == "get_list_file":
                             return jsonify({"message": await control_client.get_file_list()})
                         elif func_name == "get_pwd":
@@ -418,13 +416,6 @@ async def function():
                                 target_path = json_data['path']
                                 file = file["file"]
                                 return jsonify({"message": await control_client.upload_file(target_path, file)})
-                            elif func_name == "download":
-                                if "path" not in json_data:
-                                    logging.warning(lp.g("path_not_provided"))
-                                    return jsonify({'error': lp.g('path_not_provided')}), 400
-
-                                target_path = json_data['path']
-                                return jsonify({"message": await control_client.download_file(target_path)})
         else:
             logging.warning(f"{lp.g('invalid_function')}: {func_name}")
             return jsonify({'error': lp.g('invalid_function_name_provided')}), 400
@@ -497,11 +488,10 @@ async def main():
         # 创建任务
         server_task = asyncio.create_task(server_loop())
         web_task = asyncio.create_task(app.run_task(host=WEB_HOST, port=WEB_PORT))
-        clean_downloads = asyncio.create_task(clean_download_file())
 
         # 等待任意一个任务完成或出错
         _, tasks = await asyncio.wait(
-            [server_task, web_task, clean_downloads],
+            [server_task, web_task],
             return_when=asyncio.FIRST_COMPLETED
         )
         for task in tasks:
@@ -512,8 +502,8 @@ async def main():
 
 if __name__ == '__main__':
     try:
-        if not os.path.exists("download"):
-            os.mkdir("download")
+        if not os.path.exists(download_directory_name):
+            os.mkdir(download_directory_name)
         logging.info(lp.g("download_directory_created"))
     except Exception as e:
         logging.error(f"{lp.g('failed_to_create_download_directory')}: {str(e)}")
