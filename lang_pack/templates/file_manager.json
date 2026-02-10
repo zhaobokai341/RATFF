@@ -11,6 +11,18 @@
         "zh": "退出登录",
         "en": "Logout"
     },
+    "create_folder": {
+        "zh": "新建文件夹",
+        "en": "Create Folder"
+    },
+    "upload_file": {
+        "zh": "上传文件",
+        "en": "Upload File"
+    },
+    "please_wait": {
+        "zh": "正在执行命令中，此操作可能需要一些时间",
+        "en": "Please wait, this operation may take some time"
+    },
     "delete": {
         "zh": "删除",
         "en": "Delete"
@@ -31,8 +43,24 @@
         "zh": "复制&粘贴",
         "en": "Copy&Paste"
     },
+    "compress": {
+        "zh": "压缩",
+        "en": "Compress"
+    },
+    "extract": {
+        "zh": "解压",
+        "en": "Extract"
+    },
     "directory_changed_successfully": {
-        "zh": "Directory changed successfully",
+        "zh": "文件切换成功",
         "en": "Directory changed successfully"
+    },
+    "input_folder_name": {
+        "zh": "请输入目录名：",
+        "en": "Please enter the folder name:"
+    },
+    "input_upload_target_path": {
+        "zh": "请输入上传目标路径：",
+        "en": "Please enter the upload target path:"
     }
 }

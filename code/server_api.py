@@ -38,6 +38,7 @@ SECURITY_PASSWORD_HASH = b'$2b$04$T8NZ.WUIuO05WyVpLrQYiOdgqc2zbx7E9ysF03696dYvwG
 # 全局变量
 app = Quart(__name__)
 app.config['MAX_CONTENT_LENGTH'] = None
+app.config['BODY_TIMEOUT'] = None 
 control_list = {}
 delete_file = ""
 download_directory_name = "download"
@@ -131,6 +132,32 @@ class ControlClient:
             logging.error(f"{lp.g('failed_to_move_file')}: {str(e)}")
             raise
 
+    async def compress_file(self, file, target_file):
+        logging.info(f"{lp.g('compressing_file')}: {file} -> {target_file}")
+        try:
+            await self.websocket.send(f"compress:{file}(*.*){target_file}")
+            result = await self.websocket.recv()
+            if result != "ok":
+                raise Exception(result)
+            logging.info(f"{lp.g('file_compression_result')}: {result}")
+            return result
+        except Exception as e:
+            logging.error(f"{lp.g('failed_to_compress_file')}: {str(e)}")
+            raise
+
+    async def extract_file(self, file, target_directory):
+        logging.info(f"{lp.g('extracting_file')}: {file} -> {target_directory}")
+        try:
+            await self.websocket.send(f"extract:{file}(*.*){target_directory}")
+            result = await self.websocket.recv()
+            if result != "ok":
+                raise Exception(result)
+            logging.info(f"{lp.g('file_extraction_result')}: {result}")
+            return result
+        except Exception as e:
+            logging.error(f"{lp.g('failed_to_extract_file')}: {str(e)}")
+            raise
+
     async def copy_file(self, old_file, new_file):
         logging.info(f"{lp.g('copying_file')}: {old_file} -> {new_file}")
         try:
@@ -188,10 +215,21 @@ class ControlClient:
             logging.error(f"{lp.g('failed_to_get_current_directory')}: {str(e)}")
             raise
 
+    async def create_directory(self, directory):
+        logging.info(f"{lp.g('creating_directory')}: {directory}")
+        try:
+            await self.websocket.send(f"mkdir:{directory}")
+            result = await self.websocket.recv()
+            logging.info(f"{lp.g('directory_creation_result')}: {result}")
+            return result
+        except Exception as e:
+            logging.error(f"{lp.g('directory_creation_failed')}: {str(e)}")
+            raise
+
     async def change_directory(self, directory):
         logging.info(f"{lp.g('changing_directory')}: {directory}")
         try:
-            await self.websocket.send(f"change_directory:{directory}")
+            await self.websocket.send(f"cd:{directory}")
             result = await self.websocket.recv()
             logging.info(f"{lp.g('directory_change_result')}: {result}")
             return result
@@ -333,8 +371,11 @@ async def function():
                         "command",
                         "background",
                         "delete_file",
+                        "extract",
+                        "compress",
                         "copy_file",
                         "move_file",
+                        "create_directory",
                         "change_directory", 
                         "upload", 
                         "download", 
@@ -373,13 +414,15 @@ async def function():
                                 return jsonify({"message": await control_client.execute_command(command)})
                             else:
                                 return jsonify({"message": await control_client.background(command)})
-                        elif func_name in ["delete_file", "download"]:
+                        elif func_name in ["delete_file", "create_directory", "download"]:
                             if "path" not in json_data:
                                 logging.warning(lp.g("path_not_provided"))
                                 return jsonify({'error': lp.g('path_not_provided')}), 400
                             target_path = json_data["path"]
                             if func_name == "delete_file":
                                 return jsonify({"message": await control_client.delete_file(target_path)})
+                            elif func_name == "create_directory":
+                                return jsonify({"message": await control_client.create_directory(target_path)})
                             elif func_name == "download":
                                 return jsonify({"message": await control_client.download_file(target_path)})
                         elif func_name in ["copy_file", "move_file"]:
@@ -392,6 +435,16 @@ async def function():
                                 return jsonify({"message": await control_client.copy_file(old_name, new_name)})
                             elif func_name == "move_file":
                                 return jsonify({"message": await control_client.move_file(old_name, new_name)})
+                        elif func_name in ["compress", "extract"]:
+                            if "source_path" not in json_data or "target_path" not in json_data:
+                                logging.warning(lp.g("path_not_provided"))
+                                return jsonify({'error': lp.g('path_not_provided')}), 400
+                            source_path = json_data["source_path"]
+                            target_path = json_data["target_path"]
+                            if func_name == "compress":
+                                return jsonify({"message": await control_client.compress_file(source_path, target_path)})
+                            elif func_name == "extract":
+                                return jsonify({"message": await control_client.extract_file(source_path, target_path)})
                         elif func_name == "get_list_file":
                             return jsonify({"message": await control_client.get_file_list()})
                         elif func_name == "get_pwd":

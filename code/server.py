@@ -166,6 +166,34 @@ class Server:
             output(f"{lp.g('copy_file_failed')}: {result['message']}", type="error")
 
     @staticmethod
+    def compress(id, source_path, target_path):
+        """压缩文件"""
+        response = requests.post(f"{API_SITE}/{API_PATH}/function",
+                                data={"func_name": "compress", "id": id, "source_path": source_path, "target_path": target_path},
+                                cookies=cookie)
+        if not response.ok:
+            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
+        result = response.json()
+        if result["message"] == "ok":
+            output(f"{lp.g('compressed_file')}: {source_path} -> {target_path}", type="success")
+        else:
+            output(f"{lp.g('compress_file_failed')}: {result['message']}", type="error")
+
+    @staticmethod
+    def extract(id, source_path, target_path):
+        """解压文件"""
+        response = requests.post(f"{API_SITE}/{API_PATH}/function",
+                                data={"func_name": "extract", "id": id, "source_path": source_path, "target_path": target_path},
+                                cookies=cookie)
+        if not response.ok:
+            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
+        result = response.json()
+        if result["message"] == "ok":
+            output(f"{lp.g('extracted_file')}: {source_path} -> {target_path}", type="success")
+        else:
+            output(f"{lp.g('extract_file_failed')}: {result['message']}", type="error")
+
+    @staticmethod
     def command(id):
         """进入设备命令模式"""
         while True:
@@ -196,6 +224,20 @@ class Server:
         else:
             output(f"{lp.g('command_execution_failed')}: {result["message"]}", type="error")
     
+    @staticmethod
+    def mkdir(id, directory):
+        """在设备上创建目录"""
+        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
+                                data={"func_name": "create_directory", "id": id, "path": directory}, 
+                                cookies=cookie)
+        result = response.json()
+        if not response.ok: 
+            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {result['error']}")
+        if result["message"] == "ok":
+            output(f"{lp.g('directory_created')}: {directory}", type="success")
+        else:
+            output(f"{lp.g('directory_creation_failed')}: {result['message']}", type="error")
+
     @staticmethod
     def cd(id, directory):
         """切换设备工作目录"""
@@ -293,6 +335,26 @@ def command_input():
                         Server.background(select_device, command.split(" ", 1)[1])
                     case command if command.startswith("cd "): 
                         Server.cd(select_device, command.split(" ", 1)[1])
+                    case command if command.startswith("mkdir "):
+                        Server.mkdir(select_device, command.split(" ", 1)[1])
+                    case command if command.startswith("compress "):
+                        file_info = command.split(" ", 1)[1]
+                        file_info = file_info.split("(*.*)")
+                        if len(file_info) != 2:
+                            output(f"{lp.g('invalid_file_info')}", type="error")
+                            continue
+                        source_path = file_info[0]
+                        target_path = file_info[1]
+                        Server.compress(select_device, source_path, target_path)
+                    case command if command.startswith("extract "):
+                        file_info = command.split(" ", 1)[1]
+                        file_info = file_info.split("(*.*)")
+                        if len(file_info) != 2:
+                            output(f"{lp.g('invalid_file_info')}", type="error")
+                            continue
+                        source_path = file_info[0]
+                        target_path = file_info[1]
+                        Server.extract(select_device, source_path, target_path)
                     case command if command.startswith("mv "):
                         file_info = command.split(" ", 1)[1]
                         file_info = file_info.split("(*.*)")

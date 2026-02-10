@@ -3,6 +3,7 @@ __license__ = "GPL v3"
 
 from quart import Quart, redirect, url_for, request, make_response, render_template, jsonify, send_file
 import asyncio
+import base64
 import os
 import rich
 from sys import exit
@@ -18,6 +19,7 @@ rich.traceback.install(show_locals=True)
 # 基础配置
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 app = Quart(__name__)
+app.config['MAX_CONTENT_LENGTH'] = None
 LANGUAGE = "zh"
 WEB_HOST = "0.0.0.0"
 WEB_PORT = 8000
@@ -42,7 +44,7 @@ lp_file_manager.load()
 # 安全验证函数
 def check(cookie):
     """验证用户cookie是否有效"""
-    if requests.post(f"{url_root}/function", verify=False, cookies=cookie).status_code == 401:
+    if requests.post(f"{url_root}/function", cookies=cookie).status_code == 401:
         return False
     return True
 
@@ -101,7 +103,29 @@ async def requests_to_function():
     if not check(request.cookies): 
         return redirect(url_for('login'))
     json = await request.json
-    response = requests.post(f"{url_root}/function", data=json, verify=False, cookies=request.cookies)
+
+    if json["func_name"] == "upload":
+        files = json["file"]
+        file_content = base64.b64decode(files)
+        #breakpoint()
+        new_request = {
+            "func_name": json["func_name"],
+            "path": json["path"],
+            "id": json["id"]
+        }
+        response = requests.post(f"{url_root}/function",
+                                data=new_request,
+                                files={"file": file_content},
+                                cookies=request.cookies)
+        if not response.ok:
+            return jsonify(response.json())
+        response = response.json()["message"]
+        return jsonify({"message": response})
+
+    response = requests.post(f"{url_root}/function", data=json, cookies=request.cookies)
+    if not response.ok:
+        return jsonify(response.json()["error"])
+
     if json["func_name"] == "download":
         random_file_name = response.json()["message"]
         file_url = f"{url_root}/download/{random_file_name}"
@@ -111,6 +135,7 @@ async def requests_to_function():
             f.write(response.content)
         file_url = f"/{SECURITY_PATH}/download/{file_name}"
         return jsonify({"message": file_url})
+    
     return jsonify(response.json())
 
 # 下载文件路由
@@ -119,7 +144,10 @@ async def download(filename):
     """下载文件"""
     if not check(request.cookies):
         return redirect(url_for('login'))
-    return await send_file(f"{download_directory_name}/{filename}")
+    try:
+        return await send_file(f"{download_directory_name}/{filename}")
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 # 主程序入口
 async def main():

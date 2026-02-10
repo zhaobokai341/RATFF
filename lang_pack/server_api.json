@@ -275,6 +275,18 @@
         "zh": "收到文件下载请求",
         "en": "Received file download request"
     },
+    "creating_directory": {
+        "zh": "正在创建目录",
+        "en": "Creating directory"
+    },
+    "directory_creation_result": {
+        "zh": "目录创建结果",
+        "en": "Directory creation result"
+    },
+    "directory_creation_failed": {
+        "zh": "目录创建失败",
+        "en": "Directory creation failed"
+    },
     "copying_file": {
         "zh": "正在复制文件",
         "en": "Copying file"
@@ -410,6 +422,30 @@
     "failed_to_move_file": {
         "zh": "移动文件失败",
         "en": "Failed to move file"
+    },
+    "compressing_file": {
+        "zh": "正在压缩文件",
+        "en": "Compressing file"
+    },
+    "file_compression_result": {
+        "zh": "文件压缩结果",
+        "en": "File compression result"
+    },
+    "failed_to_compress_file": {
+        "zh": "文件压缩失败",
+        "en": "Failed to compress file"
+    },
+    "extracting_file": {
+        "zh": "正在解压文件",
+        "en": "Extracting file"
+    },
+    "file_extraction_result": {
+        "zh": "文件解压结果",
+        "en": "File extraction result"
+    },
+    "failed_to_extract_file": {
+        "zh": "文件解压失败",
+        "en": "Failed to extract file"
     },
     "file_name_not_provided": {
         "zh": "未提供文件名",

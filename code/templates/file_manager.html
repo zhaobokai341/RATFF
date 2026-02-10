@@ -33,16 +33,62 @@
         }
 
         #file_manager {
-            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        #file_manager button {
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 50px;
+        }
+
+        #upload_file {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #upload_file label {
+            color: #333;
+            font-size: 14px;
+        }
+
+        #file_manager input[type="file"] {
+            padding: 8px 12px;
+            cursor: pointer;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        #file_manager input[type="file"]::-webkit-file-upload-button {
+            visibility: hidden;
+        }
+
+        #file_manager input[type="file"]::before {
+            content: '选择文件';
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
         }
 
         #file_path {
+            font-size: 20px;
+            padding: 5px 10px;
             width: 100%;
-            padding: 10px;
-            font-size: 1em;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin-bottom: 20px;
+            margin-top: 10px;
         }
 
         tr {
@@ -111,6 +157,10 @@
             <h1>{{id}}{{ lp.g("file_manager") }}</h1>
             <a id="logout" href="javascript:logout()">{{ lp.g("logout") }}</a>
             <div id="file_manager">
+                <button id="create_folder">{{ lp.g("create_folder") }}</button>
+                <div id="upload_file">
+                    <label>上传文件：</label><input type="file">
+                </div>
                 <input id="file_path" enterkeyhint="enter">
                 <div id="directories"></div>
                 <div id="files"></div>
@@ -120,11 +170,11 @@
     </div>
 
     <script>
-        async function requests_to_function(json) {
+        async function requests_to_function(json, headers={"Content-Type": "application/json"}) {
             try {
                 const response = await fetch("../requests_to_function", {
                     method: "POST",
-                    headers: {"Content-Type": "application/json"},
+                    headers: headers,
                     body: JSON.stringify(json)
                 });
                 return await response.json();
@@ -181,8 +231,20 @@
                         <li onclick="change_directory('${directoryName}')">${directoryName}</li>
                         ${directoryInfo.length ? `<span class="file-info">${directoryInfo.join(' | ')}</span>` : ''}
                         <button onclick="delete_file('${directoryName}')">{{ lp.g("delete") }}</button>
-                        <button onclick="move('${directoryName}', prompt('{{ lp.g("move") }} ${directoryName} {{ lp.g("to") }}:'))">{{ lp.g("move") }}</button>
-                        <button onclick="copy('${directoryName}', prompt('{{ lp.g("copy_and_paste") }} ${directoryName} {{ lp.g("to") }}:'))">{{ lp.g("copy_and_paste") }}</button>
+                        <button onclick="let new_file = prompt('{{ lp.g("move") }} ${directoryName} {{ lp.g("to") }}:');
+                        if (new_file != null) {
+                            move('${directoryName}', new_file);
+                        }">{{ lp.g("move") }}</button>
+                        <button onclick="let new_file = prompt('{{ lp.g("copy_and_paste") }} ${directoryName} {{ lp.g("to") }}:');
+                        if (new_file != null) {
+                            copy('${directoryName}', new_file);   
+                        }
+                        ">{{ lp.g("copy_and_paste") }}</button>
+                        <button onclick="let target_file = prompt('{{ lp.g("compress") }} ${directoryName} {{ lp.g("to") }}:');
+                        if (target_file != null) {
+                            compress('${directoryName}', target_file);
+                        }
+                        ">{{ lp.g("compress") }}</button>
                     `;
                 }
                 tr.appendChild(td);
@@ -211,9 +273,27 @@
                     <li>${fileName}</li>
                     ${fileInfo.length ? `<span class="file-info">${fileInfo.join(' | ')}</span>` : ''}
                     <button onclick="delete_file('${fileName}')">{{ lp.g("delete") }}</button>
-                    <button onclick="move('${fileName}', prompt('{{ lp.g("move") }} ${fileName} {{ lp.g("to") }}:'))">{{ lp.g("move") }}</button>
+                    <button onclick="let new_file = prompt('{{ lp.g("move") }} ${fileName} {{ lp.g("to") }}:');
+                    if (new_file != null) {
+                        move('${fileName}', new_file);
+                    }
+                    ">{{ lp.g("move") }}</button>
                     <button onclick="download('${fileName}')">{{ lp.g("download_or_preview") }}</button>
-                    <button onclick="copy('${fileName}', prompt('{{ lp.g("copy_and_paste") }} ${fileName} {{ lp.g("to") }}:'))">{{ lp.g("copy_and_paste") }}</button>
+                    <button onclick="let new_file = prompt('{{ lp.g("copy_and_paste") }} ${fileName} {{ lp.g("to") }}:');
+                    if (new_file != null) {
+                        copy('${fileName}', new_file);
+                    }
+                    ">{{ lp.g("copy_and_paste") }}</button>
+                    <button onclick="let target_file = prompt('{{ lp.g("compress") }} ${fileName} {{ lp.g("to") }}:');
+                    if (target_file != null) {
+                        compress('${fileName}', target_file);
+                    }
+                    ">{{ lp.g("compress") }}</button>
+                    <button onclick="let target_file = prompt('{{ lp.g("extract") }} ${fileName} {{ lp.g("to") }}:');
+                    if (target_file != null) {
+                        extract('${fileName}', target_file);
+                    }
+                    ">{{ lp.g("extract") }}</button>
                 `;
                 tr.appendChild(td);
                 files_element.appendChild(tr);
@@ -246,6 +326,7 @@
         }
 
         async function download(file) {
+            alert('{{ lp.g("please_wait")}}');
             const data = await requests_to_function(
                 { func_name: "download", id: "{{id}}", path: file}
             );
@@ -279,6 +360,7 @@
         }
 
         async function move(old_path, new_path) {
+            alert('{{ lp.g("please_wait")}}');
             const data = await requests_to_function(
                 { func_name: "move_file", id: "{{id}}", old_path: old_path, new_path: new_path}
             );
@@ -287,8 +369,65 @@
         }
 
         async function copy(source_path, target_path) {
+            alert('{{ lp.g("please_wait")}}');
             const data = await requests_to_function(
                 { func_name: "copy_file", id: "{{id}}", old_path: source_path, new_path: target_path}
+            );
+            (data.error) ? alert(data.error) : alert(data["message"]);
+            await load_file_manager();
+        }
+
+        async function mkdir(directory) {
+            const data = await requests_to_function(
+                { func_name: "create_directory", id: "{{id}}", path: directory}
+            );
+            (data.error) ? alert(data.error) : alert(data["message"]);
+            await load_file_manager();
+        }
+
+        async function upload_file(file, path) {
+            alert('{{ lp.g("please_wait")}}');
+            // 读取文件为 base64
+            const fileReader = new FileReader();
+            const fileContent = await new Promise((resolve, reject) => {
+            fileReader.onload = e => {
+                const dataUrl = e.target.result;
+                const base64 = dataUrl.split(',')[1];
+                resolve(base64);
+            };
+            fileReader.onerror = reject;
+            fileReader.readAsDataURL(file);
+            load_file_manager();
+        });
+
+            // 准备请求数据
+            const requestData = {
+                func_name: "upload",
+                id: "{{id}}",
+                path: path,
+                file: fileContent,
+            };
+
+            // 发送请求
+            const data = await requests_to_function(requestData);
+
+            (data.error) ? alert(data.error) : alert(data["message"]);
+            await load_file_manager();
+        }
+
+        async function compress(source_path, target_path) {
+            alert('{{ lp.g("please_wait")}}');
+            const data = await requests_to_function(
+                { func_name: "compress", id: "{{id}}", source_path: source_path, target_path: target_path}
+            );
+            (data.error) ? alert(data.error) : alert(data["message"]);
+            await load_file_manager();
+        }
+
+        async function extract(source_path, target_path) {
+            alert('{{ lp.g("please_wait")}}');
+            const data = await requests_to_function(
+                { func_name: "extract", id: "{{id}}", source_path: source_path, target_path: target_path}
             );
             (data.error) ? alert(data.error) : alert(data["message"]);
             await load_file_manager();
@@ -301,12 +440,29 @@
 
         document.getElementById("file_path").addEventListener("keydown", async function(event) {
             if (event.key === 'Enter' || 
-
             event.KeyCode == 13) {
                     await change_directory(document.getElementById('file_path').value);
                 }
             }
         );
+
+        document.getElementById("create_folder").addEventListener("click", async function() {
+            const file_name = prompt('{{ lp.g("input_folder_name") }}');
+            if (file_name == null) {
+                return ;
+            }
+            await mkdir(file_name);
+        });
+
+        document.getElementById("upload_file").getElementsByTagName("input")[0].addEventListener("change", async function(event) {
+            for (let file in event.target.files) {
+                let target_path = prompt('{{ lp.g("input_upload_target_path") }}');
+                if (target_path == null) {
+                    return ;
+                }
+                await upload_file(file, target_path);
+            }
+        });
     </script>
 </body>
 </html>

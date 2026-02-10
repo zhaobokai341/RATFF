@@ -89,7 +89,10 @@
             "[u bold yellow]command[/u bold yellow]：[green]进入command,可在对方下命令并返回结果[/green]\n",
             "[u bold yellow]bg <command>[/u bold yellow]：[green]在后台运行命令，不返回结果[/green]\n",
             "[u bold yellow]cd <dir>[/u bold yellow]：[green]切换工作目录[/green]\n",
+            "[u bold yellow]mkdir <directory>[/u bold yellow]：[green]创建目录[/green]\n",
             "[u bold yellow]rm <path>[/u bold yellow]：[green]删除文件或目录[/green]\n",
+            "[u bold yellow]compress <source path>(*.*)<target path>[/u bold yellow]：[green]压缩文件或目录[/green]\n",
+            "[u bold yellow]extract <source path>(*.*)<target path>[/u bold yellow]：[green]解压文件或目录[/green]\n",
             "[u bold yellow]mv <old path>(*.*)<new path>[/u bold yellow]：[green]移动文件或目录[/green]\n",
             "[u bold yellow]cp <source path> <target path>[/u bold yellow]：[green]复制文件或目录[/green]\n",
             "[u bold yellow]upload <local file path>(*.*)<target file path>[/u bold yellow]：[green]上传文件到目标设备[/green]\n",
@@ -108,7 +111,10 @@
             "[u bold yellow]command[/u bold yellow]: [green]Enter command mode to execute commands and get results[/green]\n",
             "[u bold yellow]bg <command>[/u bold yellow]: [green]Run command in background without returning results[/green]\n",
             "[u bold yellow]cd <dir>[/u bold yellow]: [green]Change working directory[/green]\n",
+            "[u bold yellow]mkdir <directory>[/u bold yellow]: [green]Create directory[/green]\n",
             "[u bold yellow]rm <path>[/u bold yellow]: [green]Delete file or directory[/green]\n",
+            "[u bold yellow]compress <source path>(*.*)<target path>[/u bold yellow]: [green]Compress file or directory[/green]\n",
+            "[u bold yellow]extract <source path>(*.*)<target path>[/u bold yellow]: [green]Extract file or directory[/green]\n",
             "[u bold yellow]mv <old path>(*.*)<new path>[/u bold yellow]: [green]Move file or directory[/green]\n",
             "[u bold yellow]cp <source path> <target path>[/u bold yellow]: [green]Copy file or directory[/green]\n",
             "[u bold yellow]upload <local file path>(*.*)<target file path>[/u bold yellow]: [green]Upload file to target device[/green]\n",
@@ -173,6 +179,22 @@
         "zh": "用户手动中断",
         "en": "User interrupted"
     },
+    "compressed_file": {
+        "zh": "已压缩文件",
+        "en": "File compressed"
+    },
+    "compress_file_failed": {
+        "zh": "压缩文件失败",
+        "en": "Failed to compress file"
+    },
+    "extracted_file": {
+        "zh": "已解压文件",
+        "en": "File extracted"
+    },
+    "extract_file_failed": {
+        "zh": "解压文件失败",
+        "en": "Failed to extract file"
+    },
     "deleted_file": {
         "zh": "已删除文件",
         "en": "File deleted"
@@ -188,6 +210,14 @@
     "move_file_failed": {
         "zh": "文件移动失败",
         "en": "Failed to move file"
+    },
+    "directory_created": {
+        "zh": "目录创建成功",
+        "en": "Directory created successfully"
+    },
+    "directory_creation_failed": {
+        "zh": "创建目录失败",
+        "en": "Failed to create directory"
     },
     "copied_file": {
         "zh": "文件复制成功",
