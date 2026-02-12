@@ -32,7 +32,7 @@ git clone https://github.com/zhaobokai341/remote_access_trojan.git
 cd remote_access_trojan
 ```
 方法2：通过浏览器下载压缩包并解压，然后进入目录
-方法3：访问 [Releases](https://github.com/zhaobokai341/remote_access_trojan/releases) 页面，选择合适版本下载 code.zip 文件并解压，然后进入目录
+方法3：访问 [Releases](https://github.com/zhaobokai341/RATFF/releases) 页面，选择合适版本下载 code.zip 文件并解压，然后进入目录
 
 ### 项目配置
 请参考 [配置项目](wiki/zh/配置项目.md)
