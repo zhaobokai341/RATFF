@@ -68,13 +68,16 @@ go get github.com/gorilla/websocket github.com/shirou/gopsutil/v3/cpu github.com
 ```
 
 ## Configure Certificates
-To implement WSS secure communication, certificates need to be configured. Recommended to use self-signed certificates:
+To implement WSS secure communication, certificates need to be configured.
+
+**Recommended Approach**: If you want simplicity and don't place high importance on security, it's recommended to use self-signed certificates:
 ```bash
 openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -out cert.pem -days 99999 -subj "/CN=localhost"
 ```
 
 **Security Reminder**:
 - WSS protocol provides encrypted communication and is the default and recommended configuration
+- Self-signed certificates, while not issued by authoritative institutions, provide basic encryption protection
 - Only consider alternative communication methods in special testing environments
 - Production environments must use valid SSL/TLS certificates
 
