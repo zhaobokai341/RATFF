@@ -46,7 +46,6 @@ Reference running result:
 
 Finally, go back one level and compile `client.go`:
 ```bash
-cd ..
 go build -o <output_filename> client.go
 ```
 Have the victim open the compiled executable file. If the configuration is correct and permissions are granted, you will be able to control their device as you wish.
