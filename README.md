@@ -1,34 +1,41 @@
-# remote_access_trojan
+# 远程访问木马 (Remote Access Trojan)
 
 语言：[中文](README.md) [English](README_en.md)
 
-这个仓库用于生成木马病毒，目前暂未做好
+这个仓库包含一个功能完整的远程访问木马程序实现。
 
-注：用户使用该软件造成的任何损失和赔偿，全由用户承担
+**重要声明**：本软件仅供教育和研究目的使用。用户使用该软件造成的任何损失和法律责任，均由用户自行承担。
 
-## 特点：
-- 木马病毒可打包成exe,elf,apk,app可执行文件 ✅
-- 木马病毒支持中文和英文 ✅
-- 木马病毒基于wss(websocket+ssl)协议，原计划基于tcp协议 ✅
-- 木马病毒可以通过命令行，网页，图形化这些方式控制目标主机 → 木马病毒可以通过命令行，网页这些方式控制目标主机 ✅
-- 木马病毒可以同时控制多台设备 ✅
-- 木马病毒可以对目标主机输入命令，获取系统信息，上传/下载文件，截图，录音，实时观看对方屏幕，截取键盘输入等操作 ❌
+## 主要特性：
+- 支持多种平台的可执行文件生成 (exe, elf, apk, app) ✅
+- 完整的中英文双语支持 ✅
+- 基于WSS (WebSocket + SSL) 安全协议通信 ✅
+- 提供命令行和网页两种控制界面 ✅
+- 支持同时控制多个设备 ✅
+- 丰富的远程控制功能：
+  - 执行系统命令 ✅
+  - 获取详细的系统信息（CPU、内存、磁盘、网络等）✅
+  - 文件上传/下载 ✅
+  - 文件管理（复制、移动、删除、压缩、解压）✅
+  - 目录浏览和切换 ✅
+  - 后台命令执行 ✅
+  - 实时文件列表查看 ✅
 
-## 准备环境：
-跳转至[https://github.com/zhaobokai341/RATFF/wiki/%E5%87%86%E5%A4%87%E7%8E%AF%E5%A2%83](https://github.com/zhaobokai341/RATFF/wiki/%E5%87%86%E5%A4%87%E7%8E%AF%E5%A2%83)
+## 环境准备：
+请参考 [环境准备](wiki/zh/准备环境.md)
 
-## 如何使用：
-### 下载
-方法1：克隆这个仓库并进入该目录
+## 使用方法：
+### 下载项目
+方法1：克隆仓库并进入目录
 ```bash
 git clone https://github.com/zhaobokai341/remote_access_trojan.git
 cd remote_access_trojan
 ```
-方法2：直接通过浏览器下载压缩包然后解压，且进入该目录
-方法3：进入[Releases](https://github.com/zhaobokai341/remote_access_trojan/releases)，选择合适的版本，下载名为code.zip的文件并解压，且进入该目录
+方法2：通过浏览器下载压缩包并解压，然后进入目录
+方法3：访问 [Releases](https://github.com/zhaobokai341/remote_access_trojan/releases) 页面，选择合适版本下载 code.zip 文件并解压，然后进入目录
 
-### 配置
-跳转至[https://github.com/zhaobokai341/RATFF/wiki/%E9%85%8D%E7%BD%AE%E9%A1%B9%E7%9B%AE](https://github.com/zhaobokai341/RATFF/wiki/%E9%85%8D%E7%BD%AE%E9%A1%B9%E7%9B%AE)
+### 项目配置
+请参考 [配置项目](wiki/zh/配置项目.md)
 
-### 运行
-跳转至[https://github.com/zhaobokai341/RATFF/wiki/%E8%BF%90%E8%A1%8C](https://github.com/zhaobokai341/RATFF/wiki/%E8%BF%90%E8%A1%8C)
+### 运行程序
+请参考 [运行](wiki/zh/运行.md)

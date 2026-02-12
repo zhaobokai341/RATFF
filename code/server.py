@@ -13,12 +13,13 @@ from sys import exit
 import load_lang_pack
 
 # 服务器配置
+LANGUAGE = "zh"
 API_SITE = "http://localhost:5000"  # 服务器地址
 API_PATH = "fuck"  # API路径
 APT_PASSWORD = "fuck"  # 访问密码
 
 # 初始化语言包
-lp = load_lang_pack.LanguagePack("server.json", "zh")
+lp = load_lang_pack.LanguagePack("server.json", LANGUAGE)
 lp.load()
 
 # 输出函数
@@ -68,12 +69,19 @@ class Server:
     def select_device(id):
         """选择要控制的设备"""
         response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                    data={"func_name": "command", "id": id, "command": "echo"}, 
+                                    data={"func_name": "device_list"}, 
                                     cookies=cookie)
         if not response.ok: 
             raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
-        output(f"{lp.g('selected_device')}: {id}", type="success")
-        return id
+        result = response.json()
+        if type(result) != list:
+            raise Exception(result)
+        for i in result:
+            if id in i["id"] or id in i["ip"] or id in i["systeminfo"]:
+                selected_id = i["id"]
+                output(f"{lp.g('selected_device')}: {selected_id}", type="success")
+                return selected_id
+        raise Exception(f"{lp.g('device_not_found')}: {id}")
 
     @staticmethod   
     def delete_device(id):
@@ -312,7 +320,9 @@ def command_input():
                 match command:
                     case "": pass
                     case "help": 
-                        output(lp.g("console_help_info"), type="info")
+                        help_list = lp.g("console_help_info")
+                        for help_text in help_list:
+                            output(help_text, type="info")
                     case "back": 
                         select_device = None
                     case "clear": 
@@ -403,7 +413,9 @@ def command_input():
                 case "exit": 
                     exit(0)
                 case "help":
-                    output(lp.g("server_help_info"), type="info")
+                    help_list = lp.g("server_help_info")
+                    for help_text in help_list:
+                        output(help_text, type="info")
                 case "clear": 
                     os.system("cls") if os.name == "nt" else os.system("clear")
                 case "about": 

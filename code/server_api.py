@@ -32,6 +32,7 @@ WEB_HOST = '0.0.0.0'
 WEB_PORT = 5000
 SSL_CERT = 'cert.pem' 
 SSL_KEY = 'key.pem'
+LANGUAGE = 'zh'
 SECURITY_PATH = 'fuck'
 SECURITY_PASSWORD_HASH = b'$2b$04$T8NZ.WUIuO05WyVpLrQYiOdgqc2zbx7E9ysF03696dYvwGohCFzwC'
 
@@ -42,7 +43,7 @@ app.config['BODY_TIMEOUT'] = None
 control_list = {}
 delete_file = ""
 download_directory_name = "download"
-lp = load_lang_pack.LanguagePack("server_api.json", "zh")
+lp = load_lang_pack.LanguagePack("server_api.json", LANGUAGE)
 lp.load()
 
 # 服务器核心类
