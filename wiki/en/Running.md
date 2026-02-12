@@ -44,7 +44,7 @@ Reference running result:
 (server)>
 ```
 
-Finally, go back one level and compile `client.go`:
+Finally, compile `client.go`:
 ```bash
 go build -o <output_filename> client.go
 ```
