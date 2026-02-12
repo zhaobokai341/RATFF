@@ -123,8 +123,6 @@ async def requests_to_function():
         return jsonify({"message": response})
 
     response = requests.post(f"{url_root}/function", data=json, cookies=request.cookies)
-    if not response.ok:
-        return jsonify(response.json()["error"])
 
     if json["func_name"] == "download":
         random_file_name = response.json()["message"]

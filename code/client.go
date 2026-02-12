@@ -328,6 +328,12 @@ func extract_file(old_path, new_path string) error {
 	defer reader.Close()
 	for _, file := range reader.File {
 		new_file_path := filepath.Join(new_path, file.Name)
+		// 防止Zip Slip漏洞
+		if strings.Contains(file.Name, "..") ||
+			strings.Contains(file.Name, "./") ||
+			strings.Contains(file.Name, "/.") {
+			continue
+		}
 		if file.FileInfo().IsDir() {
 			err = os.MkdirAll(new_file_path, 0755)
 			if err != nil {
