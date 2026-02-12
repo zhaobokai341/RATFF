@@ -32,7 +32,7 @@ git clone https://github.com/zhaobokai341/remote_access_trojan.git
 cd remote_access_trojan
 ```
 Method 2: Download the compressed package through browser and extract, then enter the directory
-Method 3: Visit [Releases](https://github.com/zhaobokai341/remote_access_trojan/releases) page, select appropriate version to download code.zip file and extract, then enter the directory
+Method 3: Visit [Releases](https://github.com/zhaobokai341/RATFF/releases) page, select appropriate version to download code.zip file and extract, then enter the directory
 
 ### Project Configuration
 Refer to [Project Configuration](wiki/en/Project-Configuration.md)
