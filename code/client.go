@@ -328,13 +328,22 @@ func extract_file(old_path, new_path string) error {
 	defer reader.Close()
 	for _, file := range reader.File {
 		new_file_path := filepath.Join(new_path, file.Name)
+		// 防止 Zip Slip 漏洞：确保目标路径仍在解压目录中
+		cleanPath := filepath.Clean(new_file_path)
+		rel, err := filepath.Rel(new_path, cleanPath)
+		if err != nil {
+			return err
+		}
+		if strings.HasPrefix(rel, ".."+string(os.PathSeparator)) || rel == ".." {
+			return fmt.Errorf("invalid file path in archive: %s", file.Name)
+		}
 		if file.FileInfo().IsDir() {
-			err = os.MkdirAll(new_file_path, 0755)
+			err = os.MkdirAll(cleanPath, 0755)
 			if err != nil {
 				return err
 			}
 		} else {
-			new_file, err := os.Create(new_file_path)
+			new_file, err := os.Create(cleanPath)
 			if err != nil {
 				return err
 			}
