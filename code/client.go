@@ -326,8 +326,18 @@ func extract_file(old_path, new_path string) error {
 		return err
 	}
 	defer reader.Close()
+
+	abs_dest_dir, err := filepath.Abs(new_path)
+	if err != nil {
+		return err
+	}
+
 	for _, file := range reader.File {
 		new_file_path := filepath.Join(new_path, filepath.Clean(file.Name))
+		abs_new_file_path, err := filepath.Abs(new_file_path)
+		if !strings.HasPrefix(abs_new_file_path, abs_dest_dir) {
+			continue
+		}
 		if file.FileInfo().IsDir() {
 			err = os.MkdirAll(new_file_path, 0755)
 			if err != nil {
