@@ -14,7 +14,7 @@ import load_lang_pack
 
 # 服务器配置
 LANGUAGE = "zh"
-API_SITE = "http://localhost:5000"  # 服务器地址
+API_SITE = "http://121.40.27.97:5000"  # 服务器地址
 API_PATH = "fuck"  # API路径
 APT_PASSWORD = "fuck"  # 访问密码
 

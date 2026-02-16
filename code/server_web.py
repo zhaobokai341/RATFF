@@ -23,7 +23,7 @@ app.config['MAX_CONTENT_LENGTH'] = None
 LANGUAGE = "zh"
 WEB_HOST = "0.0.0.0"
 WEB_PORT = 8000
-API_SITE = 'http://localhost:5000'
+API_SITE = 'http://127.0.0.1:5000'
 SECURITY_PATH = 'fuck'  # 安全路径
 SECURITY_PASSWORD_HASH = '6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e'  # 密码哈希值
 
@@ -44,7 +44,7 @@ lp_file_manager.load()
 # 安全验证函数
 def check(cookie):
     """验证用户cookie是否有效"""
-    if requests.post(f"{url_root}/function", cookies=cookie).status_code == 401:
+    if requests.post(f"{url_root}/function", data={"func_name": "verify"}, cookies=cookie).status_code == 401:
         return False
     return True
 

@@ -390,20 +390,20 @@
             // 读取文件为 base64
             const fileReader = new FileReader();
             const fileContent = await new Promise((resolve, reject) => {
-            fileReader.onload = e => {
-                const dataUrl = e.target.result;
-                const base64 = dataUrl.split(',')[1];
-                resolve(base64);
-            };
-            fileReader.onerror = reject;
-            fileReader.readAsDataURL(file);
-            load_file_manager();
-        });
+                fileReader.onload = e => {
+                    const dataUrl = e.target.result;
+                    const base64 = dataUrl.split(',')[1];
+                    resolve(base64);
+                };
+                fileReader.onerror = reject;
+                console.log(file);
+                fileReader.readAsDataURL(file);
+            });
 
             // 准备请求数据
             const requestData = {
                 func_name: "upload",
-                id: "{{id}}",
+                id: "{{ id }}",
                 path: path,
                 file: fileContent,
             };
@@ -455,13 +455,12 @@
         });
 
         document.getElementById("upload_file").getElementsByTagName("input")[0].addEventListener("change", async function(event) {
-            for (let file in event.target.files) {
-                let target_path = prompt('{{ lp.g("input_upload_target_path") }}');
-                if (target_path == null) {
-                    return ;
-                }
-                await upload_file(file, target_path);
+            let file = event.target.files[0];
+            let target_path = prompt('{{ lp.g("input_upload_target_path") }}');
+            if (target_path == null) {
+                return ;
             }
+            await upload_file(file, target_path);
         });
     </script>
 </body>

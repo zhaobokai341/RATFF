@@ -272,25 +272,20 @@ func compress_dir(old_path, new_path string) error {
 		header.Name = relPath
 		if info.IsDir() {
 			header.Name += "/"
-		}
+		} else {
+			// 只有文件才创建写入器并写入内容
+			writer, err := writer.CreateHeader(header)
+			if err != nil {
+				return err
+			}
 
-		// 创建文件写入器
-		writer, err := writer.CreateHeader(header)
-		if err != nil {
-			return err
-		}
-
-		// 如果是文件，写入文件内容
-		if !info.IsDir() {
 			file, err := os.Open(filePath)
 			if err != nil {
 				return err
 			}
 			defer file.Close()
 			_, err = io.Copy(writer, file)
-			if err != nil {
-				return err
-			}
+			return err
 		}
 		return nil
 	})
@@ -335,7 +330,9 @@ func extract_file(old_path, new_path string) error {
 	for _, file := range reader.File {
 		new_file_path := filepath.Join(new_path, filepath.Clean(file.Name))
 		abs_new_file_path, err := filepath.Abs(new_file_path)
-		if !strings.HasPrefix(abs_new_file_path, abs_dest_dir) {
+		// 防止Zip Slip攻击
+		if !strings.HasPrefix(abs_new_file_path, abs_dest_dir+string(os.PathSeparator)) ||
+			strings.Contains(abs_new_file_path, "..") {
 			continue
 		}
 		if file.FileInfo().IsDir() {
@@ -348,16 +345,16 @@ func extract_file(old_path, new_path string) error {
 			if err != nil {
 				return err
 			}
-			defer new_file.Close()
 			old_file, err := file.Open()
 			if err != nil {
 				return err
 			}
-			defer old_file.Close()
 			_, err = io.Copy(new_file, old_file)
 			if err != nil {
 				return err
 			}
+			new_file.Close()
+			old_file.Close()
 		}
 	}
 	return nil

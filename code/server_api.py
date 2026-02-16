@@ -368,6 +368,7 @@ async def function():
 
         if func_name in ["device_list",
                         "delete",
+                        "verify",
                         "systeminfo",
                         "command",
                         "background",
@@ -383,7 +384,9 @@ async def function():
                         "get_list_file", 
                         "get_pwd"]:
             server = Server()
-            if func_name == "device_list":
+            if func_name == "verify":
+                return jsonify({"type": "ok"})
+            elif func_name == "device_list":
                 return jsonify(await server.client_list())
             else:
                 if "id" not in json_data:
