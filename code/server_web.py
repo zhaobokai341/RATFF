@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 app = Quart(__name__)
 app.config['MAX_CONTENT_LENGTH'] = None
 LANGUAGE = "zh"
-WEB_HOST = "0.0.0.0"
+WEB_HOST = "127.0.0.1"
 WEB_PORT = 8000
 API_SITE = 'http://127.0.0.1:5000'
 SECURITY_PATH = 'fuck'  # 安全路径
