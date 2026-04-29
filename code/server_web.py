@@ -21,11 +21,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 app = Quart(__name__)
 app.config['MAX_CONTENT_LENGTH'] = None
 LANGUAGE = "zh"
-WEB_HOST = "127.0.0.1"
+WEB_HOST = "0.0.0.0"
 WEB_PORT = 8000
 API_SITE = 'http://127.0.0.1:5000'
 SECURITY_PATH = 'fuck'  # 安全路径
-SECURITY_PASSWORD_HASH = '6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e'  # 密码哈希值
+SECURITY_PASSWORD_HASH = b'$2b$04$T8NZ.WUIuO05WyVpLrQYiOdgqc2zbx7E9ysF03696dYvwGohCFzwC'
 
 # 全局变量
 download_directory_name = "web_download"
@@ -91,7 +91,7 @@ async def device(id):
 # 设备文件管理器页面路由
 @app.route(f'/{SECURITY_PATH}/file_manager/<id>')
 async def file_manager(id):
-    """显示文3件管理器页面"""
+    """显示文件管理器页面"""
     if not check(request.cookies): 
         return redirect(url_for('login'))
     return await render_template('file_manager.html', id=id, url_root=url_root, lp=lp_file_manager, language=LANGUAGE)

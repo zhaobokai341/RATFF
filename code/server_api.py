@@ -1,8 +1,10 @@
+# pylint: disable=all
+
 __author__ = "赵博凯"
 __license__ = "GPL v3"
 
 from quart import Quart, request, jsonify, send_file
-from sys import exit
+from sys import exit # pylint: disable=redefined-builtin
 
 import load_lang_pack
 
@@ -41,7 +43,7 @@ app = Quart(__name__)
 app.config['MAX_CONTENT_LENGTH'] = None
 app.config['BODY_TIMEOUT'] = None 
 control_list = {}
-delete_file = ""
+device_lock = []
 download_directory_name = "download"
 lp = load_lang_pack.LanguagePack("server_api.json", LANGUAGE)
 lp.load()
@@ -55,7 +57,7 @@ class Server:
         logging.info(lp.g("about"))
         return lp.g("about")
     
-    async def client_list(self):
+    async def client_list(self) -> list | str:
         logging.info(lp.g("getting_client_list"))
         if len(control_list) == 0:
             logging.info(lp.g("no_connected_devices"))
@@ -68,10 +70,10 @@ class Server:
                     'ip': device[1]['ip'],
                     'systeminfo': device[1]['systeminfo']
                 })
-            logging.info(f"{lp.g('device_list')}: {devices}")
+            logging.info("%s: %s", lp.g('device_list'), devices)
             return devices
     
-    async def delete(self, id):
+    async def delete(self, id) -> str:
         logging.info(f"{lp.g('deleting_device')}: {id}")
         global control_list
         if id in control_list:
@@ -91,12 +93,12 @@ class Server:
 
 # 客户端控制类
 class ControlClient:
-    def __init__(self, id):
+    def __init__(self, id : str):
         logging.info(f"{lp.g('initializing_client_controller')}: {id}")
         self.id = id
         self.websocket = control_list[id]['websocket']
-    
-    async def system_info(self):
+
+    async def system_info(self) -> str:
         logging.info(lp.g("getting_device_system_information"))
         try:
             await self.websocket.send("systeminfo")
@@ -107,7 +109,7 @@ class ControlClient:
             logging.error(f"{lp.g('failed_to_get_system_information')}: {str(e)}")
             raise
     
-    async def delete_file(self, file):
+    async def delete_file(self, file : str) -> str:
         logging.info(f"{lp.g('deleting_file')}: {file}")
         try:
             await self.websocket.send(f"delete:{file}")
@@ -120,10 +122,10 @@ class ControlClient:
             logging.error(f"{lp.g('failed_to_delete_file')}: {str(e)}")
             raise
     
-    async def move_file(self, old_file, new_file):
-        logging.info(f"{lp.g('moving_file')}: {old_file} -> {new_file}")
+    async def move_file(self, source : str, target : str) -> str:
+        logging.info(f"{lp.g('moving_file')}: {source} -> {target}")
         try:
-            await self.websocket.send(f"mv:{old_file}(*.*){new_file}")
+            await self.websocket.send(f"mv:{source}(*.*){target}")
             result = await self.websocket.recv()
             if result != "ok":
                 raise Exception(result)
@@ -133,7 +135,7 @@ class ControlClient:
             logging.error(f"{lp.g('failed_to_move_file')}: {str(e)}")
             raise
 
-    async def compress_file(self, file, target_file):
+    async def compress_file(self, file : str, target_file):
         logging.info(f"{lp.g('compressing_file')}: {file} -> {target_file}")
         try:
             await self.websocket.send(f"compress:{file}(*.*){target_file}")
@@ -366,116 +368,113 @@ async def function():
         func_name = json_data["func_name"]
         logging.info(f"{lp.g('requested_function')}: {func_name}")
 
-        if func_name in ["device_list",
-                        "delete",
-                        "verify",
-                        "systeminfo",
-                        "command",
-                        "background",
-                        "delete_file",
-                        "extract",
-                        "compress",
-                        "copy_file",
-                        "move_file",
-                        "create_directory",
-                        "change_directory", 
-                        "upload", 
-                        "download", 
-                        "get_list_file", 
-                        "get_pwd"]:
-            server = Server()
-            if func_name == "verify":
-                return jsonify({"type": "ok"})
-            elif func_name == "device_list":
-                return jsonify(await server.client_list())
-            else:
-                if "id" not in json_data:
-                    logging.warning(lp.g("device_id_not_provided"))
-                    return jsonify({'error': lp.g('device_id_not_provided')}), 400
-                device_id = json_data["id"]
-                logging.info(f"{lp.g('target_device')}: {device_id}")
-                client_list = await server.client_list()
-                if isinstance(client_list, str):
-                    logging.warning(f"{lp.g('device_does_not_exist')}: {device_id}")
-                    return jsonify({'error': f"{lp.g('device_with_id_does_not_exist')}{device_id}"}), 400
-                if not any(device_id in device.values() for device in client_list):
-                    logging.warning(f"{lp.g('device_does_not_exist')}: {device_id}")
-                    return jsonify({'error': f"{lp.g('device_with_id_does_not_exist')}{device_id}"}), 400
-                
-                if func_name == "delete":
-                    return jsonify({"message": await server.delete(device_id)})
+        server = Server()
+        if func_name == "verify":
+            return jsonify({"type": "ok"})
+        elif func_name == "device_list":
+            return jsonify(await server.client_list())
+        
+        if "id" not in json_data:
+            logging.warning(lp.g("device_id_not_provided"))
+            return jsonify({'error': lp.g('device_id_not_provided')}), 400
+        device_id = json_data["id"]
+        logging.info(f"{lp.g('target_device')}: {device_id}")
+        client_list = await server.client_list()
+        if isinstance(client_list, str):
+            logging.warning(f"{lp.g('device_does_not_exist')}: {device_id}")
+            return jsonify({'error': f"{lp.g('device_with_id_does_not_exist')}{device_id}"}), 400
+        if not any(device_id in device.values() for device in client_list):
+            logging.warning(f"{lp.g('device_does_not_exist')}: {device_id}")
+            return jsonify({'error': f"{lp.g('device_with_id_does_not_exist')}{device_id}"}), 400
+        
+        if func_name == "delete":
+            return jsonify({"message": await server.delete(device_id)})
+        
+        if device_id in device_lock:
+            while device_id in device_lock:
+                await asyncio.sleep(0.3)
+        device_lock.append(device_id)
+        control_client = ControlClient(device_id)
+        try:
+            if func_name == "systeminfo":
+                return jsonify({"message": await control_client.system_info()})
+            
+            if func_name in ["command", "background"]:
+                if "command" not in json_data:
+                    logging.warning(lp.g("command_not_provided"))
+                    return jsonify({'error': lp.g('command_not_provided')}), 400
+                command = json_data["command"]
+                if func_name == "command":
+                    return jsonify({"message": await control_client.execute_command(command)})
                 else:
-                    control_client = ControlClient(device_id)
-                    if func_name == "systeminfo":
-                        return jsonify({"message": await control_client.system_info()})
-                    else:
-                        if func_name in ["command", "background"]:
-                            if "command" not in json_data:
-                                logging.warning(lp.g("command_not_provided"))
-                                return jsonify({'error': lp.g('command_not_provided')}), 400
-                            command = json_data["command"]
-                            if func_name == "command":
-                                return jsonify({"message": await control_client.execute_command(command)})
-                            else:
-                                return jsonify({"message": await control_client.background(command)})
-                        elif func_name in ["delete_file", "create_directory", "download"]:
-                            if "path" not in json_data:
-                                logging.warning(lp.g("path_not_provided"))
-                                return jsonify({'error': lp.g('path_not_provided')}), 400
-                            target_path = json_data["path"]
-                            if func_name == "delete_file":
-                                return jsonify({"message": await control_client.delete_file(target_path)})
-                            elif func_name == "create_directory":
-                                return jsonify({"message": await control_client.create_directory(target_path)})
-                            elif func_name == "download":
-                                return jsonify({"message": await control_client.download_file(target_path)})
-                        elif func_name in ["copy_file", "move_file"]:
-                            if "old_path" not in json_data or "new_path" not in json_data:
-                                logging.warning(lp.g("file_name_not_provided"))
-                                return jsonify({'error': lp.g('file_name_not_provided')}), 400
-                            old_name = json_data["old_path"]
-                            new_name = json_data["new_path"]
-                            if func_name == "copy_file":
-                                return jsonify({"message": await control_client.copy_file(old_name, new_name)})
-                            elif func_name == "move_file":
-                                return jsonify({"message": await control_client.move_file(old_name, new_name)})
-                        elif func_name in ["compress", "extract"]:
-                            if "source_path" not in json_data or "target_path" not in json_data:
-                                logging.warning(lp.g("path_not_provided"))
-                                return jsonify({'error': lp.g('path_not_provided')}), 400
-                            source_path = json_data["source_path"]
-                            target_path = json_data["target_path"]
-                            if func_name == "compress":
-                                return jsonify({"message": await control_client.compress_file(source_path, target_path)})
-                            elif func_name == "extract":
-                                return jsonify({"message": await control_client.extract_file(source_path, target_path)})
-                        elif func_name == "get_list_file":
-                            return jsonify({"message": await control_client.get_file_list()})
-                        elif func_name == "get_pwd":
-                            return jsonify({"message": await control_client.get_pwd()})
-                        elif func_name == "change_directory":
-                            if "directory" not in json_data:
-                                logging.warning(lp.g("directory_not_provided"))
-                                return jsonify({'error': lp.g('directory_not_provided')}), 400
-                            
-                            directory = json_data["directory"]
-                            return jsonify({"message": await control_client.change_directory(directory)})
-                        else:
-                            if func_name == "upload":
-                                file = await request.files
-                                if "file" not in file:
-                                    logging.warning(lp.g("file_not_provided"))
-                                    return jsonify({'error': lp.g('file_not_provided')}), 400
-                                if "path" not in json_data:
-                                    logging.warning(lp.g("path_not_provided"))
-                                    return jsonify({'error': lp.g('path_not_provided')}), 400
-                                
-                                target_path = json_data['path']
-                                file = file["file"]
-                                return jsonify({"message": await control_client.upload_file(target_path, file)})
-        else:
-            logging.warning(f"{lp.g('invalid_function')}: {func_name}")
-            return jsonify({'error': lp.g('invalid_function_name_provided')}), 400
+                    return jsonify({"message": await control_client.background(command)})
+            
+            if func_name in ["delete_file", "create_directory", "download"]:
+                if "path" not in json_data:
+                    logging.warning(lp.g("path_not_provided"))
+                    return jsonify({'error': lp.g('path_not_provided')}), 400
+                target_path = json_data["path"]
+                if func_name == "delete_file":
+                    return jsonify({"message": await control_client.delete_file(target_path)})
+                
+                if func_name == "create_directory":
+                    return jsonify({"message": await control_client.create_directory(target_path)})
+                else:
+                    return jsonify({"message": await control_client.download_file(target_path)})
+            if func_name in ["copy_file", "move_file"]:
+                if "old_path" not in json_data or "new_path" not in json_data:
+                    logging.warning(lp.g("file_name_not_provided"))
+                    return jsonify({'error': lp.g('file_name_not_provided')}), 400
+                old_name = json_data["old_path"]
+                new_name = json_data["new_path"]
+                if func_name == "copy_file":
+                    return jsonify({"message": await control_client.copy_file(old_name, new_name)})
+                else:
+                    return jsonify({"message": await control_client.move_file(old_name, new_name)})
+            
+            if func_name in ["compress", "extract"]:
+                if "source_path" not in json_data or "target_path" not in json_data:
+                    logging.warning(lp.g("path_not_provided"))
+                    return jsonify({'error': lp.g('path_not_provided')}), 400
+                source_path = json_data["source_path"]
+                target_path = json_data["target_path"]
+                if func_name == "compress":
+                    return jsonify({"message": await control_client.compress_file(source_path, target_path)})
+                else:
+                    return jsonify({"message": await control_client.extract_file(source_path, target_path)})
+
+            if func_name == "get_list_file":
+                return jsonify({"message": await control_client.get_file_list()})
+            
+            
+            if func_name == "get_pwd":
+                return jsonify({"message": await control_client.get_pwd()})
+            
+            if func_name == "change_directory":
+                if "directory" not in json_data:
+                    logging.warning(lp.g("directory_not_provided"))
+                    return jsonify({'error': lp.g('directory_not_provided')}), 400
+                
+                directory = json_data["directory"]
+                return jsonify({"message": await control_client.change_directory(directory)})
+            
+            if func_name == "upload":
+                file = await request.files
+                if "file" not in file:
+                    logging.warning(lp.g("file_not_provided"))
+                    return jsonify({'error': lp.g('file_not_provided')}), 400
+                if "path" not in json_data:
+                    logging.warning(lp.g("path_not_provided"))
+                    return jsonify({'error': lp.g('path_not_provided')}), 400
+                
+                target_path = json_data['path']
+                file = file["file"]
+                return jsonify({"message": await control_client.upload_file(target_path, file)})
+            else:
+                logging.warning(f"{lp.g('invalid_function')}: {func_name}")
+                return jsonify({'error': lp.g('invalid_function_name_provided')}), 400
+        finally:
+            device_lock.remove(device_id)
     
     except Exception as e:
         logging.error(f"{lp.g('request_processing_error')}: {str(e)}")
@@ -499,7 +498,7 @@ async def handle_client(websocket):
         "systeminfo": systeminfo
     }
     
-    logging.info(f"{lp.g('client_connected_successfully')} {ip}，ID: {websocket.id}")
+    logging.info(f"{lp.g('client_connected_successfully')} {ip}, ID: {websocket.id}")
     try:
         await websocket.wait_closed()
     except Exception as e:
@@ -512,7 +511,7 @@ async def handle_client(websocket):
 # 服务器主循环
 async def server_loop():
     logging.info(lp.g("initializing_server"))
-    logging.info(f"{lp.g('certificate_path')}: {SSL_CERT}，{lp.g('key_path')}: {SSL_KEY}")
+    logging.info(f"{lp.g('certificate_path')}: {SSL_CERT}, {lp.g('key_path')}: {SSL_KEY}")
     
     try:
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)

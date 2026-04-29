@@ -1,459 +1,538 @@
 __author__ = "赵博凯"
 __license__ = "MIT"
 
-import os
-import requests
 import json
+import os
 
+from sys import exit # pylint: disable=redefined-builtin
+
+import load_lang_pack
+import requests
 import rich.console
 import rich.table
 import rich.text
-
-from sys import exit
-import load_lang_pack
+from requests.exceptions import HTTPError
 
 # 服务器配置
-LANGUAGE = "zh"
-API_SITE = "http://121.40.27.97:5000"  # 服务器地址
+LANGUAGE = "zh" # 语言
+API_SITE = "http://127.0.0.1:5000"  # 服务器地址
 API_PATH = "fuck"  # API路径
 APT_PASSWORD = "fuck"  # 访问密码
+REQUEST_TIMEOUT = 10 # 请求超时时间
 
 # 初始化语言包
 lp = load_lang_pack.LanguagePack("server.json", LANGUAGE)
 lp.load()
 
-# 输出函数
-def output(*args, type=""):
-    console = rich.console.Console()
-    if type.strip() == "":
-        print(*args)
-    else:
-        if type == "info":
-            console.log(f"[white on blue][*][/white on blue]", *args, style="white")
-        elif type == "warning":
-            console.log(f"[white on blue][!][/white on blue]", *args, style="white")
-        elif type == "error":
-            console.log(f"[white on red][-][/white on red]", *args, style="bold red")
-        elif type == "success":
-            console.log(f"[white on green][+][/white on green]", *args, style="green")
-        elif type == "debug":
-            console.log(f"[grey50][|][/grey50]", *args, style="grey50")
-        else:
-            raise ValueError(f"Invalid type: {type}")
-
 # 服务器操作类
 class Server:
-    @staticmethod
-    def device_list():
-        """获取并显示设备列表"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "device_list"}, 
-                                cookies=cookie)
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
-        result = response.json()
-        if type(result) != list:
-            output(result, type="info")
-            return
-        Table = rich.table.Table(title=lp.g("device_list_title"))
-        Table.add_column(lp.g("device_id"), justify="center", style="cyan")
-        Table.add_column(lp.g("device_ip"), justify="center", style="magenta")
-        Table.add_column(lp.g("device_info"), justify="center", style="green")
-        for i in result:
-            Table.add_row(rich.text.Text(i["id"], overflow="fold"), 
-                            rich.text.Text(i["ip"], overflow="fold"), 
-                            rich.text.Text(i["systeminfo"], overflow="fold"))
-        output(Table, type="info")
+    def __init__(self, device_id : str, cookie : dict):
+        self.id = device_id
+        self.cookie = cookie
 
-    @staticmethod
-    def select_device(id):
+        def request_post(data : dict, files : dict=None) -> requests.Response:
+            response = requests.post(f"{API_SITE}/{API_PATH}/function",
+                                data=data,
+                                cookies=self.cookie,
+                                timeout=REQUEST_TIMEOUT,
+                                files=files
+                        )
+            if not response.ok:
+                raise HTTPError(
+                    f"{lp.g('request_failed')}: {response.status_code} {response.json()}"
+                )
+            return response
+
+        self.request_post = request_post
+
+    def device_list(self) -> list[dict] | str:
+        """获取设备列表"""
+        response = self.request_post({"func_name": "device_list"})
+        return response.json()
+
+    def select_device(self) -> str:
         """选择要控制的设备"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                    data={"func_name": "device_list"}, 
-                                    cookies=cookie)
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
+        response = self.request_post({"func_name": "device_list"})
         result = response.json()
-        if type(result) != list:
-            raise Exception(result)
+        if not isinstance(result, list):
+            raise TypeError(result)
         for i in result:
-            if id in i["id"] or id in i["ip"] or id in i["systeminfo"]:
-                selected_id = i["id"]
-                output(f"{lp.g('selected_device')}: {selected_id}", type="success")
-                return selected_id
-        raise Exception(f"{lp.g('device_not_found')}: {id}")
+            if self.id in i["id"] or self.id in i["ip"] or self.id in i["systeminfo"]:
+                return i["id"]
+        raise ValueError(f"{lp.g('device_not_found')}: {self.id}")
 
-    @staticmethod   
-    def delete_device(id):
+    def delete_device(self):
         """删除指定设备"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                    data={"func_name": "delete", "id": id}, 
-                                    cookies=cookie)
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
-        output(f"{lp.g('deleted_device')}: {id}", type="success")
-        
-    @staticmethod
-    def systeminfo(id):
+        self.request_post({"func_name": "delete", "id": self.id})
+
+    def systeminfo(self) -> str:
         """获取设备系统信息"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "systeminfo", "id": id}, 
-                                cookies=cookie)
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
-        system_info = json.loads(response.json()["message"])
-        with open("systeminfo.json", "w") as f:
-            json.dump(system_info, f, indent=4, ensure_ascii=False)
-        rich.print_json(data=system_info)
-        output(lp.g("system_info_saved"), type="success")
-    
-    @staticmethod
-    def ls(id):
+        response = self.request_post({"func_name": "systeminfo", "id": self.id})
+        return json.loads(response.json()["message"])
+
+    def ls(self) -> str:
         """列出设备当前目录文件"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "get_list_file", "id": id}, 
-                                cookies=cookie)
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
+        response = self.request_post({"func_name": "get_list_file", "id": self.id})
         result = response.json()
-        result = result["message"]
-        result = json.loads(result)
-        rich.print_json(data=result)
-    
-    @staticmethod
-    def pwd(id):
+        return json.loads(result["message"])
+
+    def pwd(self) -> str:
         """获取设备当前工作目录"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "get_pwd", "id": id}, 
-                                cookies=cookie)
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
+        response = self.request_post({"func_name": "get_pwd", "id": self.id})
         result = response.json()
-        output(result["message"], type="info")
+        return result["message"]
 
-    @staticmethod
-    def delete(id, file_path):
+    def delete(self, file_path : str) -> str:
         """删除设备上的文件"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "delete_file", "id": id, "path": file_path}, 
-                                cookies=cookie)
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
-        result = response.json()
-        if result["message"] == "ok":
-            output(f"{lp.g('deleted_file')}: {file_path}", type="success")
-        else:
-            output(f"{lp.g('delete_file_failed')}: {result['message']}", type="error")
-    
-    @staticmethod
-    def move(id, old_path, new_path):
+        response = self.request_post({"func_name": "delete_file", "id": self.id, "path": file_path})
+        return response.json()
+
+    def move(self, old_path : str, new_path : str) -> str:
         """移动该设备上的文件"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "move_file", "id": id, "old_path": old_path, "new_path": new_path}, 
-                                cookies=cookie)
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
-        result = response.json()
-        if result["message"] == "ok":
-            output(f"{lp.g('moved_file')}: {old_path} -> {new_path}", type="success")
-        else:
-            output(f"{lp.g('move_file_failed')}: {result['message']}", type="error")
+        response = self.request_post(
+            {
+                "func_name": "move_file",
+                "id": self.id,
+                "old_path": old_path,
+                "new_path": new_path
+            }
+        )
+        return response.json()
 
-    @staticmethod
-    def copy_file(id, source_path, target_path):
+    def copy_file(self, source_path : str, target_path : str) -> str:
         """复制文件"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "copy_file", "id": id, "old_path": source_path, "new_path": target_path}, 
-                                cookies=cookie)
-        if not response.ok:
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
-        result = response.json()
-        if result["message"] == "ok":
-            output(f"{lp.g('copied_file')}: {source_path} -> {target_path}", type="success")
-        else:
-            output(f"{lp.g('copy_file_failed')}: {result['message']}", type="error")
+        response = self.request_post(
+            {
+                "func_name": "copy_file",
+                "id": self.id,
+                "old_path": source_path,
+                "new_path": target_path
+            }
+        )
+        return response.json()
 
-    @staticmethod
-    def compress(id, source_path, target_path):
+    def compress(self, source_path : str, target_path : str) -> str:
         """压缩文件"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function",
-                                data={"func_name": "compress", "id": id, "source_path": source_path, "target_path": target_path},
-                                cookies=cookie)
-        if not response.ok:
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
-        result = response.json()
-        if result["message"] == "ok":
-            output(f"{lp.g('compressed_file')}: {source_path} -> {target_path}", type="success")
-        else:
-            output(f"{lp.g('compress_file_failed')}: {result['message']}", type="error")
+        response = self.request_post(
+            {
+                "func_name": "compress",
+                "id": self.id,
+                "source_path": source_path,
+                "target_path": target_path
+            }
+        )
+        return response.json()
 
-    @staticmethod
-    def extract(id, source_path, target_path):
+    def extract(self, source_path : str, target_path : str) -> str:
         """解压文件"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function",
-                                data={"func_name": "extract", "id": id, "source_path": source_path, "target_path": target_path},
-                                cookies=cookie)
-        if not response.ok:
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {response.json()}")
-        result = response.json()
-        if result["message"] == "ok":
-            output(f"{lp.g('extracted_file')}: {source_path} -> {target_path}", type="success")
-        else:
-            output(f"{lp.g('extract_file_failed')}: {result['message']}", type="error")
+        response = self.request_post(
+            {
+                "func_name": "extract",
+                "id": self.id,
+                "source_path": source_path,
+                "target_path": target_path
+            }
+        )
+        return response.json()
 
-    @staticmethod
-    def command(id):
-        """进入设备命令模式"""
-        while True:
-            command = input(f"(command)<{id}>>")
-            if command.strip().lower() == "exit": 
-                break
-            response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                     data={"func_name": "command", "id": id, "command": command},
-                                     cookies=cookie)
-            result = response.json()
-            if not response.ok: 
-                raise Exception(f"{lp.g('request_failed')}: {response.status_code} {result["error"]}")
-            result = json.loads(result["message"])
-            for i in result.items():
-                output(f"{i[0]}: {i[1]}", type="info")
-    
-    @staticmethod
-    def background(id, command):
+    def command(self, cmd : str) -> str:
+        """执行设备命令"""
+        response = self.request_post({"func_name": "command", "id": self.id, "command": cmd})
+        return json.loads(response.json()["message"])
+
+    def background(self, command : str) -> str:
         """在设备上后台执行命令"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "background", "id": id, "command": command}, 
-                                cookies=cookie)
-        result = response.json()
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {result["error"]}")
-        if "ok" in result["message"]:
-            output(f"{lp.g('command_executed_in_background')}: {command}", type="success")
-        else:
-            output(f"{lp.g('command_execution_failed')}: {result["message"]}", type="error")
-    
-    @staticmethod
-    def mkdir(id, directory):
-        """在设备上创建目录"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "create_directory", "id": id, "path": directory}, 
-                                cookies=cookie)
-        result = response.json()
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {result['error']}")
-        if result["message"] == "ok":
-            output(f"{lp.g('directory_created')}: {directory}", type="success")
-        else:
-            output(f"{lp.g('directory_creation_failed')}: {result['message']}", type="error")
+        response = self.request_post({"func_name": "background", "id": self.id, "command": command})
+        return response.json()
 
-    @staticmethod
-    def cd(id, directory):
+    def mkdir(self, directory : str) -> str:
+        """在设备上创建目录"""
+        response = self.request_post(
+            {
+                "func_name": "create_directory",
+                "id": self.id,
+                "path": directory
+            }
+        )
+        return response.json()
+
+    def cd(self, directory : str) -> str:
         """切换设备工作目录"""
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "change_directory", "id": id, "directory": directory}, 
-                                cookies=cookie)
-        result = response.json()
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {result["error"]}")
-        if result["message"] == "ok":
-            output(f"{lp.g('directory_changed')}: {directory}", type="success")
-        else:
-            output(f"{lp.g('directory_change_failed')}: {result["message"]}", type="error")
-    
-    @staticmethod
-    def upload(id, local_file_path, target_file_path):
+        response = self.request_post(
+            {
+                "func_name": "change_directory",
+                "id": self.id,
+                "directory": directory
+            }
+        )
+        return response.json()
+
+    def upload(self, local_file_path : str, target_file_path : str) -> str:
         """上传文件到设备"""
-        output(lp.g("uploading_file"), type="info")
         try:
             with open(local_file_path, "rb") as f:
-                response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                        data={"func_name": "upload" ,"id": id, "path": target_file_path}, 
-                        files={"file": f},
-                        cookies=cookie)
+                response = self.request_post(
+                        data={"func_name": "upload" ,"id": self.id, "path": target_file_path},
+                        files={"file": f}
+                        )
         except Exception as e:
-            output(f"{lp.g('file_upload_failed')}: {e}", type="error")
-            return
-        
+            raise IOError(f"{lp.g('file_upload_failed')}: {e}") from e
+
+        return response.json()
+
+    def download(self, target_file_path : str, local_file_path : str) -> str:
+        """下载设备上的文件"""
+        response = self.request_post(
+            {
+                "func_name": "download",
+                "id": self.id,
+                "path": target_file_path
+            }
+        )
         result = response.json()
         if not response.ok:
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {result['error']}")
-        if "ok" in result["message"]:
-            output(f"{lp.g('file_uploaded')}: {local_file_path} -> {target_file_path}", type="success")
-        else:
-            output(f"{lp.g('file_upload_failed')}: {result['message']}", type="error")
-
-    @staticmethod
-    def download(id, target_file_path, local_file_path):
-        ''"下载设备上的文件"""
-        output(lp.g("downloading_file"), type="info")
-        response = requests.post(f"{API_SITE}/{API_PATH}/function", 
-                                data={"func_name": "download", "id": id, "path": target_file_path}, 
-                                cookies=cookie)
-        result = response.json()
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code} {result["error"]}")
+            raise HTTPError(f"{lp.g('request_failed')}: {response.status_code} {result["error"]}")
         result = result["message"]
         if len(result) != 64 or not result.isalpha():
-            output(f"{lp.g('file_download_failed')}: {result}", type="error")
-            return
-        response = requests.get(f"{API_SITE}/{API_PATH}/download/{result}", cookies=cookie)
-        if not response.ok: 
-            raise Exception(f"{lp.g('request_failed')}: {response.status_code}")
+            raise IOError(f"{lp.g('file_download_failed')}: {result}")
+        response = requests.get(
+            f"{API_SITE}/{API_PATH}/download/{result}",
+            cookies=self.cookie,
+            timeout=REQUEST_TIMEOUT
+        )
+        if not response.ok:
+            raise HTTPError(f"{lp.g('request_failed')}: {response.status_code}")
         try:
             with open(local_file_path, "wb") as f:
                 f.write(response.content)
         except Exception as e:
-            output(f"{lp.g('file_download_failed')}: {e}", type="error")
-            return
-        output(f"{lp.g('file_downloaded')}: {target_file_path} -> {local_file_path}", type="success")
+            raise HTTPError(f"{lp.g('file_download_failed')}: {e}") from e
 
+# 用户输入类
+class CommandInput:
+    # TODO: 重构函数和类，要求用shlex实现关于命令和参数的分割
+    # TODO: 把重复的功能封装成函数
+    def __init__(self, cookie):
+        self.select_device = None
+        self.cookie = cookie
 
-def command_input():
-    """命令行交互主循环"""
-    select_device = None
-    while True:
-        try:
-            # 设备控制模式
-            if not select_device is None:
-                command = input(f"(console)<{select_device}>>")
-                command = command.strip()
-                match command:
-                    case "": pass
-                    case "help": 
-                        help_list = lp.g("console_help_info")
-                        for help_text in help_list:
-                            output(help_text, type="info")
-                    case "back": 
-                        select_device = None
-                    case "clear": 
-                        os.system("cls") if os.name == "nt" else os.system("clear")
-                    case "list": 
-                        Server.device_list()
-                    case "systeminfo":
-                        Server.systeminfo(select_device)
-                    case "ls":
-                        Server.ls(select_device)
-                    case "pwd":
-                        Server.pwd(select_device)
-                    case command if command.startswith("select "): 
-                        select_device = Server.select_device(command.split(" ", 1)[1])
-                    case command if command.startswith("rm "):
-                        Server.delete(select_device, command.split(" ", 1)[1])
-                    case command if command.startswith("command"): 
-                        Server.command(select_device)
-                    case command if command.startswith("bg "): 
-                        Server.background(select_device, command.split(" ", 1)[1])
-                    case command if command.startswith("cd "): 
-                        Server.cd(select_device, command.split(" ", 1)[1])
-                    case command if command.startswith("mkdir "):
-                        Server.mkdir(select_device, command.split(" ", 1)[1])
-                    case command if command.startswith("compress "):
-                        file_info = command.split(" ", 1)[1]
-                        file_info = file_info.split("(*.*)")
-                        if len(file_info) != 2:
-                            output(f"{lp.g('invalid_file_info')}", type="error")
-                            continue
-                        source_path = file_info[0]
-                        target_path = file_info[1]
-                        Server.compress(select_device, source_path, target_path)
-                    case command if command.startswith("extract "):
-                        file_info = command.split(" ", 1)[1]
-                        file_info = file_info.split("(*.*)")
-                        if len(file_info) != 2:
-                            output(f"{lp.g('invalid_file_info')}", type="error")
-                            continue
-                        source_path = file_info[0]
-                        target_path = file_info[1]
-                        Server.extract(select_device, source_path, target_path)
-                    case command if command.startswith("mv "):
-                        file_info = command.split(" ", 1)[1]
-                        file_info = file_info.split("(*.*)")
-                        if len(file_info) != 2:
-                            output(f"{lp.g('invalid_file_info')}", type="error")
-                            continue
-                        old_name = file_info[0]
-                        new_name = file_info[1]
-                        Server.move(select_device, old_name, new_name)
-                    case command if command.startswith("cp "):
-                        file_info = command.split(" ", 1)[1]
-                        file_info = file_info.split("(*.*)")
-                        if len(file_info) != 2:
-                            output(f"{lp.g('invalid_file_info')}", type="error")
-                            continue
-                        source_path = file_info[0]
-                        target_path = file_info[1]
-                        Server.copy_file(select_device, source_path, target_path)
-                    case command if command.startswith("upload "):
-                        file_info = command.split(" ", 1)[1]
-                        file_info = file_info.split("(*.*)")
-                        if len(file_info) != 2:
-                            output(f"{lp.g('invalid_file_info')}", type="error")
-                            continue
-                        local_file_path = file_info[0]
-                        target_file_path = file_info[1]
-                        Server.upload(select_device, local_file_path, target_file_path)
-                    case command if command.startswith("download "):
-                        file_info = command.split(" ", 1)[1]
-                        file_info = file_info.split("(*.*)")
-                        if len(file_info) != 2:
-                            output(f"{lp.g('invalid_file_info')}", type="error")
-                            continue
-                        target_file_path = file_info[0]
-                        local_file_path = file_info[1]
-                        Server.download(select_device, target_file_path, local_file_path)
-                    case _: 
-                        output(f"{lp.g('unknown_command')}: {command}", type="error")
-                continue
+    def command_input(self):
+        """命令行交互主循环"""
+        while True:
+            try:
+                server = Server(self.select_device, self.cookie)
+                # 设备控制模式
+                if self.select_device is not None:
+                    server = Server(self.select_device, self.cookie)
+                    while True:
+                        command = input(f"(console)<{self.select_device}>>")
+                        command = command.strip()
+                        if self.console(command, server) == "break":
+                            break
 
-            # 服务器控制模式
-            command = input("(server)>")
-            command = command.strip().lower()
-            match command:
-                case "": pass
-                case "exit": 
-                    exit(0)
-                case "help":
-                    help_list = lp.g("server_help_info")
-                    for help_text in help_list:
-                        output(help_text, type="info")
-                case "clear": 
-                    os.system("cls") if os.name == "nt" else os.system("clear")
-                case "about": 
-                    output(lp.g("about_info"), type="info")
-                case "list": 
-                    Server.device_list()
-                case command if command.startswith("select "): 
-                    select_device = Server.select_device(command.split(" ", 1)[1])
-                case command if command.startswith("delete "): 
-                    Server.delete_device(command.split(" ", 1)[1])
-                case _: 
-                    output(f"{lp.g('unknown_command')}: {command}", type="error")
-        except Exception as e:
-            output(f"{lp.g('error_occurred')}: {type(e).__name__}: {e}", type="error")
+                # 服务器控制模式
+                server = Server("", self.cookie)
+                while True:
+                    command = input("(server)>")
+                    command = command.strip().lower()
+                    if self.server_(command) == "break":
+                        break
+            except Exception as e:
+                output(f"{lp.g('error_occurred')}: {type(e).__name__}: {e}", type_="error")
+
+    def server_(self, command : str) -> str | None:
+        """服务端模式
+        服务端模式指的是未选择设备时使用的模式，主要用于选择，查看和管理设备
+        """
+        server = Server("", self.cookie)
+        match command:
+            case "":
+                return
+            case "exit":
+                exit(0)
+            case "help":
+                help_list = lp.g("server_help_info")
+                for help_text in help_list:
+                    output(help_text, type_="info")
+            case "clear":
+                if os.name == "nt":
+                    os.system("cls")
+                else:
+                    os.system("clear")
+            case "about":
+                output(lp.g("about_info"), type_="info")
+            case "list":
+                result = server.device_list()
+                if not isinstance(result, list):
+                    output(result, type_="info")
+                else:
+                    Table = rich.table.Table(title=lp.g("device_list_title"))
+                    Table.add_column(lp.g("device_id"), justify="center", style="cyan")
+                    Table.add_column(lp.g("device_ip"), justify="center", style="magenta")
+                    Table.add_column(lp.g("device_info"), justify="center", style="green")
+                    for i in result:
+                        Table.add_row(rich.text.Text(i["id"], overflow="fold"),
+                                    rich.text.Text(i["ip"], overflow="fold"),
+                                    rich.text.Text(i["systeminfo"], overflow="fold"))
+                    output(Table, type_="info")
+            case command if command.startswith("select "):
+                ready_select_id = command.split(" ", 1)[1]
+                server = Server(ready_select_id, self.cookie)
+                self.select_device = server.select_device()
+                output(f"{lp.g('selected_device')}: {self.select_device}", type_="success")
+                return "break"
+            case command if command.startswith("delete "):
+                ready_delete_id = command.split(" ", 1)[1]
+                server = Server(ready_delete_id, self.cookie)
+                server.delete_device()
+                output(f"{lp.g('deleted_device')}: {ready_delete_id}", type_="success")
+            case _:
+                output(f"{lp.g('unknown_command')}: {command}", type_="error")
+
+    def console(self, command : str, server : Server) -> str | None:
+        """控制台模式
+        控制台模式指的是已选择设备时使用的模式，主要用于控制设备
+        """
+        match command:
+            case "":
+                return
+            case "help":
+                help_list = lp.g("console_help_info")
+                for help_text in help_list:
+                    output(help_text, type_="info")
+            case "back":
+                self.select_device = None
+                return "break"
+            case "clear":
+                if os.name == "nt":
+                    os.system("cls")
+                else:
+                    os.system("clear")
+            case "list":
+                result = server.device_list()
+                if not isinstance(result, list):
+                    output(result, type_="info")
+                else:
+                    Table = rich.table.Table(title=lp.g("device_list_title"))
+                    Table.add_column(lp.g("device_id"), justify="center", style="cyan")
+                    Table.add_column(lp.g("device_ip"), justify="center", style="magenta")
+                    Table.add_column(lp.g("device_info"), justify="center", style="green")
+                    for i in result:
+                        Table.add_row(rich.text.Text(i["id"], overflow="fold"),
+                                    rich.text.Text(i["ip"], overflow="fold"),
+                                    rich.text.Text(i["systeminfo"], overflow="fold"))
+                    output(Table, type_="info")
+            case "systeminfo":
+                system_info = server.systeminfo()
+                with open("systeminfo.json", "w", encoding="utf-8") as f:
+                    json.dump(system_info, f, indent=4, ensure_ascii=False)
+                rich.print_json(data=system_info)
+                output(lp.g("system_info_saved"), type_="success")
+            case "ls":
+                result = server.ls()
+                rich.print_json(data=result)
+            case "pwd":
+                result = server.pwd()
+                output(result, type_="info")
+            case command if command.startswith("select "):
+                self.select_device = server.select_device()
+                output(f"{lp.g('selected_device')}: {self.select_device}", type_="success")
+            case command if command.startswith("rm "):
+                result = server.delete(command.split(" ", 1)[1])
+                if result["message"] == "ok":
+                    output(f"{lp.g('deleted_file')}: {command.split(' ', 1)[1]}", type_="success")
+                else:
+                    output(f"{lp.g('delete_file_failed')}: {result['message']}", type_="error")
+            case command if command.startswith("command"):
+                while True:
+                    cmd = input(f"(command)<{self.select_device}>>")
+                    if cmd.strip().lower() == "exit":
+                        break
+                    if cmd.strip().lower() == "":
+                        continue
+                    result = server.command(cmd)
+                    for i in result.items():
+                        output(f"{i[0]}: {i[1]}", type_="info")
+            case command if command.startswith("bg "):
+                result = server.background(command.split(" ", 1)[1])
+                if "ok" in result["message"]:
+                    output(
+                        f"{lp.g('command_executed_in_background')}: {command.split(' ', 1)[1]}",
+                        type_="success"
+                    )
+                else:
+                    output(
+                        f"{lp.g('command_execution_failed')}: {result['message']}",
+                        type_="error")
+            case command if command.startswith("cd "):
+                result = server.cd(command.split(" ", 1)[1])
+                if result["message"] == "ok":
+                    output(
+                        f"{lp.g('directory_changed')}: {command.split(' ', 1)[1]}",
+                        type_="success"
+                    )
+                else:
+                    output(f"{lp.g('directory_change_failed')}: {result['message']}", type_="error")
+            case command if command.startswith("mkdir "):
+                result = server.mkdir(command.split(" ", 1)[1])
+                if result["message"] == "ok":
+                    output(
+                        f"{lp.g('directory_created')}: {command.split(' ', 1)[1]}",
+                        type_="success"
+                    )
+                else:
+                    output(
+                            f"{lp.g('directory_creation_failed')}: {result['message']}",
+                            type_="error"
+                            )
+            case command if command.startswith("compress "):
+                file_info = command.split(" ", 1)[1]
+                file_info = file_info.split("(*.*)")
+                if len(file_info) != 2:
+                    output(f"{lp.g('invalid_file_info')}", type_="error")
+                    return
+                source_path = file_info[0]
+                target_path = file_info[1]
+                result = server.compress(source_path, target_path)
+                if result["message"] == "ok":
+                    output(
+                        f"{lp.g('compressed_file')}: {source_path} -> {target_path}",
+                        type_="success"
+                    )
+                else:
+                    output(f"{lp.g('compress_file_failed')}: {result['message']}", type_="error")
+            case command if command.startswith("extract "):
+                file_info = command.split(" ", 1)[1]
+                file_info = file_info.split("(*.*)")
+                if len(file_info) != 2:
+                    output(f"{lp.g('invalid_file_info')}", type_="error")
+                    return
+                source_path = file_info[0]
+                target_path = file_info[1]
+                result = server.extract(source_path, target_path)
+                if result["message"] == "ok":
+                    output(
+                        f"{lp.g('extracted_file')}: {source_path} -> {target_path}",
+                        type_="success"
+                    )
+                else:
+                    output(f"{lp.g('extract_file_failed')}: {result['message']}", type_="error")
+            case command if command.startswith("mv "):
+                file_info = command.split(" ", 1)[1]
+                file_info = file_info.split("(*.*)")
+                if len(file_info) != 2:
+                    output(f"{lp.g('invalid_file_info')}", type_="error")
+                    return
+                old_name = file_info[0]
+                new_name = file_info[1]
+                result = server.move(old_name, new_name)
+                if result["message"] == "ok":
+                    output(f"{lp.g('moved_file')}: {old_name} -> {new_name}", type_="success")
+                else:
+                    output(f"{lp.g('move_file_failed')}: {result['message']}", type_="error")
+            case command if command.startswith("cp "):
+                file_info = command.split(" ", 1)[1]
+                file_info = file_info.split("(*.*)")
+                if len(file_info) != 2:
+                    output(f"{lp.g('invalid_file_info')}", type_="error")
+                    return
+                source_path = file_info[0]
+                target_path = file_info[1]
+                result = server.copy_file(source_path, target_path)
+                if result["message"] == "ok":
+                    output(f"{lp.g('copied_file')}: {source_path} -> {target_path}",
+                           type_="success")
+                else:
+                    output(f"{lp.g('copy_file_failed')}: {result['message']}", type_="error")
+            case command if command.startswith("upload "):
+                file_info = command.split(" ", 1)[1]
+                file_info = file_info.split("(*.*)")
+                if len(file_info) != 2:
+                    output(f"{lp.g('invalid_file_info')}", type_="error")
+                    return
+                local_file_path = file_info[0]
+                target_file_path = file_info[1]
+                output(lp.g("uploading_file"), type_="info")
+                try:
+                    result = server.upload(local_file_path, target_file_path)
+                    if "ok" in result["message"]:
+                        output(
+                            f"{lp.g('file_uploaded')}: {local_file_path} -> {target_file_path}",
+                            type_="success"
+                        )
+                    else:
+                        output(f"{lp.g('file_upload_failed')}: {result['message']}", type_="error")
+                except Exception as e:
+                    output(str(e), type_="error")
+            case command if command.startswith("download "):
+                file_info = command.split(" ", 1)[1]
+                file_info = file_info.split("(*.*)")
+                if len(file_info) != 2:
+                    output(f"{lp.g('invalid_file_info')}", type_="error")
+                    return
+                target_file_path = file_info[0]
+                local_file_path = file_info[1]
+                output(lp.g("downloading_file"), type_="info")
+                try:
+                    server.download(target_file_path, local_file_path)
+                    output(
+                        f"{lp.g('file_downloaded')}: {target_file_path} -> {local_file_path}",
+                        type_="success"
+                    )
+                except Exception as e:
+                    output(str(e), type_="error")
+            case _:
+                output(f"{lp.g('unknown_command')}: {command}", type_="error")
+
+# 日志美化函数
+def output(*args, type_ : str=""):
+    console = rich.console.Console()
+    if type_.strip() == "":
+        print(*args)
+    else:
+        if type_ == "info":
+            console.log("[white on blue][*][/white on blue]", *args, style="white")
+        elif type_ == "warning":
+            console.log("[white on blue][!][/white on blue]", *args, style="white")
+        elif type_ == "error":
+            console.log("[white on red][-][/white on red]", *args, style="bold red")
+        elif type_ == "success":
+            console.log("[white on green][+][/white on green]", *args, style="green")
+        elif type_ == "debug":
+            console.log("[grey50][|][/grey50]", *args, style="grey50")
+        else:
+            raise ValueError(f"Invalid type: {type_}")
 
 if __name__ == "__main__":
     # 程序入口
-    output(lp.g("copyright"), type="info")
-    output(lp.g("program_starting"), type="info")
-    output(lp.g("verifying_password"), type="info")
+    output(lp.g("copyright"), type_="info")
+    output(lp.g("program_starting"), type_="info")
+    output(lp.g("verifying_password"), type_="info")
     try:
         # 验证服务器密码
-        response = requests.post(f"{API_SITE}/{API_PATH}/verify", json={"password": APT_PASSWORD})
+        response = requests.post(
+            f"{API_SITE}/{API_PATH}/verify",
+            json={"password": APT_PASSWORD},
+            timeout=REQUEST_TIMEOUT
+        )
         if response.status_code == 200:
             cookie = response.json()
-            output(f"{lp.g('verification_successful')}: {cookie}", type="success")
+            output(f"{lp.g('verification_successful')}: {cookie}", type_="success")
         else:
-            output(f"{lp.g('verification_failed')}: {response.status_code} {response.json()}", type="error")
+            output(
+                f"{lp.g('verification_failed')}: {response.status_code} {response.json()}",
+                type_="error"
+            )
             exit(1)
     except Exception as e:
-        output(f"{lp.g('verification_failed')}: {type(e).__name__}: {e}", type="error")
+        output(f"{lp.g('verification_failed')}: {type(e).__name__}: {e}", type_="error")
         exit(1)
 
     try:
         # 启动命令行交互
-        command_input()
+        CommandInput(cookie).command_input()
     except Exception as e:
-        output(f"{lp.g('error_occurred')}: {type(e).__name__}: {e}", type="error")
+        output(f"{lp.g('error_occurred')}: {type(e).__name__}: {e}", type_="error")
     except KeyboardInterrupt:
-        output(lp.g("user_interrupted"), type="warning")
+        output(lp.g("user_interrupted"), type_="warning")
         exit(1)
