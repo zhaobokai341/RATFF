@@ -11,7 +11,7 @@
 # 服务器主循环
 async def server_loop():
     logging.info(lp.g("initializing_server"))
-    logging.info(f"{lp.g('certificate_path')}: {SSL_CERT}，{lp.g('key_path')}: {SSL_KEY}")
+    logging.info("%s: %s, %s: %s", lp.g("certificate_path"), SSL_CERT, lp.g("key_path"), SSL_KEY)
 
     try:
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -21,10 +21,10 @@ async def server_loop():
         logging.error(lp.g("certificate_file_not_found"))
         exit(1)
     except Exception as e:
-        logging.error(f"{lp.g('ssl_loading_failed')}: {str(e)}")
+        logging.error("%s: %s", lp.g("ssl_loading_failed"), str(e))
         exit(1)
 
-    logging.info(f"{lp.g('starting_server')}: {HOST}:{PORT}")
+    logging.info("%s: %s:%s", lp.g("starting_server"), HOST, PORT)
     try:
         async with websockets.serve(handle_client, HOST, PORT, ssl=ssl_context):
             logging.info(lp.g("server_started_successfully"))
@@ -40,14 +40,16 @@ async def server_loop():
     # 移除SSL配置，使用None表示不启用SSL
     ssl_context = None
 
-    logging.info(f"{lp.g('starting_server')}: {HOST}:{PORT}")
+    logging.info("%s: %s:%s", lp.g("starting_server"), HOST, PORT)
     try:
         # 注意：ssl参数设为None
         async with websockets.serve(handle_client, HOST, PORT, ssl=ssl_context):
             logging.info(lp.g("server_started_successfully"))
 ```
 
-## 步骤2：修改客户端 [client.go](file:///home/zhaobokai/vscode/RATFF/code/client.go)
+## 步骤2：修改客户端 [client/main.go](file:///home/zhaobokai/vscode/RATFF/code/client/main.go)
+
+**注意**：从v3.0版本开始，客户端代码位于`code/client/`目录下。
 
 找到客户端连接部分：
 ```go
@@ -79,6 +81,20 @@ for {
 	)
 ```
 
+## 步骤3：重新编译和部署 / Step 3: Recompile and Deploy
+
+1. **重新编译客户端**：
+   ```bash
+   cd code/client
+   go build -o client .
+   ```
+
+2. **重启服务端**：
+   ```bash
+   cd code
+   python server_api.py
+   ```
+
 # 安全建议：
 1. **生产环境强烈建议使用WSS协议**
 2. 只在本地测试或受控环境中考虑使用WS协议
@@ -99,7 +115,7 @@ Find the SSL configuration section in the server main loop function:
 # Server main loop
 async def server_loop():
     logging.info(lp.g("initializing_server"))
-    logging.info(f"{lp.g('certificate_path')}: {SSL_CERT}，{lp.g('key_path')}: {SSL_KEY}")
+    logging.info("%s: %s, %s: %s", lp.g("certificate_path"), SSL_CERT, lp.g("key_path"), SSL_KEY)
 
     try:
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -109,10 +125,10 @@ async def server_loop():
         logging.error(lp.g("certificate_file_not_found"))
         exit(1)
     except Exception as e:
-        logging.error(f"{lp.g('ssl_loading_failed')}: {str(e)}")
+        logging.error("%s: %s", lp.g("ssl_loading_failed"), str(e))
         exit(1)
 
-    logging.info(f"{lp.g('starting_server')}: {HOST}:{PORT}")
+    logging.info("%s: %s:%s", lp.g("starting_server"), HOST, PORT)
     try:
         async with websockets.serve(handle_client, HOST, PORT, ssl=ssl_context):
             logging.info(lp.g("server_started_successfully"))
@@ -128,14 +144,16 @@ async def server_loop():
     # Remove SSL configuration, use None to indicate no SSL
     ssl_context = None
 
-    logging.info(f"{lp.g('starting_server')}: {HOST}:{PORT}")
+    logging.info("%s: %s:%s", lp.g("starting_server"), HOST, PORT)
     try:
         # Note: ssl parameter set to None
         async with websockets.serve(handle_client, HOST, PORT, ssl=ssl_context):
             logging.info(lp.g("server_started_successfully"))
 ```
 
-## Step 2: Modify Client [client.go](file:///home/zhaobokai/vscode/RATFF/code/client.go)
+## Step 2: Modify Client [client/main.go](file:///home/zhaobokai/vscode/RATFF/code/client/main.go)
+
+**Note**: Starting from v3.0, the client code is located in the `code/client/` directory.
 
 Find the client connection section:
 ```go
@@ -169,15 +187,16 @@ for {
 
 ## Step 3: Recompile and Deploy
 
-1. **Recompile Server**:
+1. **Recompile Client**:
    ```bash
-   # server_api.py is a Python script, no compilation needed, run directly
+   cd code/client
+   go build -o client .
    ```
 
-2. **Recompile Client**:
+2. **Restart Server**:
    ```bash
-   cd ..  # Back to project root directory
-   go build -o client client.go
+   cd code
+   python server_api.py
    ```
 
 # Security Recommendations:

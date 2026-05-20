@@ -455,8 +455,6 @@ disable=raw-checker-failed,
       R0913,  # too-many-arguments (参数太多)
       R0914,  # too-many-locals (局部变量太多)
       W0212,  # protected-access (访问以_开头的内部成员)
-      W0611,  # unused-import
-      W0612,  # unused-variable
       W0621,
       W0718,
 

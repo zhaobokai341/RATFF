@@ -3,40 +3,42 @@ __license__ = "MIT"
 
 import json
 import os
-
-from sys import exit # pylint: disable=redefined-builtin
-
 import load_lang_pack
 import requests
 import rich.console
 import rich.table
 import rich.text
+import shlex
+
+from sys import exit  # pylint: disable=redefined-builtin
 from requests.exceptions import HTTPError
 
 # 服务器配置
-LANGUAGE = "zh" # 语言
+LANGUAGE = "zh"  # 语言
 API_SITE = "http://127.0.0.1:5000"  # 服务器地址
 API_PATH = "fuck"  # API路径
 APT_PASSWORD = "fuck"  # 访问密码
-REQUEST_TIMEOUT = 10 # 请求超时时间
+REQUEST_TIMEOUT = 10  # 请求超时时间
 
 # 初始化语言包
 lp = load_lang_pack.LanguagePack("server.json", LANGUAGE)
 lp.load()
 
+
 # 服务器操作类
 class Server:
-    def __init__(self, device_id : str, cookie : dict):
+    def __init__(self, device_id: str, cookie: dict):
         self.id = device_id
         self.cookie = cookie
 
-        def request_post(data : dict, files : dict=None) -> requests.Response:
-            response = requests.post(f"{API_SITE}/{API_PATH}/function",
-                                data=data,
-                                cookies=self.cookie,
-                                timeout=REQUEST_TIMEOUT,
-                                files=files
-                        )
+        def request_post(data: dict, files: dict = None) -> requests.Response:
+            response = requests.post(
+                f"{API_SITE}/{API_PATH}/function",
+                data=data,
+                cookies=self.cookie,
+                timeout=REQUEST_TIMEOUT,
+                files=files,
+            )
             if not response.ok:
                 raise HTTPError(
                     f"{lp.g('request_failed')}: {response.status_code} {response.json()}"
@@ -56,9 +58,13 @@ class Server:
         result = response.json()
         if not isinstance(result, list):
             raise TypeError(result)
-        for i in result:
-            if self.id in i["id"] or self.id in i["ip"] or self.id in i["systeminfo"]:
-                return i["id"]
+        for device in result:
+            if (
+                self.id in device["id"]
+                or self.id in device["ip"]
+                or self.id in device["systeminfo"]
+            ):
+                return device["id"]
         raise ValueError(f"{lp.g('device_not_found')}: {self.id}")
 
     def delete_device(self):
@@ -68,13 +74,13 @@ class Server:
     def systeminfo(self) -> str:
         """获取设备系统信息"""
         response = self.request_post({"func_name": "systeminfo", "id": self.id})
-        return json.loads(response.json()["message"])
+        return response.json()["message"]
 
     def ls(self) -> str:
         """列出设备当前目录文件"""
         response = self.request_post({"func_name": "get_list_file", "id": self.id})
         result = response.json()
-        return json.loads(result["message"])
+        return result["message"]
 
     def pwd(self) -> str:
         """获取设备当前工作目录"""
@@ -82,123 +88,123 @@ class Server:
         result = response.json()
         return result["message"]
 
-    def delete(self, file_path : str) -> str:
+    def delete(self, file_path: str) -> str:
         """删除设备上的文件"""
-        response = self.request_post({"func_name": "delete_file", "id": self.id, "path": file_path})
+        response = self.request_post(
+            {"func_name": "delete_file", "id": self.id, "path": file_path}
+        )
         return response.json()
 
-    def move(self, old_path : str, new_path : str) -> str:
+    def move(self, old_path: str, new_path: str) -> str:
         """移动该设备上的文件"""
         response = self.request_post(
             {
                 "func_name": "move_file",
                 "id": self.id,
                 "old_path": old_path,
-                "new_path": new_path
+                "new_path": new_path,
             }
         )
         return response.json()
 
-    def copy_file(self, source_path : str, target_path : str) -> str:
+    def copy_file(self, source_path: str, target_path: str) -> str:
         """复制文件"""
         response = self.request_post(
             {
                 "func_name": "copy_file",
                 "id": self.id,
                 "old_path": source_path,
-                "new_path": target_path
+                "new_path": target_path,
             }
         )
         return response.json()
 
-    def compress(self, source_path : str, target_path : str) -> str:
+    def compress(self, source_path: str, target_path: str) -> str:
         """压缩文件"""
         response = self.request_post(
             {
                 "func_name": "compress",
                 "id": self.id,
                 "source_path": source_path,
-                "target_path": target_path
+                "target_path": target_path,
             }
         )
         return response.json()
 
-    def extract(self, source_path : str, target_path : str) -> str:
+    def extract(self, source_path: str, target_path: str) -> str:
         """解压文件"""
         response = self.request_post(
             {
                 "func_name": "extract",
                 "id": self.id,
                 "source_path": source_path,
-                "target_path": target_path
+                "target_path": target_path,
             }
         )
         return response.json()
 
-    def command(self, cmd : str) -> str:
+    def command(self, cmd: str) -> str:
         """执行设备命令"""
-        response = self.request_post({"func_name": "command", "id": self.id, "command": cmd})
-        return json.loads(response.json()["message"])
+        response = self.request_post(
+            {"func_name": "command", "id": self.id, "command": cmd}
+        )
+        return response.json()["message"]
 
-    def background(self, command : str) -> str:
+    def background(self, command: str) -> str:
         """在设备上后台执行命令"""
-        response = self.request_post({"func_name": "background", "id": self.id, "command": command})
+        response = self.request_post(
+            {"func_name": "background", "id": self.id, "command": command}
+        )
         return response.json()
 
-    def mkdir(self, directory : str) -> str:
+    def mkdir(self, directory: str) -> str:
         """在设备上创建目录"""
         response = self.request_post(
-            {
-                "func_name": "create_directory",
-                "id": self.id,
-                "path": directory
-            }
+            {"func_name": "create_directory", "id": self.id, "path": directory}
         )
         return response.json()
 
-    def cd(self, directory : str) -> str:
+    def cd(self, directory: str) -> str:
         """切换设备工作目录"""
         response = self.request_post(
-            {
-                "func_name": "change_directory",
-                "id": self.id,
-                "directory": directory
-            }
+            {"func_name": "change_directory", "id": self.id, "directory": directory}
         )
         return response.json()
 
-    def upload(self, local_file_path : str, target_file_path : str) -> str:
+    def upload(self, local_file_path: str, target_file_path: str) -> str:
         """上传文件到设备"""
         try:
             with open(local_file_path, "rb") as f:
                 response = self.request_post(
-                        data={"func_name": "upload" ,"id": self.id, "path": target_file_path},
-                        files={"file": f}
-                        )
+                    data={
+                        "func_name": "upload",
+                        "id": self.id,
+                        "path": target_file_path,
+                    },
+                    files={"file": f},
+                )
         except Exception as e:
             raise IOError(f"{lp.g('file_upload_failed')}: {e}") from e
 
         return response.json()
 
-    def download(self, target_file_path : str, local_file_path : str) -> str:
+    def download(self, target_file_path: str, local_file_path: str) -> str:
         """下载设备上的文件"""
         response = self.request_post(
-            {
-                "func_name": "download",
-                "id": self.id,
-                "path": target_file_path
-            }
+            {"func_name": "download", "id": self.id, "path": target_file_path}
         )
         result = response.json()
         if not response.ok:
-            raise HTTPError(f"{lp.g('request_failed')}: {response.status_code} {result["error"]}")
+            raise HTTPError(
+                f"{lp.g('request_failed')}: {response.status_code} {result['error']}"
+            )
         result = result["message"]
         if len(result) != 64 or not result.isalpha():
             raise IOError(f"{lp.g('file_download_failed')}: {result}")
         response = requests.get(
             f"{API_SITE}/{API_PATH}/download/{result}",
             cookies=self.cookie,
-            timeout=REQUEST_TIMEOUT
+            timeout=REQUEST_TIMEOUT,
         )
         if not response.ok:
             raise HTTPError(f"{lp.g('request_failed')}: {response.status_code}")
@@ -208,13 +214,18 @@ class Server:
         except Exception as e:
             raise HTTPError(f"{lp.g('file_download_failed')}: {e}") from e
 
+
 # 用户输入类
 class CommandInput:
-    # TODO: 重构函数和类，要求用shlex实现关于命令和参数的分割
-    # TODO: 把重复的功能封装成函数
     def __init__(self, cookie):
         self.select_device = None
         self.cookie = cookie
+
+        def command_parse(command: str) -> tuple[str, list[str]]:
+            command = shlex.split(command)
+            return command[0].lower(), command[1:]
+
+        self.command_parse = command_parse
 
     def command_input(self):
         """命令行交互主循环"""
@@ -227,20 +238,24 @@ class CommandInput:
                     while True:
                         command = input(f"(console)<{self.select_device}>>")
                         command = command.strip()
-                        if self.console(command, server) == "break":
+                        command, args = self.command_parse(command)
+                        if self.console(command, args, server) == "break":
                             break
 
                 # 服务器控制模式
                 server = Server("", self.cookie)
                 while True:
                     command = input("(server)>")
-                    command = command.strip().lower()
-                    if self.server_(command) == "break":
+                    command = command.strip()
+                    command, args = self.command_parse(command)
+                    if self.server_(command, args) == "break":
                         break
             except Exception as e:
-                output(f"{lp.g('error_occurred')}: {type(e).__name__}: {e}", type_="error")
+                output(
+                    f"{lp.g('error_occurred')}: {type(e).__name__}: {e}", type_="error"
+                )
 
-    def server_(self, command : str) -> str | None:
+    def server_(self, command: str, args: tuple[str, ...]) -> str | None:
         """服务端模式
         服务端模式指的是未选择设备时使用的模式，主要用于选择，查看和管理设备
         """
@@ -268,28 +283,44 @@ class CommandInput:
                 else:
                     Table = rich.table.Table(title=lp.g("device_list_title"))
                     Table.add_column(lp.g("device_id"), justify="center", style="cyan")
-                    Table.add_column(lp.g("device_ip"), justify="center", style="magenta")
-                    Table.add_column(lp.g("device_info"), justify="center", style="green")
+                    Table.add_column(
+                        lp.g("device_ip"), justify="center", style="magenta"
+                    )
+                    Table.add_column(
+                        lp.g("device_info"), justify="center", style="green"
+                    )
                     for i in result:
-                        Table.add_row(rich.text.Text(i["id"], overflow="fold"),
-                                    rich.text.Text(i["ip"], overflow="fold"),
-                                    rich.text.Text(i["systeminfo"], overflow="fold"))
+                        Table.add_row(
+                            rich.text.Text(i["id"], overflow="fold"),
+                            rich.text.Text(i["ip"], overflow="fold"),
+                            rich.text.Text(i["systeminfo"], overflow="fold"),
+                        )
                     output(Table, type_="info")
-            case command if command.startswith("select "):
-                ready_select_id = command.split(" ", 1)[1]
+            case "select":
+                if not args:
+                    output(lp.g("no_device_id_specified"), type_="error")
+                    return
+                ready_select_id = args[0]
                 server = Server(ready_select_id, self.cookie)
                 self.select_device = server.select_device()
-                output(f"{lp.g('selected_device')}: {self.select_device}", type_="success")
+                output(
+                    f"{lp.g('selected_device')}: {self.select_device}", type_="success"
+                )
                 return "break"
-            case command if command.startswith("delete "):
-                ready_delete_id = command.split(" ", 1)[1]
+            case "delete":
+                if not args:
+                    output(lp.g("no_device_id_specified"), type_="error")
+                    return
+                ready_delete_id = args[0]
                 server = Server(ready_delete_id, self.cookie)
                 server.delete_device()
                 output(f"{lp.g('deleted_device')}: {ready_delete_id}", type_="success")
             case _:
                 output(f"{lp.g('unknown_command')}: {command}", type_="error")
 
-    def console(self, command : str, server : Server) -> str | None:
+    def console(
+        self, command: str, args: tuple[str, ...], server: Server
+    ) -> str | None:
         """控制台模式
         控制台模式指的是已选择设备时使用的模式，主要用于控制设备
         """
@@ -315,12 +346,18 @@ class CommandInput:
                 else:
                     Table = rich.table.Table(title=lp.g("device_list_title"))
                     Table.add_column(lp.g("device_id"), justify="center", style="cyan")
-                    Table.add_column(lp.g("device_ip"), justify="center", style="magenta")
-                    Table.add_column(lp.g("device_info"), justify="center", style="green")
+                    Table.add_column(
+                        lp.g("device_ip"), justify="center", style="magenta"
+                    )
+                    Table.add_column(
+                        lp.g("device_info"), justify="center", style="green"
+                    )
                     for i in result:
-                        Table.add_row(rich.text.Text(i["id"], overflow="fold"),
-                                    rich.text.Text(i["ip"], overflow="fold"),
-                                    rich.text.Text(i["systeminfo"], overflow="fold"))
+                        Table.add_row(
+                            rich.text.Text(i["id"], overflow="fold"),
+                            rich.text.Text(i["ip"], overflow="fold"),
+                            rich.text.Text(i["systeminfo"], overflow="fold"),
+                        )
                     output(Table, type_="info")
             case "systeminfo":
                 system_info = server.systeminfo()
@@ -334,16 +371,30 @@ class CommandInput:
             case "pwd":
                 result = server.pwd()
                 output(result, type_="info")
-            case command if command.startswith("select "):
+            case "select":
+                if not args:
+                    output(lp.g("no_device_id_specified"), type_="error")
+                    return
+                ready_select_id = args[0]
+                server = Server(ready_select_id, self.cookie)
                 self.select_device = server.select_device()
-                output(f"{lp.g('selected_device')}: {self.select_device}", type_="success")
-            case command if command.startswith("rm "):
-                result = server.delete(command.split(" ", 1)[1])
+                output(
+                    f"{lp.g('selected_device')}: {self.select_device}", type_="success"
+                )
+            case "rm":
+                if not args:
+                    output(lp.g("no_file_name_specified"), type_="error")
+                    return
+                file_name = args[0]
+                result = server.delete(file_name)
                 if result["message"] == "ok":
-                    output(f"{lp.g('deleted_file')}: {command.split(' ', 1)[1]}", type_="success")
+                    output(f"{lp.g('deleted_file')}: {file_name}", type_="success")
                 else:
-                    output(f"{lp.g('delete_file_failed')}: {result['message']}", type_="error")
-            case command if command.startswith("command"):
+                    output(
+                        f"{lp.g('delete_file_failed')}: {result['message']}",
+                        type_="error",
+                    )
+            case "command":
                 while True:
                     cmd = input(f"(command)<{self.select_device}>>")
                     if cmd.strip().lower() == "exit":
@@ -353,139 +404,160 @@ class CommandInput:
                     result = server.command(cmd)
                     for i in result.items():
                         output(f"{i[0]}: {i[1]}", type_="info")
-            case command if command.startswith("bg "):
-                result = server.background(command.split(" ", 1)[1])
+            case "bg":
+                if not args:
+                    output(lp.g("no_command_specified"), type_="error")
+                    return
+                bg_command = args[0]
+                result = server.background(bg_command)
                 if "ok" in result["message"]:
                     output(
-                        f"{lp.g('command_executed_in_background')}: {command.split(' ', 1)[1]}",
-                        type_="success"
+                        f"{lp.g('command_executed_in_background')}: {bg_command}",
+                        type_="success",
                     )
                 else:
                     output(
                         f"{lp.g('command_execution_failed')}: {result['message']}",
-                        type_="error")
-            case command if command.startswith("cd "):
-                result = server.cd(command.split(" ", 1)[1])
-                if result["message"] == "ok":
-                    output(
-                        f"{lp.g('directory_changed')}: {command.split(' ', 1)[1]}",
-                        type_="success"
+                        type_="error",
                     )
-                else:
-                    output(f"{lp.g('directory_change_failed')}: {result['message']}", type_="error")
-            case command if command.startswith("mkdir "):
-                result = server.mkdir(command.split(" ", 1)[1])
+            case "cd":
+                if not args:
+                    output(lp.g("no_directory_specified"), type_="error")
+                    return
+                directory = args[0]
+                result = server.cd(directory)
                 if result["message"] == "ok":
                     output(
-                        f"{lp.g('directory_created')}: {command.split(' ', 1)[1]}",
-                        type_="success"
+                        f"{lp.g('directory_changed')}: {bg_command}", type_="success"
                     )
                 else:
                     output(
-                            f"{lp.g('directory_creation_failed')}: {result['message']}",
-                            type_="error"
-                            )
-            case command if command.startswith("compress "):
-                file_info = command.split(" ", 1)[1]
-                file_info = file_info.split("(*.*)")
-                if len(file_info) != 2:
+                        f"{lp.g('directory_change_failed')}: {result['message']}",
+                        type_="error",
+                    )
+            case "mkdir":
+                if not args:
+                    output(lp.g("no_directory_specified"), type_="error")
+                    return
+                directory = args[0]
+                result = server.mkdir(directory)
+                if result["message"] == "ok":
+                    output(f"{lp.g('directory_created')}: {directory}", type_="success")
+                else:
+                    output(
+                        f"{lp.g('directory_creation_failed')}: {result['message']}",
+                        type_="error",
+                    )
+            case "compress":
+                if len(args) < 2:
                     output(f"{lp.g('invalid_file_info')}", type_="error")
                     return
-                source_path = file_info[0]
-                target_path = file_info[1]
+                source_path = args[0]
+                target_path = args[1]
                 result = server.compress(source_path, target_path)
                 if result["message"] == "ok":
                     output(
                         f"{lp.g('compressed_file')}: {source_path} -> {target_path}",
-                        type_="success"
+                        type_="success",
                     )
                 else:
-                    output(f"{lp.g('compress_file_failed')}: {result['message']}", type_="error")
-            case command if command.startswith("extract "):
-                file_info = command.split(" ", 1)[1]
-                file_info = file_info.split("(*.*)")
-                if len(file_info) != 2:
+                    output(
+                        f"{lp.g('compress_file_failed')}: {result['message']}",
+                        type_="error",
+                    )
+            case "extract":
+                if len(args) < 2:
                     output(f"{lp.g('invalid_file_info')}", type_="error")
                     return
-                source_path = file_info[0]
-                target_path = file_info[1]
+                source_path = args[0]
+                target_path = args[1]
                 result = server.extract(source_path, target_path)
                 if result["message"] == "ok":
                     output(
                         f"{lp.g('extracted_file')}: {source_path} -> {target_path}",
-                        type_="success"
+                        type_="success",
                     )
                 else:
-                    output(f"{lp.g('extract_file_failed')}: {result['message']}", type_="error")
-            case command if command.startswith("mv "):
-                file_info = command.split(" ", 1)[1]
-                file_info = file_info.split("(*.*)")
-                if len(file_info) != 2:
+                    output(
+                        f"{lp.g('extract_file_failed')}: {result['message']}",
+                        type_="error",
+                    )
+            case "mv":
+                if len(args) < 2:
                     output(f"{lp.g('invalid_file_info')}", type_="error")
                     return
-                old_name = file_info[0]
-                new_name = file_info[1]
+                old_name = args[0]
+                new_name = args[1]
                 result = server.move(old_name, new_name)
                 if result["message"] == "ok":
-                    output(f"{lp.g('moved_file')}: {old_name} -> {new_name}", type_="success")
+                    output(
+                        f"{lp.g('moved_file')}: {old_name} -> {new_name}",
+                        type_="success",
+                    )
                 else:
-                    output(f"{lp.g('move_file_failed')}: {result['message']}", type_="error")
-            case command if command.startswith("cp "):
-                file_info = command.split(" ", 1)[1]
-                file_info = file_info.split("(*.*)")
-                if len(file_info) != 2:
+                    output(
+                        f"{lp.g('move_file_failed')}: {result['message']}",
+                        type_="error",
+                    )
+            case "cp":
+                if len(args) < 2:
                     output(f"{lp.g('invalid_file_info')}", type_="error")
                     return
-                source_path = file_info[0]
-                target_path = file_info[1]
+                source_path = args[0]
+                target_path = args[1]
                 result = server.copy_file(source_path, target_path)
                 if result["message"] == "ok":
-                    output(f"{lp.g('copied_file')}: {source_path} -> {target_path}",
-                           type_="success")
+                    output(
+                        f"{lp.g('copied_file')}: {source_path} -> {target_path}",
+                        type_="success",
+                    )
                 else:
-                    output(f"{lp.g('copy_file_failed')}: {result['message']}", type_="error")
-            case command if command.startswith("upload "):
-                file_info = command.split(" ", 1)[1]
-                file_info = file_info.split("(*.*)")
-                if len(file_info) != 2:
+                    output(
+                        f"{lp.g('copy_file_failed')}: {result['message']}",
+                        type_="error",
+                    )
+            case "upload":
+                if len(args) < 2:
                     output(f"{lp.g('invalid_file_info')}", type_="error")
                     return
-                local_file_path = file_info[0]
-                target_file_path = file_info[1]
+                local_file_path = args[0]
+                target_file_path = args[1]
                 output(lp.g("uploading_file"), type_="info")
                 try:
                     result = server.upload(local_file_path, target_file_path)
                     if "ok" in result["message"]:
                         output(
                             f"{lp.g('file_uploaded')}: {local_file_path} -> {target_file_path}",
-                            type_="success"
+                            type_="success",
                         )
                     else:
-                        output(f"{lp.g('file_upload_failed')}: {result['message']}", type_="error")
+                        output(
+                            f"{lp.g('file_upload_failed')}: {result['message']}",
+                            type_="error",
+                        )
                 except Exception as e:
                     output(str(e), type_="error")
-            case command if command.startswith("download "):
-                file_info = command.split(" ", 1)[1]
-                file_info = file_info.split("(*.*)")
-                if len(file_info) != 2:
+            case "download":
+                if len(args) < 2:
                     output(f"{lp.g('invalid_file_info')}", type_="error")
                     return
-                target_file_path = file_info[0]
-                local_file_path = file_info[1]
+                target_file_path = args[0]
+                local_file_path = args[1]
                 output(lp.g("downloading_file"), type_="info")
                 try:
                     server.download(target_file_path, local_file_path)
                     output(
                         f"{lp.g('file_downloaded')}: {target_file_path} -> {local_file_path}",
-                        type_="success"
+                        type_="success",
                     )
                 except Exception as e:
                     output(str(e), type_="error")
             case _:
                 output(f"{lp.g('unknown_command')}: {command}", type_="error")
 
+
 # 日志美化函数
-def output(*args, type_ : str=""):
+def output(*args, type_: str = ""):
     console = rich.console.Console()
     if type_.strip() == "":
         print(*args)
@@ -503,6 +575,7 @@ def output(*args, type_ : str=""):
         else:
             raise ValueError(f"Invalid type: {type_}")
 
+
 if __name__ == "__main__":
     # 程序入口
     output(lp.g("copyright"), type_="info")
@@ -513,7 +586,7 @@ if __name__ == "__main__":
         response = requests.post(
             f"{API_SITE}/{API_PATH}/verify",
             json={"password": APT_PASSWORD},
-            timeout=REQUEST_TIMEOUT
+            timeout=REQUEST_TIMEOUT,
         )
         if response.status_code == 200:
             cookie = response.json()
@@ -521,7 +594,7 @@ if __name__ == "__main__":
         else:
             output(
                 f"{lp.g('verification_failed')}: {response.status_code} {response.json()}",
-                type_="error"
+                type_="error",
             )
             exit(1)
     except Exception as e:

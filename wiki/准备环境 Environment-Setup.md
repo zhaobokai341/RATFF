@@ -139,9 +139,19 @@ Go需要以下第三方库：
 - `github.com/shirou/gopsutil/v3/net` - 网络信息获取
 - `github.com/shirou/gopsutil/v3/process` - 进程信息获取
 
+**v3.0+ 版本说明**：客户端代码已重构为多文件结构，位于`code/client/`目录下。
+
 在当前项目中，使用以下命令：
 ```bash
+cd code/client
+go mod init ratff-client  # 如果尚未初始化
 go get github.com/gorilla/websocket github.com/shirou/gopsutil/v3/cpu github.com/shirou/gopsutil/v3/host github.com/shirou/gopsutil/v3/disk github.com/shirou/gopsutil/v3/mem github.com/shirou/gopsutil/v3/net github.com/shirou/gopsutil/v3/process
+```
+
+或者直接使用项目已有的go.mod文件（如果存在）：
+```bash
+cd code/client
+go mod download
 ```
 
 #### English
@@ -155,9 +165,19 @@ Go needs the following third-party libraries:
 - `github.com/shirou/gopsutil/v3/net` - Network information retrieval
 - `github.com/shirou/gopsutil/v3/process` - Process information retrieval
 
+**v3.0+ Version Note**: The client code has been refactored into a multi-file structure located in the `code/client/` directory.
+
 In the current project, use the following command:
 ```bash
+cd code/client
+go mod init ratff-client  # If not already initialized
 go get github.com/gorilla/websocket github.com/shirou/gopsutil/v3/cpu github.com/shirou/gopsutil/v3/host github.com/shirou/gopsutil/v3/disk github.com/shirou/gopsutil/v3/mem github.com/shirou/gopsutil/v3/net github.com/shirou/gopsutil/v3/process
+```
+
+Or directly use the existing go.mod file (if present):
+```bash
+cd code/client
+go mod download
 ```
 
 ## 配置证书 / Configure Certificates

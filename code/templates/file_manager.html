@@ -311,7 +311,7 @@
                 alert(data.error);
                 return ;
             }
-            return JSON.parse(data["message"]);
+            return data["message"];
         }
 
         async function get_pwd() {

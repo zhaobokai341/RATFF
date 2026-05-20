@@ -141,7 +141,7 @@
                         result.value += '{{ lp.g("error") }}' + ": " + data.error + "\n";
                         return ;
                     }
-                    data = JSON.parse(data.message);
+                    data = data.message;
                     data = JSON.stringify(data, null, 4)
                     result.value = data;
                 }
@@ -162,7 +162,7 @@
                             result.value += '{{ lp.g("error") }}' + ": " + data.error + "\n";
                             return ;
                         }
-                        data = JSON.parse(data.message);
+                        data = data.message;
                         for(let i in data){
                             result.value += `${i}: ${data[i]}\n`;
                         }
