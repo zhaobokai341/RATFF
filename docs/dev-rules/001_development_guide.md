@@ -26,9 +26,11 @@ RATFF/
 ## 2. 代码规范
 
 ### 2.1 文件行数限制
-- **单个文件不超过150行**
+- **源代码文件不超过150行**
+- **测试文件（`*_test.go`）不超过300行**
 - 超过则拆分为多个文件
 - 按职责拆分，而非按行数
+- 当函数属于同一职责域且拆分后降低可读性时，可适当放宽限制
 
 ### 2.2 函数规范
 - 单个函数不超过50行
@@ -39,7 +41,9 @@ RATFF/
 - 共享代码放 `shared/` 目录
 - 工具函数封装在 `shared/utils.go`
 - 协议定义在 `shared/protocol.go`
+- WebSocket 工具函数在 `shared/ws_utils.go`（`SetupHeartbeat`、`SendWSMessage`、`ReadWSMessage`）
 - 优先使用标准库和成熟第三方库
+- 禁止在多个模块中重复定义相同逻辑
 
 ### 2.4 日志规范
 - 使用 `shared.InitLogger()` 初始化
@@ -73,13 +77,15 @@ log.WithFields(logrus.Fields{
 | 功能 | 库 | 版本 |
 |------|-----|------|
 | HTTP | gin-gonic/gin | latest |
-| WebSocket | nhooyr.io/websocket | latest |
+| WebSocket | gorilla/websocket | latest |
 | 日志 | sirupsen/logrus | latest |
 | CLI | urfave/cli/v2 | latest |
 | UUID | google/uuid | latest |
 | 限流 | golang.org/x/time | latest |
 | JWT | golang-jwt/jwt/v5 | latest |
 | 密码加密 | golang.org/x/crypto/bcrypt | latest |
+| 终端输入 | golang.org/x/term | latest |
+| 测试断言 | stretchr/testify | latest |
 
 ### 3.1 前端技术栈
 
@@ -166,7 +172,7 @@ func handleNewEndpoint(manager *ClientManager) gin.HandlerFunc {
 - 测试文件命名：`xxx_test.go`
 - 测试函数命名：`TestXxx`
 - 使用标准库 `testing` 包
-- 覆盖率目标：核心逻辑 > 80%
+- 覆盖率目标：核心逻辑 > 80%，整体 > 60%
 
 ```bash
 # 运行所有测试
@@ -177,11 +183,90 @@ go test ./shared/...
 
 # 带覆盖率
 go test -cover ./...
+
+# 详细输出
+go test -v ./...
 ```
 
-### 6.2 代码检查（必须）
+### 6.2 测试编写规范
+
+**测试分类：**
+- **单元测试**：测试纯函数逻辑，无外部依赖
+- **集成测试**：使用 `httptest` 模拟 HTTP/WebSocket 交互
+- **边界测试**：测试空值、错误值、异常输入
+
+**测试模板：**
+```go
+func TestXxxSuccess(t *testing.T) {
+    // 1. 准备测试数据
+    // 2. 执行被测函数
+    // 3. 断言结果
+    assert.Equal(t, expected, actual)
+}
+
+func TestXxxError(t *testing.T) {
+    // 测试错误路径
+    assert.Error(t, err)
+}
+
+func TestXxxEdgeCase(t *testing.T) {
+    // 测试边界条件
+    // 使用子测试
+    t.Run("case1", func(t *testing.T) { ... })
+    t.Run("case2", func(t *testing.T) { ... })
+}
+```
+
+**HTTP/WebSocket 测试：**
+- 使用 `net/http/httptest.NewServer()` 创建测试服务器
+- WebSocket 测试使用 `gorilla/websocket` 的 `DefaultDialer`
+- 测试完成后务必 `defer server.Close()` 和 `defer conn.Close()`
+
+**断言规范：**
+- 使用 `github.com/stretchr/testify/assert` 进行断言
+- 每个测试至少包含一个断言
+- 错误消息使用 `t.Errorf("Expected %s, got %s", expected, actual)`
+
+### 6.3 Mock 使用规范
+
+**HTTP Mock：**
+```go
+server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    // 模拟服务端行为
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(response)
+}))
+defer server.Close()
+
+// 获取 WebSocket URL
+wsURL := "ws" + server.URL[4:] + "/ws"
+```
+
+**配置 Mock：**
+- 测试前设置 `cfg` 全局变量
+- 测试后使用 `defer` 恢复原始值
+- 使用环境变量时设置后清理：`os.Setenv()` + `defer os.Unsetenv()`
+
+### 6.4 测试覆盖率要求
+
+| 模块类型 | 最低覆盖率 | 说明 |
+|---------|---------|------|
+| shared（核心库） | > 80% | 协议、工具函数必须高覆盖 |
+| server_api（服务端） | > 60% | HTTP 路由、WebSocket 处理 |
+| client（客户端） | > 60% | 连接、命令执行逻辑 |
+| server_cli（CLI） | > 50% | 输出、交互逻辑 |
+| server_web（Web） | > 30% | 代理、页面渲染 |
+
+**提升覆盖率的方法：**
+- 为核心业务逻辑编写单元测试
+- 使用 `httptest` 测试 HTTP 端点
+- 使用 WebSocket 测试服务器测试连接逻辑
+- 测试错误路径和边界条件
+
+### 6.5 代码检查（必须）
 - 每次编写完代码后执行 `golangci-lint run`
 - 修复所有 lint 问题后再提交
+- 测试文件中的错误返回值也必须检查（使用 `_ =` 显式忽略）
 
 ```bash
 # 安装
@@ -194,12 +279,12 @@ golangci-lint run ./...
 golangci-lint run ./shared/...
 ```
 
-### 6.3 编译检查
+### 6.6 编译检查
 ```bash
 go build ./...
 ```
 
-### 6.4 运行测试
+### 6.7 运行测试
 ```bash
 # 启动server_api
 cd server_api && go run .

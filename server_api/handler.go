@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
-	"time"
 
 	"RATFF/shared"
 
@@ -27,10 +25,10 @@ func handleWebSocket(manager *ClientManager) gin.HandlerFunc {
 		}
 		defer conn.Close()
 
-		setupHeartbeat(conn)
+		shared.SetupHeartbeat(conn)
 
 		var msg shared.Message
-		if err := readMessage(conn, &msg); err != nil {
+		if err := shared.ReadWSMessage(conn, &msg); err != nil {
 			log.Error("Read register message failed: ", err)
 			return
 		}
@@ -62,47 +60,10 @@ func handleWebSocket(manager *ClientManager) gin.HandlerFunc {
 	}
 }
 
-// setupHeartbeat configures ping/pong for the WebSocket connection.
-func setupHeartbeat(conn *websocket.Conn) {
-	_ = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	conn.SetPongHandler(func(string) error {
-		_ = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
-	})
-
-	go func() {
-		ticker := time.NewTicker(30 * time.Second)
-		defer ticker.Stop()
-		for range ticker.C {
-			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
-			}
-		}
-	}()
-}
-
-// readMessage reads and unmarshals a WebSocket message.
-func readMessage(conn *websocket.Conn, msg *shared.Message) error {
-	_, data, err := conn.ReadMessage()
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(data, msg)
-}
-
-// sendMessage marshals and sends a message over WebSocket.
-func sendMessage(conn *websocket.Conn, msg shared.Message) error {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
-	return conn.WriteMessage(websocket.TextMessage, data)
-}
-
 // handleMessage processes incoming messages from a client connection.
 func handleMessage(conn *websocket.Conn, manager *ClientManager, clientID string) error {
 	var msg shared.Message
-	if err := readMessage(conn, &msg); err != nil {
+	if err := shared.ReadWSMessage(conn, &msg); err != nil {
 		return err
 	}
 
@@ -114,12 +75,12 @@ func handleMessage(conn *websocket.Conn, manager *ClientManager, clientID string
 
 	switch msg.Type {
 	case shared.MsgHeartbeat:
-		return sendMessage(conn, shared.NewMessage(shared.MsgHeartbeat, "", "", nil))
+		return shared.SendWSMessage(conn, shared.NewMessage(shared.MsgHeartbeat, "", "", nil))
 
 	case shared.MsgCommand:
 		targetID := msg.ClientID
 		if !manager.IsOnline(targetID) {
-			return sendMessage(conn, shared.NewMessage(shared.MsgError, "", "",
+			return shared.SendWSMessage(conn, shared.NewMessage(shared.MsgError, "", "",
 				map[string]interface{}{"error": "client offline"}))
 		}
 		return manager.Send(targetID, msg)

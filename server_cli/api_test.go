@@ -420,7 +420,8 @@ func TestDeleteClientSuccess(t *testing.T) {
 	callCount := 0
 	server := setupTestServer(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
-		if r.URL.Path == "/api/clients" {
+		switch r.URL.Path {
+		case "/api/clients":
 			resp := map[string]interface{}{
 				"clients": []shared.ClientInfo{
 					{ID: "test-001", IP: "192.168.1.1", Hostname: "host1", OSInfo: "Linux"},
@@ -431,9 +432,9 @@ func TestDeleteClientSuccess(t *testing.T) {
 				http.Error(w, "Encode error", http.StatusInternalServerError)
 				return
 			}
-		} else if r.URL.Path == "/api/command" {
+		case "/api/command":
 			w.WriteHeader(http.StatusOK)
-		} else {
+		default:
 			http.NotFound(w, r)
 		}
 	})
