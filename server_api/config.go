@@ -21,7 +21,7 @@ func loadConfig() {
 	cfg = Config{
 		Host:              getEnv("HOST", "0.0.0.0"),
 		Port:              getEnv("PORT", "6341"),
-		PathPassword:      getEnv("LOGIN_PATH", "fuck"),
+		PathPassword:      getEnv("LOGIN_PATH", ""),
 		LoginPasswordHash: getEnv("LOGIN_PASSWORD_HASH", "$2b$12$lfEEs6tTAdp61DYg7xiorOkspqK2iTObW/qK6fOsT6JxBfbRBGjn2"),
 		JWTSecret:         getEnv("JWT_SECRET", "default-jwt-secret-change-in-production"),
 	}
