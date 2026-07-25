@@ -52,7 +52,10 @@ func verifyPasswordWithAPI(pathPassword, password string) (string, error) {
 
 // handleLoginPage renders the login page.
 func handleLoginPage(c *gin.Context) {
-	c.HTML(200, "login.html", gin.H{"title": "Login"})
+	c.HTML(200, "login.html", gin.H{
+		"title": T(c, "login_title"),
+		"lang":  getLang(c),
+	})
 }
 
 // handleLogin verifies password via server_api and sets auth cookie.
@@ -60,7 +63,11 @@ func handleLogin(c *gin.Context) {
 	password := c.PostForm("password")
 
 	if password == "" {
-		c.HTML(400, "login.html", gin.H{"title": "Login", "error": "password required"})
+		c.HTML(400, "login.html", gin.H{
+			"title": T(c, "login_title"),
+			"error": T(c, "login_error_required"),
+			"lang":  getLang(c),
+		})
 		return
 	}
 
@@ -68,7 +75,12 @@ func handleLogin(c *gin.Context) {
 	token, err := verifyPasswordWithAPI(pathPassword, password)
 	if err != nil {
 		log.WithError(err).Warn("Failed to connect to server_api")
-		c.HTML(401, "login.html", gin.H{"title": "Login", "error": "invalid credentials"})
+		c.SetCookie("path_prefix", "", -1, "/", "", cfg.CookieSecure, true)
+		c.HTML(401, "login.html", gin.H{
+			"title": T(c, "login_title"),
+			"error": T(c, "login_error_invalid"),
+			"lang":  getLang(c),
+		})
 		return
 	}
 

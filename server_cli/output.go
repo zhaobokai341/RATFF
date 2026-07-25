@@ -62,6 +62,27 @@ func StyleCommandOutput(output string) string {
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("240")).
-		Padding(1, 2).
+		Padding(0, 2).
 		Render(output)
+}
+
+// PrintCommandResult displays command execution result with stdout, stderr, and exit code.
+func PrintCommandResult(stdout, stderr string, exitCode int) {
+	if stdout != "" {
+		PrintInfo(T("command_stdout"))
+		fmt.Println(StyleCommandOutput(stdout))
+		fmt.Println()
+	}
+
+	if stderr != "" {
+		PrintError(T("command_stderr"))
+		fmt.Println(StyleCommandOutput(stderr))
+		fmt.Println()
+	}
+
+	if exitCode == 0 {
+		PrintSuccess(Tf("command_exit_code", exitCode))
+	} else {
+		PrintError(Tf("command_exit_code", exitCode))
+	}
 }

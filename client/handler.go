@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"runtime"
@@ -27,7 +28,7 @@ func executeCommand(msg shared.Message) shared.Message {
 	}
 }
 
-// handleShellExec executes a shell command and returns the output.
+// handleShellExec executes a shell command and returns stdout, stderr, and exit code.
 func handleShellExec(msg shared.Message) shared.Message {
 	cmdStr, _ := msg.Payload["cmd"].(string)
 	if cmdStr == "" {
@@ -42,14 +43,26 @@ func handleShellExec(msg shared.Message) shared.Message {
 		cmd = exec.Command("sh", "-c", cmdStr)
 	}
 
-	output, err := cmd.CombinedOutput()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	exitCode := 0
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			exitCode = exitErr.ExitCode()
+		} else {
+			exitCode = 1
+		}
+	}
 
 	result := map[string]interface{}{
-		"command": cmdStr,
-		"output":  string(output),
-	}
-	if err != nil {
-		result["error"] = err.Error()
+		"command":   cmdStr,
+		"stdout":    stdout.String(),
+		"stderr":    stderr.String(),
+		"exit_code": exitCode,
 	}
 
 	return shared.NewMessage(shared.MsgResponse, "", msg.ClientID, result)

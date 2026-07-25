@@ -11,7 +11,7 @@ type Config struct {
 var cfg = Config{
 	Host:     "localhost",
 	Port:     "6341",
-	Language: "zh",
+	Language: "en",
 }
 
 func getAPIBaseURL() string {

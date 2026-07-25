@@ -30,6 +30,7 @@ func setupRouter() *gin.Engine {
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
 	r.Use(rateLimitMiddleware())
+	r.Use(languageMiddleware())
 
 	r.Static("/static", "./static")
 	r.LoadHTMLGlob("templates/*")
@@ -45,6 +46,9 @@ func setupRouter() *gin.Engine {
 	r.GET("/favicon.ico", func(c *gin.Context) {
 		c.Status(204)
 	})
+
+	r.GET("/api/lang", handleGetLanguage)
+	r.POST("/api/lang", handleSetLanguage)
 
 	r.GET("/", handleRoot)
 	r.GET("/ws", handleWebSocketRoot)
@@ -68,7 +72,10 @@ func handleRoot(c *gin.Context) {
 		c.Redirect(302, "/login")
 		return
 	}
-	c.HTML(200, "index.html", gin.H{"title": "Remote Control"})
+	c.HTML(200, "index.html", gin.H{
+		"title": T(c, "page_title"),
+		"lang":  getLang(c),
+	})
 }
 
 // handlePathIndex handles /<path>/ and /<path>/index.html.
@@ -81,7 +88,10 @@ func handlePathIndex(c *gin.Context) {
 		c.Redirect(302, "/login")
 		return
 	}
-	c.HTML(200, "index.html", gin.H{"title": "Remote Control"})
+	c.HTML(200, "index.html", gin.H{
+		"title": T(c, "page_title"),
+		"lang":  getLang(c),
+	})
 }
 
 // gracefulShutdown handles SIGINT and SIGTERM for clean server shutdown.
@@ -102,6 +112,10 @@ func gracefulShutdown(srv *http.Server) {
 func main() {
 	log = shared.InitLogger("info", "text")
 	loadConfig()
+
+	if err := shared.LoadLanguagePacks("lang"); err != nil {
+		log.WithError(err).Warn("Failed to load language packs")
+	}
 
 	router := setupRouter()
 

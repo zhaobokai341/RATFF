@@ -93,16 +93,29 @@ func sendShellCommand(id string, cmd string) {
 	select {
 	case msg := <-ch:
 		if msg.Payload != nil {
-			if v, ok := msg.Payload["output"]; ok {
-				if s, ok := v.(string); ok && s != "" {
-					PrintSuccess(Tf("command_output", StyleCommandOutput(s)))
+			stdout := ""
+			stderr := ""
+			exitCode := 0
+
+			if v, ok := msg.Payload["stdout"]; ok {
+				if s, ok := v.(string); ok {
+					stdout = s
 				}
 			}
-			if v, ok := msg.Payload["error"]; ok {
-				if s, ok := v.(string); ok && s != "" {
-					PrintError(Tf("command_error", s))
+			if v, ok := msg.Payload["stderr"]; ok {
+				if s, ok := v.(string); ok {
+					stderr = s
 				}
 			}
+			if v, ok := msg.Payload["exit_code"]; ok {
+				if code, ok := v.(float64); ok {
+					exitCode = int(code)
+				} else if code, ok := v.(int); ok {
+					exitCode = code
+				}
+			}
+
+			PrintCommandResult(stdout, stderr, exitCode)
 		}
 	case <-time.After(10 * time.Second):
 		PrintError(T("command_timeout"))

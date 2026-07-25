@@ -3,10 +3,12 @@ package main
 import (
 	"os"
 	"testing"
+
+	"RATFF/shared"
 )
 
 func TestMain(m *testing.M) {
-	_ = loadLanguagePacks()
+	_ = shared.LoadLanguagePacks("lang")
 	os.Exit(m.Run())
 }
 

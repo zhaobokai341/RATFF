@@ -7,8 +7,15 @@ RATFF/
 ├── client/              # 客户端（被控端）
 ├── server_api/          # 服务端API（核心）
 ├── server_web/          # Web控制端
+│   ├── lang/             # 语言包（zh.json, en.json）
+│   ├── static/           # 静态资源
+│   │   └── js/           # JavaScript（含 lang-switcher.js）
+│   └── templates/        # HTML模板
 ├── server_cli/          # CLI控制端
+│   ├── lang/             # 语言包（zh.json, en.json）
+│   └── i18n.go           # 翻译器封装
 ├── shared/              # 共享代码
+│   └── translations.go   # 翻译函数（无状态）
 ├── docs/                # 文档
 │   ├── requirements/     # 需求文档
 │   ├── tasks/            # 任务计划
@@ -42,6 +49,7 @@ RATFF/
 - 工具函数封装在 `shared/utils.go`
 - 协议定义在 `shared/protocol.go`
 - WebSocket 工具函数在 `shared/ws_utils.go`（`SetupHeartbeat`、`SendWSMessage`、`ReadWSMessage`）
+- 翻译函数在 `shared/translations.go`（`LoadLanguagePacks`、`T`、`Tf`）
 - 优先使用标准库和成熟第三方库
 - 禁止在多个模块中重复定义相同逻辑
 
@@ -360,3 +368,40 @@ AI可以快速理解项目结构并生成符合规范的代码。
 - `server_cli` 所有用户可见输出必须使用 `output.go`、`output_table.go`、`output_help.go` 中定义的函数
 - 禁止直接使用 `fmt.Println` 或 `fmt.Printf` 输出用户可见信息
 - 详见 `docs/dev-rules/002_cli_output_styling.md`
+
+### 10.6 国际化（i18n）规范
+
+**后端翻译函数：**
+- 共享翻译函数定义在 `shared/translations.go`
+  - `LoadLanguagePacks(langDir string)` - 加载指定目录下的所有 `.json` 语言包
+  - `T(langCode, key string)` - 查找翻译，找不到时返回 key 本身
+  - `Tf(langCode, key string, args ...interface{})` - 带格式化的翻译
+- 各模块应在启动时调用 `shared.LoadLanguagePacks("lang")` 加载语言包
+- 语言包文件命名：`<lang_code>.json`（如 `zh.json`、`en.json`），存放在模块的 `lang/` 目录下
+- 所有语言包的 key 必须完全一致，值可包含 `fmt.Sprintf` 格式占位符（`%v`、`%s`、`%d` 等）
+
+**CLI 模块翻译器封装：**
+- `server_cli` 使用 `Translator` 结构体封装语言参数，避免每次调用都传递 `langCode`
+- 在 `server_cli/i18n.go` 中定义 `Translator` 类型和 `T()`/`Tf()` 包级函数
+- 所有用户可见字符串必须通过 `T()` 或 `Tf()` 获取，禁止硬编码
+
+**Web 模块语言切换：**
+- 语言状态通过 cookie `app_lang` 存储
+- `translator.go` 定义语言中间件 `languageMiddleware()`，从 cookie 读取语言并注入 gin context
+- `T(c *gin.Context, key)` 和 `Tf(c *gin.Context, key, args...)` 从 context 获取当前语言进行翻译
+- 提供 `/api/lang`（GET/POST）API 用于获取/设置语言
+- 语言切换按钮封装在 `static/js/lang-switcher.js` 中，作为 Vue 组件供各页面引用
+- 语言切换**不影响全局主题**（dark mode 保持不变）
+- HTML 模板的 `<html lang="">` 属性应动态反映当前语言
+
+**前端 i18n 实现：**
+- 在 HTML 模板的 `<script>` 中定义 `messages` 对象，包含各语言的文本
+- 从 Go 模板变量 `{{.lang}}` 读取当前语言，选择对应的 `messages` 子对象
+- 所有硬编码文本替换为 Vue 数据绑定（如 `${ labels.refresh }`）
+- 跨页面复用的组件（如语言切换器）应独立为单独文件，通过 `<script>` 标签引入
+
+**添加新语言：**
+1. 在对应模块的 `lang/` 目录下创建新的 `<lang_code>.json` 文件
+2. 复制现有语言包的所有 key，填入新语言的翻译值
+3. 前端 `messages` 对象中添加对应语言的文本
+4. `lang-switcher.js` 中添加新的 `<option>` 选项
