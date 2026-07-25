@@ -1,0 +1,49 @@
+package shared
+
+import "time"
+
+// MessageType defines the type of message in the protocol.
+type MessageType string
+
+const (
+	MsgRegister  MessageType = "register"
+	MsgHeartbeat MessageType = "heartbeat"
+	MsgCommand   MessageType = "command"
+	MsgResponse  MessageType = "response"
+	MsgError     MessageType = "error"
+)
+
+// CommandType defines the type of command to execute.
+type CommandType string
+
+const (
+	CmdScreenCapture CommandType = "screen_capture"
+	CmdShellExec     CommandType = "shell_exec"
+	CmdFileList      CommandType = "file_list"
+	CmdFileUpload    CommandType = "file_upload"
+	CmdFileDownload  CommandType = "file_download"
+	CmdSystemInfo    CommandType = "system_info"
+	CmdExit          CommandType = "exit"
+)
+
+// Message represents a protocol message exchanged between components.
+type Message struct {
+	ID        string                 `json:"id"`
+	Type      MessageType            `json:"type"`
+	Command   CommandType            `json:"command,omitempty"`
+	ClientID  string                 `json:"client_id,omitempty"`
+	Payload   map[string]interface{} `json:"payload,omitempty"`
+	Timestamp int64                  `json:"timestamp"`
+}
+
+// NewMessage creates a new protocol message with generated ID and timestamp.
+func NewMessage(msgType MessageType, cmd CommandType, clientID string, payload map[string]interface{}) Message {
+	return Message{
+		ID:        GenerateID(),
+		Type:      msgType,
+		Command:   cmd,
+		ClientID:  clientID,
+		Payload:   payload,
+		Timestamp: time.Now().Unix(),
+	}
+}

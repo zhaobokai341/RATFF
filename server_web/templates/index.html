@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        bg: '#0f0f0f',
+                        surface: '#1a1a1a',
+                        'surface-2': '#242424',
+                        border: '#2a2a2a',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [v-cloak] { display: none; }
+        .font-mono { font-family: 'SF Mono', 'Consolas', 'Monaco', monospace; }
+    </style>
+</head>
+<body class="bg-bg text-gray-200 min-h-screen font-sans">
+    <div id="app" v-cloak class="max-w-6xl mx-auto p-6">
+        <header class="flex justify-between items-center mb-8 pb-5 border-b border-border">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">Remote Control</h1>
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full" :class="clients.length > 0 ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-gray-500'"></div>
+                <span class="text-sm text-gray-400">${ statusText }</span>
+                <button @click="loadClients" class="px-3 py-1.5 text-sm bg-transparent border border-border rounded-lg text-gray-400 hover:bg-surface-2 hover:text-gray-200 transition">
+                    <svg class="w-3.5 h-3.5 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                    Refresh
+                </button>
+                <button @click="logout" class="px-3 py-1.5 text-sm bg-transparent border border-border rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition ml-2">
+                    <svg class="w-3.5 h-3.5 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-border flex justify-between items-center">
+                    <h2 class="font-semibold">Connected Clients</h2>
+                    <span class="text-sm text-gray-400">${ clients.length } online</span>
+                </div>
+                <div v-if="clients.length">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-xs uppercase text-gray-400 border-b border-border">
+                                <th class="text-left px-4 py-2.5 font-semibold">ID</th>
+                                <th class="text-left px-4 py-2.5 font-semibold">IP</th>
+                                <th class="text-left px-4 py-2.5 font-semibold">Hostname</th>
+                                <th class="text-left px-4 py-2.5 font-semibold">OS</th>
+                                <th class="text-left px-4 py-2.5 font-semibold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="c in clients" :key="c.id" class="border-b border-border hover:bg-surface-2 transition">
+                                <td class="px-4 py-3 font-mono text-sm text-indigo-400">${ c.id }</td>
+                                <td class="px-4 py-3 text-sm">${ c.ip }</td>
+                                <td class="px-4 py-3 text-sm">${ c.hostname }</td>
+                                <td class="px-4 py-3"><span class="inline-block px-2 py-0.5 text-xs rounded bg-surface-2 text-gray-400">${ c.os_info }</span></td>
+                                <td class="px-4 py-3">
+                                    <button @click="showDelete(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-red-500 hover:bg-red-500/10 transition">Delete</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div v-else class="text-center py-10 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                    No clients connected
+                </div>
+            </div>
+
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-border">
+                    <h2 class="font-semibold">Execute Command</h2>
+                </div>
+                <div class="p-5">
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Target Client</label>
+                        <select v-model="selectedClient" class="w-full px-3.5 py-2.5 bg-surface-2 border border-border rounded-lg text-sm text-gray-200 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;">
+                            <option value="">Select a client...</option>
+                            <option v-for="c in clients" :key="c.id" :value="c.id">${ c.id } (${ c.hostname })</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Command</label>
+                        <input v-model="command" @keydown.enter="execCommand" placeholder="e.g. ls -la /tmp" class="w-full px-3.5 py-2.5 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <button :disabled="executing" @click="execCommand" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 12 19 12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        Execute
+                    </button>
+                    <div class="mt-4 p-3.5 bg-bg border border-border rounded-lg font-mono text-sm leading-relaxed min-h-[120px] max-h-[400px] overflow-y-auto whitespace-pre-wrap break-all" :class="outputType === 'success' ? 'border-green-500' : outputType === 'error' ? 'border-red-500 text-red-500' : 'text-gray-500'">${ output }</div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="deleteTarget" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="deleteTarget = null">
+            <div class="bg-surface border border-border rounded-xl p-6 max-w-sm w-[90%]">
+                <h3 class="text-lg font-semibold mb-3">Delete Client</h3>
+                <p class="text-gray-400 text-sm mb-5">Are you sure you want to delete <strong class="text-gray-200">${ deleteTarget }</strong>? This will send an exit command.</p>
+                <div class="flex gap-2 justify-end">
+                    <button @click="deleteTarget = null" class="px-4 py-2 bg-transparent border border-border rounded-lg text-sm text-gray-400 hover:bg-surface-2 hover:text-gray-200 transition">Cancel</button>
+                    <button @click="confirmDelete" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-lg transition">Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="fixed bottom-6 right-6 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 translate-y-[100px] opacity-0" :class="[toastType, toast ? 'translate-y-0 opacity-100' : '']">${ toast }</div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        // Extract path prefix from current URL
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        const basePath = pathParts.length > 0 ? '/' + pathParts[0] : '';
+
+        createApp({
+            delimiters: ['${', '}'],
+            setup() {
+                const clients = ref([]);
+                const selectedClient = ref('');
+                const command = ref('');
+                const output = ref('Waiting for command...');
+                const outputType = ref('loading');
+                const executing = ref(false);
+                const deleteTarget = ref(null);
+                const toast = ref('');
+                const toastType = ref('');
+
+                const statusText = computed(() => clients.value.length > 0 ? 'Connected' : 'Disconnected');
+
+                const api = async (url, opts = {}) => {
+                    const fullUrl = basePath + url;
+                    const res = await fetch(fullUrl, { headers: { 'Content-Type': 'application/json' }, ...opts });
+                    return res.json();
+                };
+
+                const loadClients = async () => {
+                    try {
+                        const data = await api('/api/clients');
+                        clients.value = data.clients || [];
+                    } catch (e) {
+                        showToast('Failed to load clients', 'error');
+                    }
+                };
+
+                const sendCommand = async (clientId, cmd, payload) => {
+                    executing.value = true;
+                    output.value = 'Executing...';
+                    outputType.value = 'loading';
+                    try {
+                        const data = await api('/api/command', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: clientId, command: cmd, payload: payload || {} })
+                        });
+                        if (data.error) {
+                            output.value = 'Error: ' + data.error;
+                            outputType.value = 'error';
+                        } else if (data.response && data.response.payload) {
+                            var p = data.response.payload;
+                            output.value = p.output || (p.error ? '[Error] ' + p.error : '[No output]');
+                            outputType.value = p.error ? 'error' : 'success';
+                        } else {
+                            output.value = JSON.stringify(data, null, 2);
+                            outputType.value = 'success';
+                        }
+                    } catch (e) {
+                        output.value = 'Request failed: ' + e.message;
+                        outputType.value = 'error';
+                    } finally {
+                        executing.value = false;
+                    }
+                };
+
+                const execCommand = function() {
+                    if (!selectedClient.value) return showToast('Select a client', 'error');
+                    if (!command.value.trim()) return showToast('Enter a command', 'error');
+                    sendCommand(selectedClient.value, 'shell_exec', { cmd: command.value.trim() });
+                };
+
+                const selectAndInfo = function(id) {
+                    selectedClient.value = id;
+                    sendCommand(id, 'system_info', {});
+                };
+
+                const showDelete = function(id) { deleteTarget.value = id; };
+
+                const confirmDelete = async function() {
+                    var id = deleteTarget.value;
+                    deleteTarget.value = null;
+                    output.value = 'Sending exit command to ' + id + '...';
+                    outputType.value = 'loading';
+                    try {
+                        var data = await api('/api/command', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: id, command: 'exit' })
+                        });
+                        if (data.error) {
+                            output.value = 'Error: ' + data.error;
+                            outputType.value = 'error';
+                        } else {
+                            output.value = 'Client "' + id + '" exit command sent.';
+                            outputType.value = 'success';
+                            showToast('Client deleted', 'success');
+                            setTimeout(loadClients, 1000);
+                        }
+                    } catch (e) {
+                        output.value = 'Request failed: ' + e.message;
+                        outputType.value = 'error';
+                    }
+                };
+
+                const showToast = function(msg, type) {
+                    toast.value = msg;
+                    toastType.value = type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white';
+                    setTimeout(function() { toast.value = ''; }, 3000);
+                };
+
+                const logout = function() {
+                    window.location.href = '/logout';
+                };
+
+                loadClients();
+
+                return {
+                    clients: clients,
+                    selectedClient: selectedClient,
+                    command: command,
+                    output: output,
+                    outputType: outputType,
+                    executing: executing,
+                    deleteTarget: deleteTarget,
+                    toast: toast,
+                    toastType: toastType,
+                    statusText: statusText,
+                    loadClients: loadClients,
+                    execCommand: execCommand,
+                    selectAndInfo: selectAndInfo,
+                    showDelete: showDelete,
+                    confirmDelete: confirmDelete,
+                    logout: logout
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
