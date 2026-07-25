@@ -74,7 +74,7 @@ func handleRoot(c *gin.Context) {
 // handlePathIndex handles /<path>/ and /<path>/index.html.
 func handlePathIndex(c *gin.Context) {
 	pathPassword := c.Param("pathPassword")
-	c.SetCookie("path_prefix", pathPassword, 3600, "/", "", false, true)
+	c.SetCookie("path_prefix", pathPassword, 3600, "/", "", cfg.CookieSecure, true)
 
 	token, _ := c.Cookie("auth_token")
 	if token == "" {

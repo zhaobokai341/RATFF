@@ -31,14 +31,14 @@ func handleAPIClientsRoot(c *gin.Context) {
 // handlePathWebSocket handles /<path>/ws.
 func handlePathWebSocket(c *gin.Context) {
 	pathPassword := c.Param("pathPassword")
-	c.SetCookie("path_prefix", pathPassword, 3600, "/", "", false, true)
+	c.SetCookie("path_prefix", pathPassword, 3600, "/", "", cfg.CookieSecure, true)
 	handleWebSocketWithPath(c, pathPassword)
 }
 
 // handlePathAPIClients handles /<path>/api/clients.
 func handlePathAPIClients(c *gin.Context) {
 	pathPassword := c.Param("pathPassword")
-	c.SetCookie("path_prefix", pathPassword, 3600, "/", "", false, true)
+	c.SetCookie("path_prefix", pathPassword, 3600, "/", "", cfg.CookieSecure, true)
 	handleAPIProxyWithPath(c, pathPassword, "/api/clients")
 }
 
@@ -182,7 +182,7 @@ func handleExecCommand(c *gin.Context) {
 	urlPathPrefix := c.Param("pathPassword")
 	if urlPathPrefix != "" {
 		pathPrefix = urlPathPrefix
-		c.SetCookie("path_prefix", pathPrefix, 3600, "/", "", false, true)
+		c.SetCookie("path_prefix", pathPrefix, 3600, "/", "", cfg.CookieSecure, true)
 	}
 
 	wsConnMu.Lock()

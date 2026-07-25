@@ -72,7 +72,7 @@ func handleLogin(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("auth_token", token, 3600, "/", "", false, true)
+	c.SetCookie("auth_token", token, 3600, "/", "", cfg.CookieSecure, true)
 
 	wsConnMu.Lock()
 	if wsConn != nil {
@@ -97,7 +97,7 @@ func handleLogin(c *gin.Context) {
 
 // handleLogout clears the auth cookie.
 func handleLogout(c *gin.Context) {
-	c.SetCookie("auth_token", "", -1, "/", "", false, true)
-	c.SetCookie("path_prefix", "", -1, "/", "", false, true)
+	c.SetCookie("auth_token", "", -1, "/", "", cfg.CookieSecure, true)
+	c.SetCookie("path_prefix", "", -1, "/", "", cfg.CookieSecure, true)
 	c.Redirect(302, "/login")
 }
