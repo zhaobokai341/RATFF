@@ -36,35 +36,35 @@ func TestBuildPrompt(t *testing.T) {
 
 // TestHandleConsoleMode tests all console mode commands.
 func TestHandleConsoleModeHelp(t *testing.T) {
-	result := handleConsoleMode("help")
+	result := handleConsoleMode("help", "test-id")
 	if result != "" {
 		t.Errorf("expected empty string, got %q", result)
 	}
 }
 
 func TestHandleConsoleModeCommand(t *testing.T) {
-	result := handleConsoleMode("command")
+	result := handleConsoleMode("command", "test-id")
 	if result != "enter_command" {
 		t.Errorf("expected enter_command, got %q", result)
 	}
 }
 
 func TestHandleConsoleModeBack(t *testing.T) {
-	result := handleConsoleMode("back")
+	result := handleConsoleMode("back", "test-id")
 	if result != "back" {
 		t.Errorf("expected back, got %q", result)
 	}
 }
 
 func TestHandleConsoleModeExit(t *testing.T) {
-	result := handleConsoleMode("exit")
+	result := handleConsoleMode("exit", "test-id")
 	if result != "exit" {
 		t.Errorf("expected exit, got %q", result)
 	}
 }
 
 func TestHandleConsoleModeInvalid(t *testing.T) {
-	result := handleConsoleMode("invalid")
+	result := handleConsoleMode("invalid", "test-id")
 	if result != "" {
 		t.Errorf("expected empty string for invalid command, got %q", result)
 	}
