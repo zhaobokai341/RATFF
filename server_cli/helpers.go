@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/google/shlex"
 )
 
 // buildPrompt generates the CLI prompt based on current mode.
@@ -13,8 +15,17 @@ func buildPrompt(id string, inCommandMode bool) string {
 
 // handleServerMode processes commands in server mode.
 func handleServerMode(input string, selectedID string) string {
-	parts := strings.Fields(input)
-	cmd := parts[0]
+	args, err := shlex.Split(input)
+	if err != nil {
+		PrintError(Tf("invalid_command_args", err))
+		return selectedID
+	}
+
+	if len(args) == 0 {
+		return selectedID
+	}
+
+	cmd := args[0]
 
 	switch cmd {
 	case "help":
@@ -22,19 +33,25 @@ func handleServerMode(input string, selectedID string) string {
 	case "list":
 		listClients()
 	case "select":
-		if len(parts) < 2 {
+		if len(args) < 2 {
 			PrintError(T("usage_select"))
 			return selectedID
 		}
-		if selectClient(parts[1]) {
-			return parts[1]
+		if selectClient(args[1]) {
+			return args[1]
 		}
 	case "delete":
-		if len(parts) < 2 {
+		if len(args) < 2 {
 			PrintError(T("usage_delete"))
 			return selectedID
 		}
-		deleteClient(parts[1])
+		deleteClient(args[1])
+	case "cd":
+		if len(args) < 3 {
+			PrintError(T("usage_cd"))
+			return selectedID
+		}
+		cdClient(args[1], strings.Join(args[2:], " "))
 	case "clear":
 		clearScreen()
 	case "exit":
@@ -48,9 +65,18 @@ func handleServerMode(input string, selectedID string) string {
 }
 
 // handleConsoleMode processes commands in console mode.
-func handleConsoleMode(input string) string {
-	parts := strings.Fields(input)
-	cmd := parts[0]
+func handleConsoleMode(input string, selectedID string) string {
+	args, err := shlex.Split(input)
+	if err != nil {
+		PrintError(Tf("invalid_command_args", err))
+		return ""
+	}
+
+	if len(args) == 0 {
+		return ""
+	}
+
+	cmd := args[0]
 
 	switch cmd {
 	case "help":
@@ -58,10 +84,20 @@ func handleConsoleMode(input string) string {
 		return ""
 	case "command":
 		return "enter_command"
+	case "cd":
+		if len(args) < 2 {
+			PrintError(T("usage_cd"))
+			return ""
+		}
+		dir := strings.Join(args[1:], " ")
+		cdClient(selectedID, dir)
+		return ""
 	case "back":
 		return "back"
 	case "exit":
 		return "exit"
+	case "bg":
+		return handleConsoleBgCommand(args)
 	default:
 		PrintError(T("invalid_command"))
 		return ""
@@ -74,6 +110,7 @@ func printServerHelp() {
 		{"list", T("cmd_list_desc")},
 		{"select <id>", T("cmd_select_desc")},
 		{"delete <id>", T("cmd_delete_desc")},
+		{"cd <id> <dir>", T("cmd_cd_desc")},
 		{"clear", T("cmd_clear_desc")},
 		{"help", T("cmd_help_desc")},
 		{"exit", T("cmd_exit_desc")},
@@ -84,6 +121,8 @@ func printServerHelp() {
 func printConsoleHelp() {
 	PrintHelp([]HelpCommand{
 		{"command", T("cmd_command_desc")},
+		{"cd <dir>", T("cmd_cd_console_desc")},
+		{"bg <cmd> [file]", T("cmd_bg_desc")},
 		{"back", T("cmd_back_desc")},
 		{"help", T("cmd_help_desc")},
 		{"exit", T("cmd_exit_desc")},
@@ -98,4 +137,50 @@ func clearScreen() {
 // handleCommandMode executes a shell command on the selected client.
 func handleCommandMode(input string, id string) {
 	sendShellCommand(id, input)
+}
+
+// handleConsoleBgCommand processes bg command in console mode.
+func handleConsoleBgCommand(args []string) string {
+	if len(args) < 2 {
+		PrintError(T("usage_bg"))
+		return ""
+	}
+
+	bgArgs := args[1:]
+	var outputFile string
+	var cmdParts []string
+
+	for i, arg := range bgArgs {
+		if strings.HasPrefix(arg, "/") || strings.Contains(arg, ":\\") {
+			outputFile = arg
+			cmdParts = bgArgs[:i]
+			break
+		}
+	}
+
+	if outputFile == "" {
+		cmdParts = bgArgs
+	}
+
+	cmd := strings.Join(cmdParts, " ")
+	if cmd == "" {
+		PrintError(T("usage_bg"))
+		return ""
+	}
+
+	clients, err := fetchClients()
+	if err != nil {
+		PrintError(Tf("fetch_clients_failed", err))
+		return ""
+	}
+
+	if len(clients) == 0 {
+		PrintError(T("no_clients"))
+		return ""
+	}
+
+	// Use the first client or the currently selected one
+	id := clients[0].ID
+	sendBgCommand(id, cmd, outputFile)
+	return ""
 }

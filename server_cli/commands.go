@@ -69,6 +69,63 @@ func deleteClient(id string) {
 	PrintSuccess(T("delete_success"))
 }
 
+// cdClient changes the working directory of a remote client.
+func cdClient(id string, dir string) {
+	clients, err := fetchClients()
+	if err != nil {
+		PrintError(Tf("fetch_clients_failed", err))
+		return
+	}
+
+	found := false
+	for _, c := range clients {
+		if c.ID == id {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		PrintError(T("client_not_exists"))
+		return
+	}
+
+	payload := map[string]interface{}{
+		"client_id": id,
+		"command":   "cd",
+		"payload":   map[string]interface{}{"dir": dir},
+	}
+
+	ch := make(chan shared.Message, 1)
+	pendingMu.Lock()
+	pendingCmd[id] = &pendingCommand{ch: ch}
+	pendingMu.Unlock()
+
+	if err := postCommand(payload); err != nil {
+		PrintError(Tf("send_command_failed", err))
+		pendingMu.Lock()
+		delete(pendingCmd, id)
+		pendingMu.Unlock()
+		return
+	}
+
+	select {
+	case msg := <-ch:
+		if msg.Payload != nil {
+			if errMsg, ok := msg.Payload["error"].(string); ok {
+				PrintError(Tf("cd_failed", errMsg))
+			} else if currentDir, ok := msg.Payload["current_dir"].(string); ok {
+				PrintSuccess(Tf("cd_success", dir, currentDir))
+			}
+		}
+	case <-time.After(10 * time.Second):
+		PrintError(T("command_timeout"))
+		pendingMu.Lock()
+		delete(pendingCmd, id)
+		pendingMu.Unlock()
+	}
+}
+
 // sendShellCommand sends a shell command to a client and waits for response.
 func sendShellCommand(id string, cmd string) {
 	payload := map[string]interface{}{
@@ -122,5 +179,53 @@ func sendShellCommand(id string, cmd string) {
 		pendingMu.Lock()
 		delete(pendingCmd, id)
 		pendingMu.Unlock()
+	}
+}
+
+// sendBgCommand sends a background command to a client with optional output file.
+func sendBgCommand(id string, cmd string, outputFile string) {
+	payload := map[string]interface{}{
+		"client_id": id,
+		"command":   "shell_exec_bg",
+		"payload": map[string]interface{}{
+			"cmd": cmd,
+		},
+	}
+
+	if outputFile != "" {
+		payload["payload"].(map[string]interface{})["output_file"] = outputFile
+	}
+
+	ch := make(chan shared.Message, 1)
+	pendingMu.Lock()
+	pendingCmd[id] = &pendingCommand{ch: ch}
+	pendingMu.Unlock()
+
+	if err := postCommand(payload); err != nil {
+		PrintError(Tf("send_command_failed", err))
+		pendingMu.Lock()
+		delete(pendingCmd, id)
+		pendingMu.Unlock()
+		return
+	}
+
+	select {
+	case msg := <-ch:
+		if msg.Payload != nil {
+			status, _ := msg.Payload["status"].(string)
+			outFile, _ := msg.Payload["output_file"].(string)
+			if status == "started" {
+				if outFile != "" {
+					PrintSuccess(Tf("bg_command_started_with_output", cmd, outFile))
+				} else {
+					PrintSuccess(Tf("bg_command_started", cmd))
+				}
+			}
+		}
+	case <-time.After(5 * time.Second):
+		pendingMu.Lock()
+		delete(pendingCmd, id)
+		pendingMu.Unlock()
+		PrintError(T("command_timeout"))
 	}
 }

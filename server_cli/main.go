@@ -101,7 +101,7 @@ func main() {
 			}
 			handleCommandMode(input, selectedID)
 		} else {
-			action := handleConsoleMode(input)
+			action := handleConsoleMode(input, selectedID)
 			switch action {
 			case "enter_command":
 				inCommandMode = true
