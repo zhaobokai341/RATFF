@@ -6,6 +6,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// isDebugEnv returns true if running in debug/development environment.
+func isDebugEnv() bool {
+	env := getEnv("APP_ENV", "debug")
+	return env == "debug" || env == "development" || env == "dev"
+}
+
 type Config struct {
 	Host              string
 	Port              string
@@ -27,13 +33,23 @@ func loadConfig() {
 	}
 
 	if os.Getenv("LOGIN_PATH") == "" {
-		logrus.Warn("PATH_PASSWORD not set, using default value (insecure for production)")
+		logConfigWarning("PATH_PASSWORD not set, using default value (insecure for production)")
 	}
 	if os.Getenv("LOGIN_PASSWORD_HASH") == "" {
-		logrus.Warn("LOGIN_PASSWORD_HASH not set, using default value (insecure for production)")
+		logConfigWarning("LOGIN_PASSWORD_HASH not set, using default value (insecure for production)")
 	}
 	if os.Getenv("JWT_SECRET") == "" {
-		logrus.Warn("JWT_SECRET not set, using default value (insecure for production)")
+		logConfigWarning("JWT_SECRET not set, using default value (insecure for production)")
+	}
+}
+
+// logConfigWarning logs configuration warnings based on environment.
+// In debug mode, warnings are logged as info. In production, they are critical errors.
+func logConfigWarning(message string) {
+	if isDebugEnv() {
+		logrus.Info("[DEBUG] " + message)
+	} else {
+		logrus.Fatal("[PRODUCTION] CRITICAL: " + message)
 	}
 }
 

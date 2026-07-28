@@ -63,7 +63,7 @@ func startServer(srv *http.Server) {
 			log.Fatal("Server failed: ", err)
 		}
 	} else {
-		log.Warn("No TLS certificate, starting WS (INSECURE)")
+		logConfigWarning("No TLS certificate, starting WS (INSECURE)")
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatal("Server failed: ", err)
 		}
