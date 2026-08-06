@@ -12,8 +12,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	log = logrus.NewEntry(logrus.New())
+}
 
 func TestLoadConfigFromEnv(t *testing.T) {
 	os.Setenv("HOST", "127.0.0.1")
@@ -49,7 +54,7 @@ func TestLoadConfigDefaults(t *testing.T) {
 
 	assert.Equal(t, "0.0.0.0", cfg.Host)
 	assert.Equal(t, "6341", cfg.Port)
-	assert.Equal(t, "fuck", cfg.PathPassword)
+	assert.Equal(t, "", cfg.PathPassword)
 	assert.Equal(t, "$2b$12$lfEEs6tTAdp61DYg7xiorOkspqK2iTObW/qK6fOsT6JxBfbRBGjn2", cfg.LoginPasswordHash)
 	assert.Equal(t, "default-jwt-secret-change-in-production", cfg.JWTSecret)
 }
@@ -128,7 +133,7 @@ func TestHandleVerifyNotConfigured(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := setupRouter(NewClientManager())
 
-	body := `{"password":"fuck"}`
+	body := `{"password":"somepass"}`
 	req := httptest.NewRequest("POST", "/verify", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()

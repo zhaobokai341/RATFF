@@ -87,6 +87,9 @@ func handleMessage(conn *websocket.Conn, manager *ClientManager, clientID string
 
 	case shared.MsgResponse:
 		manager.Broadcast(msg, clientID)
+
+	case shared.MsgError:
+		manager.Broadcast(msg, clientID)
 	}
 
 	return nil

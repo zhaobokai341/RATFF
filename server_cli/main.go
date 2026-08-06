@@ -10,6 +10,7 @@ import (
 	"golang.org/x/term"
 )
 
+// readPassword reads a password from stdin, using terminal raw mode if available.
 func readPassword() (string, error) {
 	fd := int(os.Stdin.Fd())
 

@@ -2,6 +2,7 @@ package main
 
 import "os"
 
+// Config holds the web server configuration values.
 type Config struct {
 	Host         string
 	Port         string
@@ -10,6 +11,7 @@ type Config struct {
 	CookieSecure bool
 }
 
+// cfg is the active configuration instance.
 var cfg Config
 
 func loadConfig() {

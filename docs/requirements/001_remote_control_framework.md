@@ -1,158 +1,169 @@
-# 远程控制软件框架需求文档
+# Remote Control Software Framework Requirements
 
-## 1. 项目概述
+## 1. Project Overview
 
-构建一个基于WebSocket的远程控制软件框架，包含客户端（被控端）和服务端（控制端），支持多种控制方式（Web、CLI）。
+Build a WebSocket-based remote control software framework consisting of a client (controlled endpoint) and a server (controller), supporting multiple control methods (Web, CLI).
 
-## 2. 项目结构
+## 2. Project Structure
 
 ```
 RATFF/
-├── client/              # 客户端（被控端）
-├── server_api/          # 服务端API接口（核心业务逻辑）
-├── server_web/          # Web控制端（提供Web界面）
-├── server_cli/          # CLI控制端（命令行控制端）
-├── shared/              # 共享代码库（协议定义、工具函数等）
-├── docs/                # 文档
-│   ├── 01-requirements/    # 需求文档
-│   ├── 02-tasks/           # 任务计划
-│   ├── 03-dev-rules/       # 开发规范
-│   ├── 04-ai-prompts/      # AI提示词
-│   └── 05-completed-tasks/ # 已完成任务说明
+├── client/              # Client (controlled endpoint)
+├── server_api/          # Server API (core business logic)
+├── server_web/          # Web controller (provides Web interface)
+├── server_cli/          # CLI controller (command-line controller)
+├── shared/              # Shared codebase (protocol definitions, utility functions, etc.)
+├── docs/                # Documentation
+│   ├── requirements/    # Requirements documents
+│   ├── tasks/           # Task plans
+│   ├── dev-rules/       # Development standards
+│   ├── ai-prompts/      # AI prompts
+│   └── completed-tasks/ # Completed task descriptions
 └── go.mod
 ```
 
-## 3. 技术栈
+## 3. Technology Stack
 
-| 功能 | 技术选型 | 说明 |
-|------|----------|------|
-| HTTP框架 | `github.com/gin-gonic/gin` | 高并发、成熟稳定 |
-| WebSocket | `nhooyr.io/websocket` | 现代、支持内置心跳 |
-| 日志 | `github.com/sirupsen/logrus` | 生产级、结构化日志 |
-| CLI | `github.com/urfave/cli/v2` | 成熟稳定 |
-| JSON | `encoding/json` | 标准库 |
-| 加密 | `crypto/aes` | 标准库 |
-| UUID | `github.com/google/uuid` | 生成唯一ID |
-| 限流 | `golang.org/x/time/rate` | 标准库扩展 |
+| Feature | Technology | Description |
+|---------|------------|-------------|
+| HTTP Framework | `github.com/gin-gonic/gin` | High concurrency, mature and stable |
+| WebSocket | `github.com/gorilla/websocket` | Modern, widely used |
+| Logging | `github.com/sirupsen/logrus` | Production-grade, structured logging |
+| CLI | `github.com/urfave/cli/v2` | Mature and stable |
+| JSON | `encoding/json` | Standard library |
+| Encryption | `crypto/aes` | Standard library |
+| UUID | `github.com/google/uuid` | Generate unique IDs |
+| Rate Limiting | `golang.org/x/time/rate` | Standard library extension |
+| JWT | `github.com/golang-jwt/jwt/v5` | Token authentication |
+| Password Hashing | `golang.org/x/crypto/bcrypt` | Password encryption |
+| Terminal Input | `golang.org/x/term` | Password input masking |
+| Test Assertions | `github.com/stretchr/testify` | Test assertion library |
+| Terminal Styling | `github.com/charmbracelet/lipgloss` | CLI output styling |
+| Shell Parsing | `github.com/google/shlex` | Shell command argument parsing |
 
-## 4. 功能需求
+## 4. Functional Requirements
 
-### 4.1 核心功能
+### 4.1 Core Features
 
-- [x] WebSocket长连接通信
-- [x] 客户端注册与发现
-- [x] 命令下发与执行
-- [x] 结果返回
-- [x] 心跳保活
-- [x] 断线重连
+- [x] WebSocket long connection communication
+- [x] Client registration and discovery
+- [x] Command dispatch and execution
+- [x] Result return
+- [x] Heartbeat keep-alive
+- [x] Disconnection reconnection
 
-### 4.2 控制端功能
+### 4.2 Controller Features
 
-- [ ] Web界面控制（server_web）
-- [x] CLI交互式控制端（server_cli）
-- [x] 客户端列表查看（设备ID、IP、主机名、系统信息）
-- [x] 命令执行
-- [x] 删除指定客户端
+- [x] Web interface control (server_web)
+- [x] CLI interactive controller (server_cli)
+- [x] Client list view (device ID, IP, hostname, system info)
+- [x] Command execution
+- [x] Delete specified client
 
-### 4.3 客户端功能
+### 4.3 Client Features
 
-- [x] 连接服务端
-- [x] 注册自身信息（设备ID、IP、主机名、系统信息）
-- [x] 接收并执行命令
-- [x] 返回执行结果
-- [x] 断线无限重连
-- [x] 收到退出命令后正常退出
+- [x] Connect to server
+- [x] Register own information (device ID, IP, hostname, system info)
+- [x] Receive and execute commands
+- [x] Return execution results
+- [x] Infinite reconnection on disconnect
+- [x] Graceful exit on exit command
 
-### 4.4 支持的命令类型
+### 4.4 Supported Command Types
 
-- `shell_exec` - 执行Shell命令
-- `system_info` - 获取系统信息
-- `exit` - 退出客户端
-- `screen_capture` - 屏幕截图（待实现）
-- `file_list` - 列出文件（待实现）
-- `file_upload` - 上传文件（待实现）
-- `file_download` - 下载文件（待实现）
+- `shell_exec` - Execute shell commands
+- `shell_exec_bg` - Execute shell commands in background
+- `system_info` - Get system information
+- `cd` - Change working directory
+- `exit` - Exit client
+- `screen_capture` - Screen capture (to be implemented)
+- `file_list` - List files (to be implemented)
+- `file_upload` - Upload file (to be implemented)
+- `file_download` - Download file (to be implemented)
 
-### 4.5 CLI交互端功能（server_cli）
+### 4.5 CLI Interactive Controller Features (server_cli)
 
-- [x] 交互式命令行界面（非参数式）
-- [x] 启动后显示已连接服务器
-- [x] 多级命令状态：
-  - `(server) >>` - 服务器模式，可执行 list/select/help/clear/delete/exit
-  - `(<id>)(console) >>` - 设备控制台，可执行 command/exit/back/help
-  - `(<id>)(command) >>` - 命令执行模式，输入具体命令后执行并返回结果
-- [x] 命令说明：
-  - `help` - 显示帮助列表
-  - `list` - 显示已连接设备列表
-  - `select <id>` - 选择设备进入控制台
-  - `clear` - 清空控制台内容
-  - `delete <id>` - 删除指定客户端并发送退出命令
-  - `exit` - 退出CLI
-  - `back` - 从设备控制台返回服务器模式
-  - `command` - 进入命令执行模式
-  - 任意其他输入在 command 模式下作为系统命令执行
-- [x] 错误提示：设备不存在、无效命令等
-- [x] 美化输出：使用 lipgloss 实现彩色文本、表格边框、格式化帮助信息
+- [x] Interactive command-line interface (non-parameter-based)
+- [x] Display connected server on startup
+- [x] Multi-level command states:
+  - `(server) >>` - Server mode, can execute list/select/help/clear/delete/cd/exit
+  - `(<id>)(console) >>` - Device console, can execute command/cd/bg/exit/back/help
+  - `(<id>)(command) >>` - Command execution mode, input specific command to execute and return result
+- [x] Command descriptions:
+  - `help` - Display help list
+  - `list` - Display connected device list
+  - `select <id>` - Select device to enter console
+  - `cd <id> <dir>` - Change working directory of remote client
+  - `clear` - Clear console content
+  - `delete <id>` - Delete specified client and send exit command
+  - `exit` - Exit CLI
+  - `back` - Return from device console to server mode
+  - `command` - Enter command execution mode
+  - `bg <cmd> [file]` - Execute command in background on remote client
+  - Any other input in command mode executes as a system command
+- [x] Error prompts: device not found, invalid command, etc.
+- [x] Styled output: Use lipgloss for colored text, table borders, formatted help messages
 
-### 4.6 客户端信息字段
+### 4.6 Client Information Fields
 
-- `device_id` - 设备唯一标识
-- `ip` - 设备IP地址
-- `hostname` - 设备主机名
-- `os_info` - 操作系统信息（OS名称、架构等）
+- `device_id` - Unique device identifier
+- `ip` - Device IP address
+- `hostname` - Device hostname
+- `os_info` - Operating system information (OS name, architecture, etc.)
 
-## 5. 非功能需求
+## 5. Non-Functional Requirements
 
-### 5.1 代码质量
+### 5.1 Code Quality
 
-- [ ] 代码尽可能多复用（shared库、工具函数）
-- [ ] 代码简洁优雅
-- [ ] 代码解耦，单一职责
-- [ ] 单个文件代码行数不超过150行
-- [ ] 优先使用标准库和成熟第三方库，避免手写容易出错的代码
+- [x] Maximize code reuse (shared library, utility functions)
+- [x] Code is clean and elegant
+- [x] Code is decoupled, single responsibility
+- [x] Source code files must not exceed 150 lines
+- [x] Test files (`*_test.go`) must not exceed 300 lines
+- [x] Prefer standard libraries and mature third-party libraries, avoid error-prone handwritten code
 
-### 5.2 安全性
+### 5.2 Security
 
-- [x] 支持TLS/WSS加密传输
-- [x] 无证书时警告并自动降级为WS
-- [x] Token认证机制（JWT临时token）
-- [x] 请求限流防DDoS
-- [x] 命令执行权限控制（白名单）
-- [x] 操作审计日志
-- [x] URL路径密码防护（PATH_PASSWORD环境变量）
-- [x] 登录密码bcrypt加密存储（LOGIN_PASSWORD_HASH环境变量）
-- [x] server_api JWT token验证中间件
-- [x] server_web Cookie验证中间件
-- [x] server_cli 登录获取token后携带访问
-- [x] client WebSocket连接带路径密码
-- [x] 两层加密防护：路径密码 + 登录密码
+- [x] Support TLS/WSS encrypted transport
+- [x] Warn and auto-degrade to WS without certificates
+- [x] Token authentication mechanism (JWT temporary token)
+- [x] Rate limiting to prevent DDoS
+- [x] Command execution permission control (whitelist)
+- [x] Operation audit logging
+- [x] URL path password protection (PATH_PASSWORD environment variable)
+- [x] Login password bcrypt encrypted storage (LOGIN_PASSWORD_HASH environment variable)
+- [x] server_api JWT token verification middleware
+- [x] server_web Cookie verification middleware
+- [x] server_cli obtains token on login and carries it for access
+- [x] client WebSocket connection with path password
+- [x] Two-layer encryption: path password + login password
 
-### 5.3 稳定性
+### 5.3 Stability
 
-- [ ] WebSocket内置心跳机制（PingPongPeriod参数）
-- [ ] 客户端断线指数退避重连
-- [ ] 服务端优雅关闭（Graceful Shutdown）
-- [ ] 连接超时控制
-- [ ] 并发安全（sync.RWMutex）
-- [ ] Panic恢复（Gin.Recovery）
+- [x] WebSocket built-in heartbeat mechanism (manual ping/pong with ticker)
+- [x] Client exponential backoff reconnection
+- [x] Server graceful shutdown
+- [x] Connection timeout control
+- [x] Concurrency safety (sync.RWMutex)
+- [x] Panic recovery (Gin.Recovery)
 
-### 5.4 可维护性
+### 5.4 Maintainability
 
-- [ ] 模块独立，易于测试
-- [ ] 命名清晰，注释简洁
-- [ ] 配置外部化
-- [ ] 日志分级（debug/info/warn/error）
+- [x] Modular, easy to test
+- [x] Clear naming, concise comments
+- [x] Externalized configuration
+- [x] Log level classification (debug/info/warn/error)
 
-### 5.5 工程规范
+### 5.5 Engineering Standards
 
-- [ ] 新增需求时同步更新 `docs/requirements/` 和 `docs/tasks/`
-- [ ] 每个模块必须编写单元测试
-- [ ] 每次编写完代码后用 `golangci-lint run` 检查并修复问题
-- [ ] 任务完成后在 `docs/completed-tasks/` 记录
+- [x] Update `docs/requirements/` and `docs/tasks/` when adding new requirements
+- [x] Every module must have unit tests
+- [x] After writing code, use `golangci-lint run` to check and fix issues
+- [x] Record completed tasks in `docs/completed-tasks/`
 
-## 6. 通信协议
+## 6. Communication Protocol
 
-### 6.1 消息格式（JSON）
+### 6.1 Message Format (JSON)
 
 ```json
 {
@@ -165,29 +176,29 @@ RATFF/
 }
 ```
 
-### 6.2 消息类型
+### 6.2 Message Types
 
-- `register` - 客户端注册
-- `heartbeat` - 心跳保活
-- `command` - 控制命令
-- `response` - 执行结果
-- `error` - 错误信息
+- `register` - Client registration
+- `heartbeat` - Heartbeat keep-alive
+- `command` - Control command
+- `response` - Execution result
+- `error` - Error message
 
-## 7. 部署架构
+## 7. Deployment Architecture
 
 ```
-控制端(Web/CLI) → server_api(WebSocket) → client(被控端)
-                      ↑
-                 server_web(HTTP代理)
+Controller (Web/CLI) → server_api (WebSocket) → client (controlled endpoint)
+                          ↑
+                     server_web (HTTP proxy)
 ```
 
-- server_api: 端口9090（WebSocket + HTTP API）
-- server_web: 端口8080（Web界面 + API代理）
-- server_cli: 命令行工具
-- client: 被控端程序
+- server_api: Port 6341 (WebSocket + HTTP API)
+- server_web: Port 7993 (Web interface + API proxy)
+- server_cli: Command-line tool
+- client: Controlled endpoint program
 
-## 8. 优先级
+## 8. Priority
 
-P0（必须）: 核心WebSocket通信、客户端管理、命令路由
-P1（重要）: 安全性、稳定性、Web/CLI控制端
-P2（可选）: 文件传输、屏幕截图等具体命令实现
+P0 (Must-have): Core WebSocket communication, client management, command routing
+P1 (Important): Security, stability, Web/CLI controllers
+P2 (Optional): File transfer, screen capture, and other specific command implementations

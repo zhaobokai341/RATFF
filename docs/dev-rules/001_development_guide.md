@@ -1,407 +1,410 @@
-# 代码规范与开发指南
+# Code Standards and Development Guide
 
-## 1. 项目结构规范
+## 1. Project Structure
 
 ```
 RATFF/
-├── client/              # 客户端（被控端）
-├── server_api/          # 服务端API（核心）
-├── server_web/          # Web控制端
-│   ├── lang/             # 语言包（zh.json, en.json）
-│   ├── static/           # 静态资源
-│   │   └── js/           # JavaScript（含 lang-switcher.js）
-│   └── templates/        # HTML模板
-├── server_cli/          # CLI控制端
-│   ├── lang/             # 语言包（zh.json, en.json）
-│   └── i18n.go           # 翻译器封装
-├── shared/              # 共享代码
-│   └── translations.go   # 翻译函数（无状态）
-├── docs/                # 文档
-│   ├── requirements/     # 需求文档
-│   ├── tasks/            # 任务计划
-│   ├── dev-rules/        # 开发规范
-│   ├── ai-prompts/       # AI提示词
-│   └── completed-tasks/  # 已完成任务说明
+├── client/              # Client (controlled endpoint)
+├── server_api/          # Server API (core)
+├── server_web/          # Web controller
+│   ├── lang/             # Language packs (zh.json, en.json)
+│   ├── static/           # Static resources
+│   │   └── js/           # JavaScript (includes lang-switcher.js)
+│   └── templates/        # HTML templates
+├── server_cli/          # CLI controller
+│   ├── lang/             # Language packs (zh.json, en.json)
+│   └── translator.go     # Translator encapsulation
+├── shared/              # Shared code
+│   └── translations.go   # Translation functions (stateless)
+├── docs/                # Documentation
+│   ├── requirements/     # Requirements documents
+│   ├── tasks/            # Task plans
+│   ├── dev-rules/        # Development standards
+│   ├── ai-prompts/       # AI prompts
+│   └── completed-tasks/  # Completed task descriptions
 └── go.mod
 ```
 
-**命名规则：**
-- 目录名：小写+下划线（snake_case）
-- 文件名：小写+下划线（snake_case）
-- 包名：与目录名一致，小写
+**Naming Rules:**
+- Directory names: lowercase + underscore (snake_case)
+- File names: lowercase + underscore (snake_case)
+- Package names: same as directory name, lowercase
 
-## 2. 代码规范
+## 2. Code Standards
 
-### 2.1 文件行数限制
-- **源代码文件不超过150行**
-- **测试文件（`*_test.go`）不超过300行**
-- 超过则拆分为多个文件
-- 按职责拆分，而非按行数
-- 当函数属于同一职责域且拆分后降低可读性时，可适当放宽限制
+### 2.1 File Line Limits
+- **Source code files must not exceed 150 lines**
+- **Test files (`*_test.go`) must not exceed 300 lines**
+- Split into multiple files when exceeded
+- Split by responsibility, not by line count
+- When a function belongs to the same responsibility domain and splitting would reduce readability, the limit can be appropriately relaxed
 
-### 2.2 函数规范
-- 单个函数不超过50行
-- 函数名动词开头，如 `NewClientManager`, `handleWebSocket`
-- 错误处理：尽早返回，避免嵌套
+### 2.2 Function Standards
+- Single function should not exceed 50 lines
+- Function names start with a verb, e.g., `NewClientManager`, `handleWebSocket`
+- Error handling: return early, avoid nesting
 
-### 2.3 代码复用原则
-- 共享代码放 `shared/` 目录
-- 工具函数封装在 `shared/utils.go`
-- 协议定义在 `shared/protocol.go`
-- WebSocket 工具函数在 `shared/ws_utils.go`（`SetupHeartbeat`、`SendWSMessage`、`ReadWSMessage`）
-- 翻译函数在 `shared/translations.go`（`LoadLanguagePacks`、`T`、`Tf`）
-- 优先使用标准库和成熟第三方库
-- 禁止在多个模块中重复定义相同逻辑
+### 2.3 Code Reuse Principles
+- Shared code goes in `shared/` directory
+- Utility functions encapsulated in `shared/utils.go`
+- Protocol definitions in `shared/protocol.go`
+- WebSocket utility functions in `shared/ws_utils.go` (`SetupHeartbeat`, `SendWSMessage`, `ReadWSMessage`)
+- Translation functions in `shared/translations.go` (`LoadLanguagePacks`, `T`, `Tf`)
+- Client info utilities in `shared/client_info.go` (`BuildClientInfo`, `GenerateClientID`, `CalculateBackoff`)
+- Prefer standard libraries and mature third-party libraries
+- Prohibit duplicating the same logic across multiple modules
 
-### 2.4 日志规范
-- 使用 `shared.InitLogger()` 初始化
-- 日志级别：debug < info < warn < error
-- 生产环境使用JSON格式
-- 关键操作必须记录日志
+### 2.4 Logging Standards
+- Use `shared.InitLogger()` to initialize
+- Log levels: debug < info < warn < error
+- Production environment uses JSON format
+- Critical operations must be logged
 
-### 2.5 错误处理
+### 2.5 Error Handling
 ```go
-// 正确示例
+// Correct example
 if err != nil {
-    log.Error("操作失败: ", err)
+    log.Error("Operation failed: ", err)
     return err
 }
 
-// 带上下文的错误
+// With context
 log.WithFields(logrus.Fields{
     "client_id": id,
     "command":   cmd,
-}).Error("执行失败")
+}).Error("Execution failed")
 ```
 
-### 2.6 并发安全
-- 共享map使用 `sync.RWMutex`
-- 读多写少场景用 `RLock/RUnlock`
-- 写操作用 `Lock/Unlock`
-- 使用 `defer` 确保解锁
+### 2.6 Concurrency Safety
+- Shared maps use `sync.RWMutex`
+- Read-heavy scenarios use `RLock/RUnlock`
+- Write operations use `Lock/Unlock`
+- Use `defer` to ensure unlocking
 
-## 3. 技术栈
+## 3. Technology Stack
 
-| 功能 | 库 | 版本 |
-|------|-----|------|
+| Feature | Library | Version |
+|---------|---------|---------|
 | HTTP | gin-gonic/gin | latest |
 | WebSocket | gorilla/websocket | latest |
-| 日志 | sirupsen/logrus | latest |
+| Logging | sirupsen/logrus | latest |
 | CLI | urfave/cli/v2 | latest |
 | UUID | google/uuid | latest |
-| 限流 | golang.org/x/time | latest |
+| Rate Limiting | golang.org/x/time | latest |
 | JWT | golang-jwt/jwt/v5 | latest |
-| 密码加密 | golang.org/x/crypto/bcrypt | latest |
-| 终端输入 | golang.org/x/term | latest |
-| 测试断言 | stretchr/testify | latest |
+| Password Hashing | golang.org/x/crypto/bcrypt | latest |
+| Terminal Input | golang.org/x/term | latest |
+| Test Assertions | stretchr/testify | latest |
+| Terminal Styling | charmbracelet/lipgloss | latest |
+| Shell Parsing | google/shlex | latest |
 
-### 3.1 前端技术栈
+### 3.1 Frontend Technology Stack
 
-**框架选择：**
-- **CSS框架**：Tailwind CSS（通过CDN引入）
-- **JS框架**：Vue.js 3（通过CDN引入）
+**Framework Selection:**
+- **CSS Framework**: Tailwind CSS (via CDN)
+- **JS Framework**: Vue.js 3 (via CDN)
 
-**使用规范：**
-- 所有HTML模板使用深色主题设计
-- Vue使用 `[[ ]]` 作为分隔符，避免与Go模板的 `{{ }}` 冲突
-- Tailwind配置自定义深色主题颜色
-- 保持模板文件简洁，复杂逻辑移至JS文件
-- 使用Vue的响应式数据管理表单状态
-- 加载状态使用旋转图标提示用户
+**Usage Standards:**
+- All HTML templates use dark theme design
+- Vue uses `[[ ]]` as delimiter to avoid conflict with Go template's `{{ }}`
+- Tailwind configures custom dark theme colors
+- Keep template files concise, move complex logic to JS files
+- Use Vue's reactive data management for form state
+- Loading state uses spinning icon to prompt users
 
-## 4. 如何添加新功能
+## 4. How to Add New Features
 
-### 4.1 添加新命令类型
+### 4.1 Add New Command Types
 
-1. 在 `shared/protocol.go` 添加命令常量：
+1. Add command constant in `shared/protocol.go`:
 ```go
 const CmdNewCommand CommandType = "new_command"
 ```
 
-2. 在 `client/handler.go` 添加处理函数：
+2. Add handler function in `client/handler.go`:
 ```go
 func handleNewCommand(msg shared.Message) shared.Message {
-    // 实现逻辑
+    // Implementation
     return shared.NewMessage(shared.MsgResponse, shared.CmdNewCommand, "", payload)
 }
 ```
 
-3. 在 `executeCommand` 的switch中添加case：
+3. Add case in `executeCommand` switch:
 ```go
 case shared.CmdNewCommand:
     resp = handleNewCommand(msg)
 ```
 
-### 4.2 添加新HTTP API
+### 4.2 Add New HTTP API
 
-在 `server_api/main.go` 的 `setupRouter` 中添加路由：
+Add route in `server_api/main.go`'s `setupRouter`:
 ```go
 api.GET("/new-endpoint", handleNewEndpoint(manager))
 ```
 
-在 `server_api/handler.go` 实现handler：
+Implement handler in `server_api/handler.go`:
 ```go
 func handleNewEndpoint(manager *ClientManager) gin.HandlerFunc {
     return func(c *gin.Context) {
-        // 实现逻辑
+        // Implementation
         c.JSON(200, result)
     }
 }
 ```
 
-### 4.3 添加新模块
+### 4.3 Add New Module
 
-1. 创建目录：`mkdir new_module`
-2. 创建main.go
-3. 复用shared库的日志和工具函数
-4. 保持单文件<150行
+1. Create directory: `mkdir new_module`
+2. Create main.go
+3. Reuse shared library's logging and utility functions
+4. Keep single file < 150 lines
 
-## 5. 安全开发指南
+## 5. Security Development Guide
 
-### 5.1 认证
-- 客户端注册时必须提供Token
-- Token在服务端配置中验证
-- 失败则拒绝连接
+### 5.1 Authentication
+- Client registration must provide Token
+- Token verified in server configuration
+- Reject connection on failure
 
-### 5.2 限流
-- 使用 `golang.org/x/time/rate`
-- 默认每秒50请求
-- 可根据需要调整
+### 5.2 Rate Limiting
+- Use `golang.org/x/time/rate`
+- Default 50 requests per second
+- Adjustable as needed
 
-### 5.3 加密
-- 生产环境必须使用TLS
-- 敏感数据使用AES加密
-- 密钥不要硬编码
+### 5.3 Encryption
+- Production environment must use TLS
+- Sensitive data encrypted with AES
+- Keys must not be hardcoded
 
-## 6. 测试指南
+## 6. Testing Guide
 
-### 6.1 单元测试（必须）
-- 每个模块的 `_test.go` 文件与源码同目录
-- 测试文件命名：`xxx_test.go`
-- 测试函数命名：`TestXxx`
-- 使用标准库 `testing` 包
-- 覆盖率目标：核心逻辑 > 80%，整体 > 60%
+### 6.1 Unit Tests (Required)
+- Each module's `_test.go` file in the same directory as source
+- Test file naming: `xxx_test.go`
+- Test function naming: `TestXxx`
+- Use standard library `testing` package
+- Coverage targets: core logic > 80%, overall > 60%
 
 ```bash
-# 运行所有测试
+# Run all tests
 go test ./...
 
-# 运行指定模块测试
+# Run specific module tests
 go test ./shared/...
 
-# 带覆盖率
+# With coverage
 go test -cover ./...
 
-# 详细输出
+# Verbose output
 go test -v ./...
 ```
 
-### 6.2 测试编写规范
+### 6.2 Test Writing Standards
 
-**测试分类：**
-- **单元测试**：测试纯函数逻辑，无外部依赖
-- **集成测试**：使用 `httptest` 模拟 HTTP/WebSocket 交互
-- **边界测试**：测试空值、错误值、异常输入
+**Test Categories:**
+- **Unit tests**: Test pure function logic, no external dependencies
+- **Integration tests**: Use `httptest` to simulate HTTP/WebSocket interaction
+- **Boundary tests**: Test empty values, error values, abnormal input
 
-**测试模板：**
+**Test Template:**
 ```go
 func TestXxxSuccess(t *testing.T) {
-    // 1. 准备测试数据
-    // 2. 执行被测函数
-    // 3. 断言结果
+    // 1. Prepare test data
+    // 2. Execute tested function
+    // 3. Assert results
     assert.Equal(t, expected, actual)
 }
 
 func TestXxxError(t *testing.T) {
-    // 测试错误路径
+    // Test error paths
     assert.Error(t, err)
 }
 
 func TestXxxEdgeCase(t *testing.T) {
-    // 测试边界条件
-    // 使用子测试
+    // Test boundary conditions
+    // Use sub-tests
     t.Run("case1", func(t *testing.T) { ... })
     t.Run("case2", func(t *testing.T) { ... })
 }
 ```
 
-**HTTP/WebSocket 测试：**
-- 使用 `net/http/httptest.NewServer()` 创建测试服务器
-- WebSocket 测试使用 `gorilla/websocket` 的 `DefaultDialer`
-- 测试完成后务必 `defer server.Close()` 和 `defer conn.Close()`
+**HTTP/WebSocket Testing:**
+- Use `net/http/httptest.NewServer()` to create test server
+- WebSocket tests use `gorilla/websocket`'s `DefaultDialer`
+- Always `defer server.Close()` and `defer conn.Close()` after testing
 
-**断言规范：**
-- 使用 `github.com/stretchr/testify/assert` 进行断言
-- 每个测试至少包含一个断言
-- 错误消息使用 `t.Errorf("Expected %s, got %s", expected, actual)`
+**Assertion Standards:**
+- Use `github.com/stretchr/testify/assert` for assertions
+- Each test includes at least one assertion
+- Error messages use `t.Errorf("Expected %s, got %s", expected, actual)`
 
-### 6.3 Mock 使用规范
+### 6.3 Mock Usage Standards
 
-**HTTP Mock：**
+**HTTP Mock:**
 ```go
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    // 模拟服务端行为
+    // Simulate server behavior
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(response)
 }))
 defer server.Close()
 
-// 获取 WebSocket URL
+// Get WebSocket URL
 wsURL := "ws" + server.URL[4:] + "/ws"
 ```
 
-**配置 Mock：**
-- 测试前设置 `cfg` 全局变量
-- 测试后使用 `defer` 恢复原始值
-- 使用环境变量时设置后清理：`os.Setenv()` + `defer os.Unsetenv()`
+**Configuration Mock:**
+- Set `cfg` global variable before testing
+- Restore original value with `defer` after testing
+- When using environment variables, clean up after setting: `os.Setenv()` + `defer os.Unsetenv()`
 
-### 6.4 测试覆盖率要求
+### 6.4 Test Coverage Requirements
 
-| 模块类型 | 最低覆盖率 | 说明 |
-|---------|---------|------|
-| shared（核心库） | > 80% | 协议、工具函数必须高覆盖 |
-| server_api（服务端） | > 60% | HTTP 路由、WebSocket 处理 |
-| client（客户端） | > 60% | 连接、命令执行逻辑 |
-| server_cli（CLI） | > 50% | 输出、交互逻辑 |
-| server_web（Web） | > 30% | 代理、页面渲染 |
+| Module Type | Minimum Coverage | Description |
+|-------------|-----------------|-------------|
+| shared (core library) | > 80% | Protocol, utility functions must have high coverage |
+| server_api (server) | > 60% | HTTP routes, WebSocket handling |
+| client (client) | > 60% | Connection, command execution logic |
+| server_cli (CLI) | > 50% | Output, interaction logic |
+| server_web (Web) | > 30% | Proxy, page rendering |
 
-**提升覆盖率的方法：**
-- 为核心业务逻辑编写单元测试
-- 使用 `httptest` 测试 HTTP 端点
-- 使用 WebSocket 测试服务器测试连接逻辑
-- 测试错误路径和边界条件
+**Methods to Improve Coverage:**
+- Write unit tests for core business logic
+- Use `httptest` to test HTTP endpoints
+- Use WebSocket test server to test connection logic
+- Test error paths and boundary conditions
 
-### 6.5 代码检查（必须）
-- 每次编写完代码后执行 `golangci-lint run`
-- 修复所有 lint 问题后再提交
-- 测试文件中的错误返回值也必须检查（使用 `_ =` 显式忽略）
+### 6.5 Code Checking (Required)
+- Execute `golangci-lint run` after writing code
+- Fix all lint issues before committing
+- Error return values in test files must also be checked (use `_ =` to explicitly ignore)
 
 ```bash
-# 安装
+# Install
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
-# 检查全部代码
+# Check all code
 golangci-lint run ./...
 
-# 检查指定模块
+# Check specific module
 golangci-lint run ./shared/...
 ```
 
-### 6.6 编译检查
+### 6.6 Build Check
 ```bash
 go build ./...
 ```
 
-### 6.7 运行测试
+### 6.7 Running Tests
 ```bash
-# 启动server_api
+# Start server_api
 cd server_api && go run .
 
-# 启动client
+# Start client
 cd client && go run .
 
-# 启动server_web
+# Start server_web
 cd server_web && go run .
 
-# 使用server_cli
-cd server_cli && go run . list
+# Use server_cli
+cd server_cli && go run .
 ```
 
-## 7. 需求变更流程
+## 7. Requirement Change Process
 
-1. 在 `docs/requirements/` 新建或更新需求文档
-2. 在 `docs/tasks/` 更新任务计划
-3. 编码并写单元测试
-4. `golangci-lint run` 检查
-5. 在 `docs/completed-tasks/` 记录完成情况
+1. Create or update requirement document in `docs/requirements/`
+2. Update task plan in `docs/tasks/`
+3. Code and write unit tests
+4. Run `golangci-lint run` check
+5. Record completion in `docs/completed-tasks/`
 
-## 8. 部署指南
+## 8. Deployment Guide
 
-### 8.1 编译
+### 8.1 Build
 ```bash
 GOOS=linux GOARCH=amd64 go build -o bin/client ./client
 GOOS=linux GOARCH=amd64 go build -o bin/server_api ./server_api
 ```
 
-### 8.2 配置TLS
+### 8.2 Configure TLS
 ```bash
-# 有证书
+# With certificate
 ./server_api -cert server.crt -key server.key
 
-# 无证书（自动降级WS，会有警告）
+# Without certificate (auto-degrade WS, will have warning)
 ./server_api
 ```
 
-## 9. AI辅助开发指南
+## 9. AI-Assisted Development Guide
 
-当使用AI继续开发时，提供以下信息：
-1. 项目根目录下的 `docs/` 文件夹
-2. AI 应先阅读 `docs/ai-prompts/` 中的引导文件
-3. 然后按引导顺序读取其他文档
+When using AI to continue development, provide:
+1. The `docs/` folder in the project root directory
+2. AI should first read the guide files in `docs/ai-prompts/`
+3. Then read other documents in the guided order
 
-AI可以快速理解项目结构并生成符合规范的代码。
+AI can quickly understand the project structure and generate code that meets the standards.
 
-## 10. 重要注意事项
+## 10. Important Notes
 
-### 10.1 CLI 连接机制
-- `server_cli` 需要建立 WebSocket 连接到服务端以接收命令响应
-- CLI 使用 `__cli__` 前缀的 ID 注册（如 `__cli__a1b2c3d4`）
-- `ClientManager.ListClients()` 会自动过滤 `__cli__` 前缀的客户端
-- 设备列表中不应出现 `__cli__` 开头的条目
+### 10.1 CLI Connection Mechanism
+- `server_cli` needs to establish WebSocket connection to server to receive command responses
+- CLI registers with `__cli__` prefix ID (e.g., `__cli__a1b2c3d4`)
+- `ClientManager.ListClients()` automatically filters `__cli__` prefixed clients
+- Device list should not contain entries starting with `__cli__`
 
-### 10.2 文档注释规范
-- 所有导出的类型、常量、变量、函数、方法必须添加 `//` 文档注释
-- 注释以类型名或函数名开头，如 `// ClientInfo holds information about a connected client.`
-- 未导出的内部函数使用小写注释，如 `// buildOSInfo constructs an OS info string`
+### 10.2 Documentation Comment Standards
+- All exported types, constants, variables, functions, and methods must have `//` documentation comments
+- Comments start with the type name or function name, e.g., `// ClientInfo holds information about a connected client.`
+- Non-exported internal functions use lowercase comments, e.g., `// buildOSInfo constructs an OS info string`
 
-### 10.3 代码复用原则
-- 共享类型（如 `ClientInfo`、`Message`）定义在 `shared/` 包中
-- 各模块直接引用 `shared.XXX`，禁止重复定义
-- 发现重复定义时立即删除并替换为 `shared` 引用
+### 10.3 Code Reuse Principles
+- Shared types (like `ClientInfo`, `Message`) are defined in the `shared/` package
+- Each module directly references `shared.XXX`, duplicate definitions are prohibited
+- When duplicate definitions are found, delete immediately and replace with `shared` reference
 
-### 10.4 响应匹配机制
-- `server_cli` 使用 `pendingCmd` map 存储待响应的命令
-- key 为 `clientID`（被控端 ID），value 为带 channel 的 `pendingCommand`
-- `listenResponses` 根据响应消息的 `ClientID` 匹配并投递到对应 channel
+### 10.4 Response Matching Mechanism
+- `server_cli` uses `pendingCmd` map to store pending command responses
+- Key is `clientID` (controlled endpoint ID), value is `pendingCommand` with channel
+- `listenResponses` matches based on response message's `ClientID` and delivers to corresponding channel
 
-### 10.5 CLI 输出规范
-- `server_cli` 所有用户可见输出必须使用 `output.go`、`output_table.go`、`output_help.go` 中定义的函数
-- 禁止直接使用 `fmt.Println` 或 `fmt.Printf` 输出用户可见信息
-- 详见 `docs/dev-rules/002_cli_output_styling.md`
+### 10.5 CLI Output Standards
+- All user-visible output in `server_cli` must use functions defined in `output.go`, `output_table.go`, and `output_help.go`
+- Direct use of `fmt.Println` or `fmt.Printf` for user-visible information is prohibited
+- See `docs/dev-rules/002_cli_output_styling.md` for details
 
-### 10.6 国际化（i18n）规范
+### 10.6 Internationalization (i18n) Standards
 
-**后端翻译函数：**
-- 共享翻译函数定义在 `shared/translations.go`
-  - `LoadLanguagePacks(langDir string)` - 加载指定目录下的所有 `.json` 语言包
-  - `T(langCode, key string)` - 查找翻译，找不到时返回 key 本身
-  - `Tf(langCode, key string, args ...interface{})` - 带格式化的翻译
-- 各模块应在启动时调用 `shared.LoadLanguagePacks("lang")` 加载语言包
-- 语言包文件命名：`<lang_code>.json`（如 `zh.json`、`en.json`），存放在模块的 `lang/` 目录下
-- 所有语言包的 key 必须完全一致，值可包含 `fmt.Sprintf` 格式占位符（`%v`、`%s`、`%d` 等）
+**Backend Translation Functions:**
+- Translation functions defined in `shared/translations.go`
+  - `LoadLanguagePacks(langDir string)` - Load all `.json` language packs in specified directory
+  - `T(langCode, key string)` - Look up translation, return key itself if not found
+  - `Tf(langCode, key string, args ...interface{})` - Formatted translation
+- Each module should call `shared.LoadLanguagePacks("lang")` at startup to load language packs
+- Language pack file naming: `<lang_code>.json` (e.g., `zh.json`, `en.json`), stored in module's `lang/` directory
+- All language pack keys must be identical, values may contain `fmt.Sprintf` format placeholders (`%v`, `%s`, `%d`, etc.)
 
-**CLI 模块翻译器封装：**
-- `server_cli` 使用 `Translator` 结构体封装语言参数，避免每次调用都传递 `langCode`
-- 在 `server_cli/i18n.go` 中定义 `Translator` 类型和 `T()`/`Tf()` 包级函数
-- 所有用户可见字符串必须通过 `T()` 或 `Tf()` 获取，禁止硬编码
+**CLI Module Translator Encapsulation:**
+- `server_cli` uses `Translator` struct to encapsulate language parameter, avoiding passing `langCode` on each call
+- `Translator` type and `T()`/`Tf()` package-level functions defined in `server_cli/translator.go`
+- All user-visible strings must be obtained through `T()` or `Tf()`, hardcoding is prohibited
 
-**Web 模块语言切换：**
-- 语言状态通过 cookie `app_lang` 存储
-- `translator.go` 定义语言中间件 `languageMiddleware()`，从 cookie 读取语言并注入 gin context
-- `T(c *gin.Context, key)` 和 `Tf(c *gin.Context, key, args...)` 从 context 获取当前语言进行翻译
-- 提供 `/api/lang`（GET/POST）API 用于获取/设置语言
-- 语言切换按钮封装在 `static/js/lang-switcher.js` 中，作为 Vue 组件供各页面引用
-- 语言切换**不影响全局主题**（dark mode 保持不变）
-- HTML 模板的 `<html lang="">` 属性应动态反映当前语言
+**Web Module Language Switching:**
+- Language state stored in cookie `app_lang`
+- `translator.go` defines language middleware `languageMiddleware()`, reads language from cookie and injects into gin context
+- `T(c *gin.Context, key)` and `Tf(c *gin.Context, key, args...)` get current language from context for translation
+- Provides `/api/lang` (GET/POST) API for getting/setting language
+- Language switch button encapsulated in `static/js/lang-switcher.js`, imported as Vue component for each page
+- Language switching **does not affect global theme** (dark mode remains unchanged)
+- HTML template's `<html lang="">` attribute should dynamically reflect current language
 
-**前端 i18n 实现：**
-- 在 HTML 模板的 `<script>` 中定义 `messages` 对象，包含各语言的文本
-- 从 Go 模板变量 `{{.lang}}` 读取当前语言，选择对应的 `messages` 子对象
-- 所有硬编码文本替换为 Vue 数据绑定（如 `${ labels.refresh }`）
-- 跨页面复用的组件（如语言切换器）应独立为单独文件，通过 `<script>` 标签引入
+**Frontend i18n Implementation:**
+- Define `messages` object in HTML template's `<script>`, containing text for each language
+- Read current language from Go template variable `{{.lang}}`, select corresponding `messages` sub-object
+- Replace all hardcoded text with Vue data binding (e.g., `${ labels.refresh }`)
+- Cross-page reusable components (like language switcher) should be independent files, imported via `<script>` tag
 
-**添加新语言：**
-1. 在对应模块的 `lang/` 目录下创建新的 `<lang_code>.json` 文件
-2. 复制现有语言包的所有 key，填入新语言的翻译值
-3. 前端 `messages` 对象中添加对应语言的文本
-4. `lang-switcher.js` 中添加新的 `<option>` 选项
+**Adding New Language:**
+1. Create new `<lang_code>.json` file in corresponding module's `lang/` directory
+2. Copy all keys from existing language pack, fill in new language translation values
+3. Frontend `messages` object adds corresponding language text
+4. `lang-switcher.js` adds new `<option>` option

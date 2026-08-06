@@ -19,11 +19,13 @@ type CommandType string
 const (
 	CmdScreenCapture CommandType = "screen_capture"
 	CmdShellExec     CommandType = "shell_exec"
+	CmdShellExecBg   CommandType = "shell_exec_bg"
 	CmdFileList      CommandType = "file_list"
 	CmdFileUpload    CommandType = "file_upload"
 	CmdFileDownload  CommandType = "file_download"
 	CmdSystemInfo    CommandType = "system_info"
 	CmdExit          CommandType = "exit"
+	CmdCd            CommandType = "cd"
 )
 
 // Message represents a protocol message exchanged between components.

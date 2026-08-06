@@ -1,5 +1,6 @@
 package main
 
+// Config holds the CLI client configuration values.
 type Config struct {
 	Host          string
 	Port          string
@@ -8,6 +9,7 @@ type Config struct {
 	Language      string
 }
 
+// cfg is the active configuration instance.
 var cfg = Config{
 	Host:     "localhost",
 	Port:     "6341",

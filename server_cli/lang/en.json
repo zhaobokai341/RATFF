@@ -23,7 +23,6 @@
 	"command_exit_code": "Exit Code: %d",
 	"usage_select": "Usage: select <client_id>",
 	"usage_delete": "Usage: delete <client_id>",
-	"usage_cd": "Usage: cd <client_id> <directory>",
 	"cd_failed": "Failed to change directory: %v",
 	"cd_success": "Changed working directory of %s to %s",
 	"invalid_command": "Invalid command, type 'help'",

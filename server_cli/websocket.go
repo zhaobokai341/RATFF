@@ -42,7 +42,7 @@ func listenResponses(conn *websocket.Conn) {
 			continue
 		}
 
-		if msg.Type == shared.MsgResponse {
+		if msg.Type == shared.MsgResponse || msg.Type == shared.MsgError {
 			pendingMu.Lock()
 			if pc, ok := pendingCmd[msg.ClientID]; ok {
 				pc.ch <- msg

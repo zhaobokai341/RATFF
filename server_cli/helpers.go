@@ -13,7 +13,7 @@ func buildPrompt(id string, inCommandMode bool) string {
 	return BuildPrompt(id, inCommandMode)
 }
 
-// handleServerMode processes commands in server mode.
+// handleServerMode processes commands in server mode (list, select, delete, etc.).
 func handleServerMode(input string, selectedID string) string {
 	args, err := shlex.Split(input)
 	if err != nil {
@@ -46,12 +46,6 @@ func handleServerMode(input string, selectedID string) string {
 			return selectedID
 		}
 		deleteClient(args[1])
-	case "cd":
-		if len(args) < 3 {
-			PrintError(T("usage_cd"))
-			return selectedID
-		}
-		cdClient(args[1], strings.Join(args[2:], " "))
 	case "clear":
 		clearScreen()
 	case "exit":
@@ -64,7 +58,7 @@ func handleServerMode(input string, selectedID string) string {
 	return selectedID
 }
 
-// handleConsoleMode processes commands in console mode.
+// handleConsoleMode processes commands in console mode (command, cd, bg, back, exit).
 func handleConsoleMode(input string, selectedID string) string {
 	args, err := shlex.Split(input)
 	if err != nil {
@@ -97,7 +91,7 @@ func handleConsoleMode(input string, selectedID string) string {
 	case "exit":
 		return "exit"
 	case "bg":
-		return handleConsoleBgCommand(args)
+		return handleConsoleBgCommand(args, selectedID)
 	default:
 		PrintError(T("invalid_command"))
 		return ""
@@ -129,7 +123,7 @@ func printConsoleHelp() {
 	})
 }
 
-// clearScreen clears the terminal screen.
+// clearScreen clears the terminal screen using ANSI escape codes.
 func clearScreen() {
 	fmt.Print("\033[H\033[2J")
 }
@@ -140,7 +134,7 @@ func handleCommandMode(input string, id string) {
 }
 
 // handleConsoleBgCommand processes bg command in console mode.
-func handleConsoleBgCommand(args []string) string {
+func handleConsoleBgCommand(args []string, selectedID string) string {
 	if len(args) < 2 {
 		PrintError(T("usage_bg"))
 		return ""
@@ -168,19 +162,22 @@ func handleConsoleBgCommand(args []string) string {
 		return ""
 	}
 
-	clients, err := fetchClients()
-	if err != nil {
-		PrintError(Tf("fetch_clients_failed", err))
-		return ""
+	id := selectedID
+	if id == "" {
+		clients, err := fetchClients()
+		if err != nil {
+			PrintError(Tf("fetch_clients_failed", err))
+			return ""
+		}
+
+		if len(clients) == 0 {
+			PrintError(T("no_clients"))
+			return ""
+		}
+
+		id = clients[0].ID
 	}
 
-	if len(clients) == 0 {
-		PrintError(T("no_clients"))
-		return ""
-	}
-
-	// Use the first client or the currently selected one
-	id := clients[0].ID
 	sendBgCommand(id, cmd, outputFile)
 	return ""
 }

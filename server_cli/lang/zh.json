@@ -23,7 +23,6 @@
 	"command_exit_code": "退出码: %d",
 	"usage_select": "用法: select <client_id>",
 	"usage_delete": "用法: delete <client_id>",
-	"usage_cd": "用法: cd <client_id> <directory>",
 	"cd_failed": "切换目录失败: %v",
 	"cd_success": "已将 %s 的工作目录切换到 %s",
 	"invalid_command": "无效命令，输入 'help' 查看帮助",

@@ -2,6 +2,7 @@ package main
 
 import "os"
 
+// Config holds the client configuration values.
 type Config struct {
 	ServerHost   string
 	ServerPort   string
@@ -9,6 +10,7 @@ type Config struct {
 	ClientID     string
 }
 
+// cfg is the active configuration instance.
 var cfg Config
 
 func loadConfig() {

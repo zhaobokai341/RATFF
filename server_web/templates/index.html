@@ -98,10 +98,30 @@
                         <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.commandLabel }</label>
                         <input v-model="command" @keydown.enter="execCommand" :placeholder="labels.commandPlaceholder" class="w-full px-3.5 py-2.5 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-indigo-500">
                     </div>
-                    <button :disabled="executing" @click="execCommand" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 12 19 12"/><polyline points="12 5 19 12 12 19"/></svg>
-                        ${ labels.execBtn }
-                    </button>
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.bgOutputLabel }</label>
+                        <input v-model="bgOutputFile" @keydown.enter="execBgCommand" :placeholder="labels.bgOutputPlaceholder" class="w-full px-3.5 py-2.5 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="flex gap-2 mb-4">
+                        <button :disabled="executing" @click="execCommand" class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 12 19 12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            ${ labels.execBtn }
+                        </button>
+                        <button :disabled="executing" @click="execBgCommand" class="flex-1 px-4 py-2 bg-transparent border border-border hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 text-sm font-medium rounded-lg transition flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            ${ labels.bgBtn }
+                        </button>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.cdLabel }</label>
+                        <div class="flex gap-2">
+                            <input v-model="cdDir" @keydown.enter="execCd" :placeholder="labels.cdPlaceholder" class="flex-1 px-3.5 py-2.5 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-indigo-500">
+                            <button :disabled="executing" @click="execCd" class="px-4 py-2 bg-transparent border border-border hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 text-sm font-medium rounded-lg transition">
+                                ${ labels.cdBtn }
+                            </button>
+                        </div>
+                        <div v-if="currentDir" class="mt-2 text-xs font-mono text-gray-400">${ labels.currentDirLabel }: <span class="text-indigo-400">${ currentDir }</span></div>
+                    </div>
                     <div class="mt-4 space-y-3">
                         <div v-if="outputStdout" class="p-3.5 bg-bg border border-border rounded-lg">
                             <div class="text-xs text-gray-400 mb-2">${ labels.execStdoutLabel }</div>
@@ -163,6 +183,13 @@
                 commandLabel: '命令',
                 commandPlaceholder: '例如: ls -la /tmp',
                 execBtn: '执行',
+                bgBtn: '后台执行',
+                bgOutputLabel: '后台输出文件 (可选)',
+                bgOutputPlaceholder: '例如: /tmp/output.txt',
+                cdLabel: '切换目录',
+                cdPlaceholder: '例如: /tmp',
+                cdBtn: '切换',
+                currentDirLabel: '当前目录',
                 execWaiting: '等待命令...',
                 execExecuting: '执行中...',
                 execStdoutLabel: '标准输出',
@@ -177,6 +204,10 @@
                 toastExitSentPrefix: '已发送退出命令到',
                 toastSelectClient: '请先选择客户端',
                 toastEnterCommand: '请输入命令',
+                toastEnterDir: '请输入目录路径',
+                toastCdSuccess: '已切换到目录',
+                toastCdFailed: '切换目录失败',
+                toastBgStarted: '后台命令已启动',
                 toastFailedLoadClients: '加载客户端失败'
             },
             en: {
@@ -200,6 +231,13 @@
                 commandLabel: 'Command',
                 commandPlaceholder: 'e.g. ls -la /tmp',
                 execBtn: 'Execute',
+                bgBtn: 'Background',
+                bgOutputLabel: 'Output File (Optional)',
+                bgOutputPlaceholder: 'e.g. /tmp/output.txt',
+                cdLabel: 'Change Directory',
+                cdPlaceholder: 'e.g. /tmp',
+                cdBtn: 'Change',
+                currentDirLabel: 'Current Directory',
                 execWaiting: 'Waiting for command...',
                 execExecuting: 'Executing...',
                 execStdoutLabel: 'Standard Output',
@@ -214,6 +252,10 @@
                 toastExitSentPrefix: 'Exit command sent to',
                 toastSelectClient: 'Select a client',
                 toastEnterCommand: 'Enter a command',
+                toastEnterDir: 'Enter a directory path',
+                toastCdSuccess: 'Changed to directory',
+                toastCdFailed: 'Failed to change directory',
+                toastBgStarted: 'Background command started',
                 toastFailedLoadClients: 'Failed to load clients'
             }
         };
@@ -230,6 +272,9 @@
                 const clients = ref([]);
                 const selectedClient = ref('');
                 const command = ref('');
+                const cdDir = ref('');
+                const currentDir = ref('');
+                const bgOutputFile = ref('');
                 const output = ref(labels.execWaiting);
                 const outputType = ref('loading');
                 const outputStdout = ref('');
@@ -301,6 +346,78 @@
                     sendCommand(selectedClient.value, 'shell_exec', { cmd: command.value.trim() });
                 };
 
+                const execBgCommand = function() {
+                    if (!selectedClient.value) return showToast(labels.toastSelectClient, 'error');
+                    if (!command.value.trim()) return showToast(labels.toastEnterCommand, 'error');
+                    executing.value = true;
+                    output.value = labels.execExecuting;
+                    outputType.value = 'loading';
+                    var payload = { cmd: command.value.trim() };
+                    if (bgOutputFile.value.trim()) {
+                        payload.output_file = bgOutputFile.value.trim();
+                    }
+                    try {
+                        api('/api/command', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: selectedClient.value, command: 'shell_exec_bg', payload: payload })
+                        }).then(function(data) {
+                            if (data.response && data.response.payload && data.response.payload.status === 'started') {
+                                var outFile = data.response.payload.output_file;
+                                var msg = labels.toastBgStarted + ': ' + command.value.trim();
+                                if (outFile) {
+                                    msg += ' (output: ' + outFile + ')';
+                                }
+                                output.value = msg;
+                                outputType.value = 'success';
+                                showToast(labels.toastBgStarted, 'success');
+                            } else if (data.error) {
+                                output.value = 'Error: ' + data.error;
+                                outputType.value = 'error';
+                            }
+                        }).catch(function(e) {
+                            output.value = 'Request failed: ' + e.message;
+                            outputType.value = 'error';
+                        });
+                    } finally {
+                        executing.value = false;
+                    }
+                };
+
+                const execCd = function() {
+                    if (!selectedClient.value) return showToast(labels.toastSelectClient, 'error');
+                    if (!cdDir.value.trim()) return showToast(labels.toastEnterDir, 'error');
+                    executing.value = true;
+                    try {
+                        api('/api/command', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: selectedClient.value, command: 'cd', payload: { dir: cdDir.value.trim() } })
+                        }).then(function(data) {
+                            if (data.response && data.response.payload) {
+                                var p = data.response.payload;
+                                if (p.current_dir) {
+                                    currentDir.value = p.current_dir;
+                                    output.value = labels.toastCdSuccess + ': ' + p.current_dir;
+                                    outputType.value = 'success';
+                                    showToast(labels.toastCdSuccess, 'success');
+                                } else if (p.error) {
+                                    output.value = labels.toastCdFailed + ': ' + p.error;
+                                    outputType.value = 'error';
+                                    showToast(labels.toastCdFailed, 'error');
+                                }
+                            } else if (data.error) {
+                                output.value = labels.toastCdFailed + ': ' + data.error;
+                                outputType.value = 'error';
+                                showToast(labels.toastCdFailed, 'error');
+                            }
+                        }).catch(function(e) {
+                            output.value = 'Request failed: ' + e.message;
+                            outputType.value = 'error';
+                        });
+                    } finally {
+                        executing.value = false;
+                    }
+                };
+
                 const selectAndInfo = function(id) {
                     selectedClient.value = id;
                     sendCommand(id, 'system_info', {});
@@ -349,6 +466,9 @@
                     clients: clients,
                     selectedClient: selectedClient,
                     command: command,
+                    cdDir: cdDir,
+                    currentDir: currentDir,
+                    bgOutputFile: bgOutputFile,
                     output: output,
                     outputType: outputType,
                     outputStdout: outputStdout,
@@ -362,6 +482,8 @@
                     labels: labels,
                     loadClients: loadClients,
                     execCommand: execCommand,
+                    execBgCommand: execBgCommand,
+                    execCd: execCd,
                     selectAndInfo: selectAndInfo,
                     showDelete: showDelete,
                     confirmDelete: confirmDelete,

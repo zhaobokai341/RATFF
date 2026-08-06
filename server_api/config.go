@@ -12,6 +12,7 @@ func isDebugEnv() bool {
 	return env == "debug" || env == "development" || env == "dev"
 }
 
+// Config holds the server API configuration values.
 type Config struct {
 	Host              string
 	Port              string
@@ -20,6 +21,7 @@ type Config struct {
 	JWTSecret         string
 }
 
+// cfg is the active configuration instance.
 var cfg Config
 
 // Note: Don't change this for a bit improve security, because that it can switch between safety and convenience.

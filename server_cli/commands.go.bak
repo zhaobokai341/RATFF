@@ -196,36 +196,14 @@ func sendBgCommand(id string, cmd string, outputFile string) {
 		payload["payload"].(map[string]interface{})["output_file"] = outputFile
 	}
 
-	ch := make(chan shared.Message, 1)
-	pendingMu.Lock()
-	pendingCmd[id] = &pendingCommand{ch: ch}
-	pendingMu.Unlock()
-
 	if err := postCommand(payload); err != nil {
 		PrintError(Tf("send_command_failed", err))
-		pendingMu.Lock()
-		delete(pendingCmd, id)
-		pendingMu.Unlock()
 		return
 	}
 
-	select {
-	case msg := <-ch:
-		if msg.Payload != nil {
-			status, _ := msg.Payload["status"].(string)
-			outFile, _ := msg.Payload["output_file"].(string)
-			if status == "started" {
-				if outFile != "" {
-					PrintSuccess(Tf("bg_command_started_with_output", cmd, outFile))
-				} else {
-					PrintSuccess(Tf("bg_command_started", cmd))
-				}
-			}
-		}
-	case <-time.After(5 * time.Second):
-		pendingMu.Lock()
-		delete(pendingCmd, id)
-		pendingMu.Unlock()
-		PrintError(T("command_timeout"))
+	if outputFile != "" {
+		PrintSuccess(Tf("bg_command_started_with_output", cmd, outputFile))
+	} else {
+		PrintSuccess(Tf("bg_command_started", cmd))
 	}
 }

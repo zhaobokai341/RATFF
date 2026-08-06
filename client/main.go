@@ -9,7 +9,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// log is the package-level logger instance.
 var log *logrus.Entry
+
+// reconnectAttempt tracks the number of consecutive reconnection attempts.
+var reconnectAttempt int
 
 // runClient establishes a WebSocket connection and runs the message loop.
 func runClient(serverURL, clientID string) error {
@@ -29,6 +33,7 @@ func runClient(serverURL, clientID string) error {
 
 	log.WithField("client_id", clientID).Info("Connected to server")
 
+	reconnectAttempt = 0
 	return messageLoop(conn)
 }
 
@@ -64,7 +69,9 @@ func main() {
 			log.Error("Connection lost: ", err)
 		}
 
-		log.Info("Reconnecting...")
-		time.Sleep(3 * time.Second)
+		reconnectAttempt++
+		backoff := shared.CalculateBackoff(reconnectAttempt)
+		log.WithField("attempt", reconnectAttempt).Infof("Reconnecting in %v...", backoff)
+		time.Sleep(backoff)
 	}
 }
