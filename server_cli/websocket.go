@@ -2,11 +2,24 @@ package main
 
 import (
 	"encoding/json"
+	"sync"
+	"time"
 
 	"RATFF/shared"
 
 	"github.com/gorilla/websocket"
 )
+
+var (
+	responseConnMu sync.Mutex
+	responseConn   *websocket.Conn
+)
+
+func setResponseConn(conn *websocket.Conn) {
+	responseConnMu.Lock()
+	responseConn = conn
+	responseConnMu.Unlock()
+}
 
 // connectWS establishes a WebSocket connection to the server.
 func connectWS(wsURL string) (*websocket.Conn, error) {
@@ -29,12 +42,37 @@ func connectWS(wsURL string) (*websocket.Conn, error) {
 	return conn, nil
 }
 
+// startResponseListener keeps the response websocket alive by reconnecting when the server drops it.
+func startResponseListener(wsURL string, initialConn *websocket.Conn) {
+	conn := initialConn
+	for {
+		if conn == nil {
+			var err error
+			conn, err = connectWS(wsURL)
+			if err != nil {
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			setResponseConn(conn)
+		}
+
+		err := listenResponses(conn)
+		conn.Close()
+		setResponseConn(nil)
+		conn = nil
+		if err == nil {
+			return
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
 // listenResponses reads command responses and routes them to pending commands.
-func listenResponses(conn *websocket.Conn) {
+func listenResponses(conn *websocket.Conn) error {
 	for {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
-			return
+			return err
 		}
 
 		var msg shared.Message
@@ -49,6 +87,7 @@ func listenResponses(conn *websocket.Conn) {
 				case pc.ch <- msg:
 				default:
 				}
+				delete(pendingCmd, msg.ClientID)
 			}
 			pendingMu.Unlock()
 		}

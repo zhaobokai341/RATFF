@@ -69,22 +69,17 @@ func handleExecCommand(c *gin.Context) {
 		c.SetCookie("path_prefix", pathPrefix, 3600, "/", "", cfg.CookieSecure, true)
 	}
 
-	wsConnMu.Lock()
-	if wsConn == nil {
-		newConn, err := connectWS(pathPrefix)
-		if err != nil {
-			wsConnMu.Unlock()
-			pendingMu.Lock()
-			delete(pendingCmd, req.ClientID)
-			pendingMu.Unlock()
-			c.JSON(500, gin.H{"error": "websocket not connected: " + err.Error()})
-			return
-		}
-		wsConn = newConn
-		go listenResponses(wsConn)
+	conn, err := ensureResponseConn(pathPrefix)
+	if err != nil {
+		pendingMu.Lock()
+		delete(pendingCmd, req.ClientID)
+		pendingMu.Unlock()
+		c.JSON(500, gin.H{"error": "websocket not connected: " + err.Error()})
+		return
+	}
+	if conn != nil {
 		log.Info("Connected to WebSocket server")
 	}
-	wsConnMu.Unlock()
 
 	commandURL := buildAPIURL(pathPrefix, "/api/command")
 

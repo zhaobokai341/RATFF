@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"sync"
+	"time"
 
 	"RATFF/shared"
 
@@ -41,12 +42,61 @@ func connectWS(pathPassword string) (*websocket.Conn, error) {
 	return conn, nil
 }
 
+func setResponseConn(conn *websocket.Conn) {
+	wsConnMu.Lock()
+	wsConn = conn
+	wsConnMu.Unlock()
+}
+
+func ensureResponseConn(pathPassword string) (*websocket.Conn, error) {
+	wsConnMu.Lock()
+	if wsConn != nil {
+		conn := wsConn
+		wsConnMu.Unlock()
+		return conn, nil
+	}
+	wsConnMu.Unlock()
+
+	conn, err := connectWS(pathPassword)
+	if err != nil {
+		return nil, err
+	}
+	setResponseConn(conn)
+	go startResponseListener(pathPassword, conn)
+	return conn, nil
+}
+
+// startResponseListener keeps the response websocket alive by reconnecting when the server drops it.
+func startResponseListener(pathPassword string, initialConn *websocket.Conn) {
+	conn := initialConn
+	for {
+		if conn == nil {
+			var err error
+			conn, err = connectWS(pathPassword)
+			if err != nil {
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			setResponseConn(conn)
+		}
+
+		err := listenResponses(conn)
+		conn.Close()
+		setResponseConn(nil)
+		conn = nil
+		if err == nil {
+			return
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
 // listenResponses reads command responses from the WebSocket and routes them to pending commands.
-func listenResponses(conn *websocket.Conn) {
+func listenResponses(conn *websocket.Conn) error {
 	for {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
-			return
+			return err
 		}
 
 		var msg shared.Message
@@ -54,7 +104,7 @@ func listenResponses(conn *websocket.Conn) {
 			continue
 		}
 
-		if msg.Type == shared.MsgResponse {
+		if msg.Type == shared.MsgResponse || msg.Type == shared.MsgError {
 			pendingMu.Lock()
 			if pc, ok := pendingCmd[msg.ClientID]; ok {
 				select {

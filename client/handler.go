@@ -157,24 +157,33 @@ func handleShellExecBg(msg shared.Message) shared.Message {
 	workingMu.RUnlock()
 
 	outputFile, _ := msg.Payload["output_file"].(string)
+	var err error
 	if outputFile != "" {
-		file, err := os.Create(outputFile)
-		if err != nil {
+		file, ferr := os.Create(outputFile)
+		if ferr != nil {
 			return shared.NewMessage(shared.MsgError, "", msg.ClientID,
-				map[string]interface{}{"error": err.Error()})
+				map[string]interface{}{"error": ferr.Error()})
 		}
 		cmd.Stdout = file
 		cmd.Stderr = file
+
+		err = cmd.Start()
+		if err != nil {
+			file.Close()
+			return shared.NewMessage(shared.MsgError, "", msg.ClientID,
+				map[string]interface{}{"error": err.Error()})
+		}
+
 		go func() {
 			_ = cmd.Wait()
 			file.Close()
 		}()
-	}
-
-	err := cmd.Start()
-	if err != nil {
-		return shared.NewMessage(shared.MsgError, "", msg.ClientID,
-			map[string]interface{}{"error": err.Error()})
+	} else {
+		err = cmd.Start()
+		if err != nil {
+			return shared.NewMessage(shared.MsgError, "", msg.ClientID,
+				map[string]interface{}{"error": err.Error()})
+		}
 	}
 
 	result := map[string]interface{}{

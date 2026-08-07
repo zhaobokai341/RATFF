@@ -70,11 +70,12 @@ func main() {
 		PrintError(Tf("connect_failed", err))
 		os.Exit(1)
 	}
+	setResponseConn(wsConn)
 	defer wsConn.Close()
 
 	PrintSuccess(T("connect_success"))
 
-	go listenResponses(wsConn)
+	go startResponseListener(getWSURL(), wsConn)
 
 	inputScanner := bufio.NewScanner(os.Stdin)
 	selectedID := ""
