@@ -98,12 +98,6 @@ func handleShellExec(msg shared.Message) shared.Message {
 	return shared.NewMessage(shared.MsgResponse, "", msg.ClientID, result)
 }
 
-// handleSystemInfo returns system information for the client.
-func handleSystemInfo(msg shared.Message) shared.Message {
-	info := shared.BuildClientInfo(msg.ClientID)
-	return shared.NewMessage(shared.MsgResponse, "", msg.ClientID, info.ToPayload())
-}
-
 // handleCd changes the working directory of the client.
 func handleCd(msg shared.Message) shared.Message {
 	dir, _ := msg.Payload["dir"].(string)

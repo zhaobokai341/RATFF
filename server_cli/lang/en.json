@@ -76,5 +76,10 @@
 	"download_complete_failed": "Failed to complete download",
 	"download_md5_mismatch": "MD5 mismatch! Remote: %s, Local: %s",
 	"download_success": "Download successful: %s -> %s",
-	"operation_failed": "Operation failed: %s"
+	"operation_failed": "Operation failed: %s",
+	"cmd_systeminfo_desc": "Get detailed system information from client",
+	"systeminfo_client": "System Information for Client: %s",
+	"systeminfo_all_fields": "No fields specified, showing all",
+	"systeminfo_error_field": "Error collecting %s: %v",
+	"systeminfo_unknown_field": "Unknown field: %s. Available fields: host, cpu, memory, swap_memory, partition, io_disk, interfaces, io_network, processes"
 }

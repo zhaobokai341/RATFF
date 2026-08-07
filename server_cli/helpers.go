@@ -116,6 +116,13 @@ func handleConsoleMode(input string, selectedID string) string {
 		return "exit"
 	case "bg":
 		return handleConsoleBgCommand(args, selectedID)
+	case "systeminfo":
+		var fields []string
+		if len(args) > 1 {
+			fields = args[1:]
+		}
+		systeminfo(selectedID, fields)
+		return ""
 	default:
 		PrintError(T("invalid_command"))
 		return ""
@@ -142,6 +149,7 @@ func printConsoleHelp() {
 		{"upload <local> [remote]", T("cmd_upload_desc")},
 		{"download <remote> [local]", T("cmd_download_desc")},
 		{"bg <cmd> [file]", T("cmd_bg_desc")},
+		{"systeminfo [fields...]", T("cmd_systeminfo_desc")},
 		{"back", T("cmd_back_desc")},
 		{"help", T("cmd_help_desc")},
 		{"exit", T("cmd_exit_desc")},

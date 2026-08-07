@@ -76,5 +76,10 @@
 	"download_complete_failed": "完成下载失败",
 	"download_md5_mismatch": "MD5 校验不匹配! 远程: %s, 本地: %s",
 	"download_success": "下载成功: %s -> %s",
-	"operation_failed": "操作失败: %s"
+	"operation_failed": "操作失败: %s",
+	"cmd_systeminfo_desc": "获取客户端详细系统信息",
+	"systeminfo_client": "客户端系统信息: %s",
+	"systeminfo_all_fields": "未指定字段，显示全部",
+	"systeminfo_error_field": "收集 %s 信息时出错: %v",
+	"systeminfo_unknown_field": "未知字段: %s。可用字段: host, cpu, memory, swap_memory, partition, io_disk, interfaces, io_network, processes"
 }

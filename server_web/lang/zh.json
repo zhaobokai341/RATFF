@@ -43,5 +43,12 @@
 	"toast_failed_load_clients": "加载客户端失败",
 	"lang_zh": "中文",
 	"lang_en": "English",
-	"lang_switcher_label": "语言"
+	"lang_switcher_label": "语言",
+	"button_sysinfo": "系统信息",
+	"sysinfo_title": "系统信息",
+	"sysinfo_fields_label": "选择字段",
+	"sysinfo_fetch_btn": "获取信息",
+	"sysinfo_loading": "加载中...",
+	"sysinfo_no_data": "点击\"获取信息\"按钮查看系统信息",
+	"button_close": "关闭"
 }

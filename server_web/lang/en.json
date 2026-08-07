@@ -43,5 +43,12 @@
 	"toast_failed_load_clients": "Failed to load clients",
 	"lang_zh": "中文",
 	"lang_en": "English",
-	"lang_switcher_label": "Language"
+	"lang_switcher_label": "Language",
+	"button_sysinfo": "System Info",
+	"sysinfo_title": "System Information",
+	"sysinfo_fields_label": "Select Fields",
+	"sysinfo_fetch_btn": "Fetch Info",
+	"sysinfo_loading": "Loading...",
+	"sysinfo_no_data": "Click \"Fetch Info\" button to view system information",
+	"button_close": "Close"
 }

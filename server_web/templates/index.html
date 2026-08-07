@@ -70,6 +70,7 @@
                                 <td class="px-4 py-3 text-sm">${ c.hostname }</td>
                                 <td class="px-4 py-3"><span class="inline-block px-2 py-0.5 text-xs rounded bg-surface-2 text-gray-400">${ c.os_info }</span></td>
                                 <td class="px-4 py-3">
+                                    <button @click="showSysInfo(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-indigo-400 hover:bg-indigo-500/10 transition mr-1">${ labels.sysinfoBtn }</button>
                                     <button @click="showDelete(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-red-500 hover:bg-red-500/10 transition">${ labels.deleteBtn }</button>
                                 </td>
                             </tr>
@@ -135,6 +136,176 @@
                             ${ labels.execExitCodeLabel }: ${ outputExitCode }
                         </div>
                         <div v-if="!outputStdout && !outputStderr && outputExitCode === null" class="p-3.5 bg-bg border border-border rounded-lg font-mono text-sm leading-relaxed min-h-[120px] max-h-[400px] overflow-y-auto whitespace-pre-wrap break-all" :class="outputType === 'success' ? 'border-green-500' : outputType === 'error' ? 'border-red-500 text-red-500' : 'text-gray-500'">${ output }</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="sysinfoTarget" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="sysinfoTarget = null">
+            <div class="bg-surface border border-border rounded-xl p-6 max-w-5xl w-[95%] max-h-[85vh] overflow-hidden flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">${ labels.sysinfoTitle }: ${ sysinfoTarget }</h3>
+                    <button @click="sysinfoTarget = null" class="px-3 py-1 text-sm bg-transparent border border-border rounded-lg text-gray-400 hover:bg-surface-2 hover:text-gray-200 transition">${ labels.closeBtn }</button>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-400 mb-2">${ labels.sysinfoFieldsLabel }</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label v-for="field in availableFields" :key="field" class="flex items-center gap-1 px-2 py-1 bg-surface-2 border border-border rounded cursor-pointer hover:bg-border transition">
+                            <input type="checkbox" v-model="selectedFields" :value="field" class="w-3 h-3">
+                            <span class="text-xs font-mono">${ field }</span>
+                        </label>
+                    </div>
+                </div>
+                <button @click="fetchSysInfo" :disabled="sysinfoLoading" class="mb-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition">
+                    <svg v-if="sysinfoLoading" class="w-3.5 h-3.5 inline mr-1 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" class="animate-[spin_1s_linear_infinite]"/></svg>
+                    ${ sysinfoLoading ? labels.sysinfoLoading : labels.sysinfoFetchBtn }
+                </button>
+                <div class="flex-1 overflow-y-auto font-mono text-xs space-y-4 pr-2">
+                    <div v-if="sysinfoData.host" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Host</h4>
+                        <div class="grid grid-cols-2 gap-1">
+                            <div class="text-gray-400">Hostname:</div><div class="text-gray-200">${ sysinfoData.host.hostname || 'N/A' }</div>
+                            <div class="text-gray-400">OS:</div><div class="text-gray-200">${ sysinfoData.host.os || 'N/A' }</div>
+                            <div class="text-gray-400">Platform:</div><div class="text-gray-200">${ sysinfoData.host.platform || 'N/A' } ${ sysinfoData.host.platform_version || '' }</div>
+                            <div class="text-gray-400">Platform Family:</div><div class="text-gray-200">${ sysinfoData.host.platform_family || 'N/A' }</div>
+                            <div class="text-gray-400">Kernel:</div><div class="text-gray-200">${ sysinfoData.host.kernel_version || 'N/A' } ${ sysinfoData.host.kernel_arch || '' }</div>
+                            <div class="text-gray-400">Uptime:</div><div class="text-gray-200">${ formatUptime(sysinfoData.host.uptime) }</div>
+                            <div class="text-gray-400">Boot Time:</div><div class="text-gray-200">${ sysinfoData.host.boot_time ? new Date(sysinfoData.host.boot_time * 1000).toLocaleString() : 'N/A' }</div>
+                            <div class="text-gray-400">Processes:</div><div class="text-gray-200">${ sysinfoData.host.procs || 'N/A' }</div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.cpu" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">CPU</h4>
+                        <div v-for="(cpu, idx) in sysinfoData.cpu.cpus" :key="idx" class="mb-2">
+                            <div class="text-gray-300 font-semibold">CPU ${ idx }:</div>
+                            <div class="grid grid-cols-2 gap-1 ml-4">
+                                <div class="text-gray-400">Model:</div><div class="text-gray-200">${ cpu.model_name || 'N/A' }</div>
+                                <div class="text-gray-400">Cores:</div><div class="text-gray-200">${ cpu.cores || 'N/A' }</div>
+                                <div class="text-gray-400">MHz:</div><div class="text-gray-200">${ cpu.mhz ? cpu.mhz.toFixed(2) : 'N/A' }</div>
+                                <div class="text-gray-400">Cache:</div><div class="text-gray-200">${ cpu.cache_size ? cpu.cache_size + ' KB' : 'N/A' }</div>
+                                <div class="text-gray-400">Vendor:</div><div class="text-gray-200">${ cpu.vendor_id || 'N/A' }</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.memory" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Memory</h4>
+                        <div class="grid grid-cols-2 gap-1">
+                            <div class="text-gray-400">Total:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.total) }</div>
+                            <div class="text-gray-400">Used:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.used) } (${ sysinfoData.memory.used_percent ? sysinfoData.memory.used_percent.toFixed(1) : 0 }%)</div>
+                            <div class="text-gray-400">Available:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.available) }</div>
+                            <div class="text-gray-400">Free:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.free) }</div>
+                            <div class="text-gray-400">Active:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.active) }</div>
+                            <div class="text-gray-400">Inactive:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.inactive) }</div>
+                            <div class="text-gray-400">Buffers:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.buffers) }</div>
+                            <div class="text-gray-400">Cached:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.cached) }</div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.swap_memory" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Swap Memory</h4>
+                        <div class="grid grid-cols-2 gap-1">
+                            <div class="text-gray-400">Total:</div><div class="text-gray-200">${ formatBytes(sysinfoData.swap_memory.total) }</div>
+                            <div class="text-gray-400">Used:</div><div class="text-gray-200">${ formatBytes(sysinfoData.swap_memory.used) } (${ sysinfoData.swap_memory.used_percent ? sysinfoData.swap_memory.used_percent.toFixed(1) : 0 }%)</div>
+                            <div class="text-gray-400">Free:</div><div class="text-gray-200">${ formatBytes(sysinfoData.swap_memory.free) }</div>
+                            <div class="text-gray-400">Sin:</div><div class="text-gray-200">${ formatBytes(sysinfoData.swap_memory.sin) }</div>
+                            <div class="text-gray-400">Sout:</div><div class="text-gray-200">${ formatBytes(sysinfoData.swap_memory.sout) }</div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.partition" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Partitions</h4>
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-gray-400 border-b border-border">
+                                    <th class="text-left py-1">Device</th>
+                                    <th class="text-left py-1">Mountpoint</th>
+                                    <th class="text-left py-1">Type</th>
+                                    <th class="text-right py-1">Total</th>
+                                    <th class="text-right py-1">Used</th>
+                                    <th class="text-right py-1">Free</th>
+                                    <th class="text-right py-1">Use%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(p, idx) in sysinfoData.partition.partitions" :key="idx" class="border-b border-border/50">
+                                    <td class="py-1 font-mono">${ p.device || 'N/A' }</td>
+                                    <td class="py-1 font-mono">${ p.mountpoint || 'N/A' }</td>
+                                    <td class="py-1">${ p.fstype || 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.total ? formatBytes(p.total) : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.used ? formatBytes(p.used) : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.free ? formatBytes(p.free) : 'N/A' }</td>
+                                    <td class="py-1 text-right" :class="p.used_percent > 90 ? 'text-red-400' : 'text-gray-200'">${ p.used_percent ? p.used_percent.toFixed(1) + '%' : 'N/A' }</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-if="sysinfoData.io_disk" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Disk I/O</h4>
+                        <div v-for="(counter, name) in sysinfoData.io_disk" :key="name" class="mb-2">
+                            <div class="text-gray-300 font-semibold">${ name }:</div>
+                            <div class="grid grid-cols-2 gap-1 ml-4">
+                                <div class="text-gray-400">Read Count:</div><div class="text-gray-200">${ counter.read_count || 0 }</div>
+                                <div class="text-gray-400">Write Count:</div><div class="text-gray-200">${ counter.write_count || 0 }</div>
+                                <div class="text-gray-400">Read Bytes:</div><div class="text-gray-200">${ formatBytes(counter.read_bytes) }</div>
+                                <div class="text-gray-400">Write Bytes:</div><div class="text-gray-200">${ formatBytes(counter.write_bytes) }</div>
+                                <div class="text-gray-400">Read Time:</div><div class="text-gray-200">${ counter.read_time || 0 } ms</div>
+                                <div class="text-gray-400">Write Time:</div><div class="text-gray-200">${ counter.write_time || 0 } ms</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.interfaces" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Network Interfaces</h4>
+                        <div v-for="(iface, idx) in sysinfoData.interfaces.interfaces" :key="idx" class="mb-2">
+                            <div class="text-gray-300 font-semibold">${ iface.name }:</div>
+                            <div class="grid grid-cols-2 gap-1 ml-4">
+                                <div class="text-gray-400">MTU:</div><div class="text-gray-200">${ iface.mtu || 'N/A' }</div>
+                                <div class="text-gray-400">Flags:</div><div class="text-gray-200">${ iface.flags ? iface.flags.join(', ') : 'N/A' }</div>
+                                <div class="text-gray-400">Addresses:</div><div class="text-gray-200">${ iface.addresses ? iface.addresses.join(', ') : 'N/A' }</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.io_network" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Network I/O</h4>
+                        <div v-for="(counter, idx) in sysinfoData.io_network.io_counters" :key="idx" class="mb-2">
+                            <div class="text-gray-300 font-semibold">${ counter.name }:</div>
+                            <div class="grid grid-cols-2 gap-1 ml-4">
+                                <div class="text-gray-400">Bytes Sent:</div><div class="text-gray-200">${ formatBytes(counter.bytes_sent) }</div>
+                                <div class="text-gray-400">Bytes Recv:</div><div class="text-gray-200">${ formatBytes(counter.bytes_recv) }</div>
+                                <div class="text-gray-400">Packets Sent:</div><div class="text-gray-200">${ counter.packets_sent || 0 }</div>
+                                <div class="text-gray-400">Packets Recv:</div><div class="text-gray-200">${ counter.packets_recv || 0 }</div>
+                                <div class="text-gray-400">Errors In:</div><div class="text-gray-200">${ counter.errin || 0 }</div>
+                                <div class="text-gray-400">Errors Out:</div><div class="text-gray-200">${ counter.errout || 0 }</div>
+                                <div class="text-gray-400">Dropped In:</div><div class="text-gray-200">${ counter.dropin || 0 }</div>
+                                <div class="text-gray-400">Dropped Out:</div><div class="text-gray-200">${ counter.dropout || 0 }</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.processes" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Processes (${ sysinfoData.processes.count })</h4>
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-gray-400 border-b border-border">
+                                    <th class="text-left py-1">PID</th>
+                                    <th class="text-left py-1">Name</th>
+                                    <th class="text-left py-1">Status</th>
+                                    <th class="text-right py-1">CPU%</th>
+                                    <th class="text-right py-1">Mem%</th>
+                                    <th class="text-left py-1">Start Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(p, idx) in sysinfoData.processes.processes.slice(0, 100)" :key="idx" class="border-b border-border/50">
+                                    <td class="py-1 font-mono">${ p.pid }</td>
+                                    <td class="py-1 font-mono">${ p.name }</td>
+                                    <td class="py-1">${ p.status ? p.status[0] : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.cpu_percent ? p.cpu_percent.toFixed(1) : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.memory_percent ? p.memory_percent.toFixed(1) : 'N/A' }</td>
+                                    <td class="py-1 font-mono">${ p.create_time ? new Date(p.create_time * 1000).toLocaleTimeString() : 'N/A' }</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div v-if="sysinfoData.processes.count > 100" class="text-center text-gray-400 mt-2">Showing first 100 of ${ sysinfoData.processes.count } processes</div>
+                    </div>
+                    <div v-if="Object.keys(sysinfoData).length === 0 && !sysinfoLoading" class="text-center py-10 text-gray-500">
+                        ${ labels.sysinfoNoData }
                     </div>
                 </div>
             </div>
@@ -208,7 +379,14 @@
                 toastCdSuccess: '已切换到目录',
                 toastCdFailed: '切换目录失败',
                 toastBgStarted: '后台命令已启动',
-                toastFailedLoadClients: '加载客户端失败'
+                toastFailedLoadClients: '加载客户端失败',
+                sysinfoBtn: '系统信息',
+                sysinfoTitle: '系统信息',
+                sysinfoFieldsLabel: '选择字段',
+                sysinfoFetchBtn: '获取信息',
+                sysinfoLoading: '加载中...',
+                sysinfoNoData: '点击"获取信息"按钮查看系统信息',
+                closeBtn: '关闭'
             },
             en: {
                 pageTitle: 'Remote Control',
@@ -256,7 +434,14 @@
                 toastCdSuccess: 'Changed to directory',
                 toastCdFailed: 'Failed to change directory',
                 toastBgStarted: 'Background command started',
-                toastFailedLoadClients: 'Failed to load clients'
+                toastFailedLoadClients: 'Failed to load clients',
+                sysinfoBtn: 'System Info',
+                sysinfoTitle: 'System Information',
+                sysinfoFieldsLabel: 'Select Fields',
+                sysinfoFetchBtn: 'Fetch Info',
+                sysinfoLoading: 'Loading...',
+                sysinfoNoData: 'Click "Fetch Info" button to view system information',
+                closeBtn: 'Close'
             }
         };
 
@@ -284,6 +469,11 @@
                 const deleteTarget = ref(null);
                 const toast = ref('');
                 const toastType = ref('');
+                const sysinfoTarget = ref(null);
+                const sysinfoData = ref({});
+                const sysinfoLoading = ref(false);
+                const selectedFields = ref([]);
+                const availableFields = ['host', 'cpu', 'memory', 'swap_memory', 'partition', 'io_disk', 'interfaces', 'io_network', 'processes'];
 
                 const statusText = computed(() => clients.value.length > 0 ? labels.statusConnected : labels.statusDisconnected);
 
@@ -425,6 +615,64 @@
 
                 const showDelete = function(id) { deleteTarget.value = id; };
 
+                const showSysInfo = function(id) {
+                    sysinfoTarget.value = id;
+                    sysinfoData.value = {};
+                    selectedFields.value = [];
+                };
+
+                const fetchSysInfo = async function() {
+                    if (!sysinfoTarget.value) return;
+                    sysinfoLoading.value = true;
+                    sysinfoData.value = {};
+                    try {
+                        var fields = selectedFields.value.length > 0 ? selectedFields.value : availableFields;
+                        var data = await api('/api/command', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                client_id: sysinfoTarget.value,
+                                command: 'system_info',
+                                payload: { fields: fields }
+                            })
+                        });
+                        if (data.response && data.response.payload) {
+                            sysinfoData.value = data.response.payload;
+                        } else if (data.error) {
+                            showToast('Error: ' + data.error, 'error');
+                        }
+                    } catch (e) {
+                        showToast('Request failed: ' + e.message, 'error');
+                    } finally {
+                        sysinfoLoading.value = false;
+                    }
+                };
+
+                const formatBytes = function(bytes) {
+                    if (!bytes || bytes === 0) return '0 B';
+                    var units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+                    var unitIndex = 0;
+                    var value = parseFloat(bytes);
+                    while (value >= 1024 && unitIndex < units.length - 1) {
+                        value /= 1024;
+                        unitIndex++;
+                    }
+                    return value.toFixed(1) + ' ' + units[unitIndex];
+                };
+
+                const formatUptime = function(seconds) {
+                    if (!seconds || seconds === 0) return '0s';
+                    var days = Math.floor(seconds / 86400);
+                    var hours = Math.floor((seconds % 86400) / 3600);
+                    var minutes = Math.floor((seconds % 3600) / 60);
+                    var secs = seconds % 60;
+                    var result = '';
+                    if (days > 0) result += days + 'd ';
+                    if (hours > 0) result += hours + 'h ';
+                    if (minutes > 0) result += minutes + 'm ';
+                    result += secs + 's';
+                    return result;
+                };
+
                 const confirmDelete = async function() {
                     var id = deleteTarget.value;
                     deleteTarget.value = null;
@@ -487,7 +735,16 @@
                     selectAndInfo: selectAndInfo,
                     showDelete: showDelete,
                     confirmDelete: confirmDelete,
-                    logout: logout
+                    logout: logout,
+                    sysinfoTarget: sysinfoTarget,
+                    sysinfoData: sysinfoData,
+                    sysinfoLoading: sysinfoLoading,
+                    selectedFields: selectedFields,
+                    availableFields: availableFields,
+                    showSysInfo: showSysInfo,
+                    fetchSysInfo: fetchSysInfo,
+                    formatBytes: formatBytes,
+                    formatUptime: formatUptime
                 };
             }
         }).mount('#app');
