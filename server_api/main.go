@@ -23,22 +23,28 @@ func setupRouter(manager *ClientManager) *gin.Engine {
 
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
-	r.Use(rateLimitMiddleware())
 
 	pathPassword := cfg.PathPassword
 
-	var protected *gin.RouterGroup
+	var base *gin.RouterGroup
 	if pathPassword != "" {
-		protected = r.Group("/" + pathPassword)
+		base = r.Group("/" + pathPassword)
 	} else {
-		protected = r.Group("/")
+		base = r.Group("/")
 	}
 	{
-		protected.POST("/verify", handleVerify)
-		protected.GET("/ws", handleWebSocket(manager))
+		// Non-API endpoints with global rate limiting
+		nonAPI := base.Group("")
+		nonAPI.Use(rateLimitMiddleware())
+		{
+			nonAPI.POST("/verify", handleVerify)
+			nonAPI.GET("/ws", handleWebSocket(manager))
+		}
 
-		api := protected.Group("/api")
+		// API endpoints with per-client rate limiting
+		api := base.Group("/api")
 		api.Use(authMiddleware())
+		api.Use(apiRateLimitMiddleware())
 		{
 			api.GET("/clients", handleListClients(manager))
 			api.POST("/command", handleSendCommand(manager))

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -33,6 +34,18 @@ func executeCommand(msg shared.Message) shared.Message {
 		return shared.Message{}
 	case shared.CmdCd:
 		return handleCd(msg)
+	case shared.CmdFileUploadStart:
+		return handleFileUploadStart(msg)
+	case shared.CmdFileUploadChunk:
+		return handleFileUploadChunk(msg)
+	case shared.CmdFileUploadComplete:
+		return handleFileUploadComplete(msg)
+	case shared.CmdFileDownloadStart:
+		return handleFileDownloadStart(msg)
+	case shared.CmdFileDownloadChunk:
+		return handleFileDownloadChunk(msg)
+	case shared.CmdFileDownloadComplete:
+		return handleFileDownloadComplete(msg)
 	default:
 		return shared.NewMessage(shared.MsgError, msg.Command, msg.ClientID,
 			map[string]interface{}{"error": "unknown command"})
@@ -111,7 +124,12 @@ func handleCd(msg shared.Message) shared.Message {
 			map[string]interface{}{"error": err.Error()})
 	}
 
-	currentDir, _ := os.Getwd()
+	currentDir, wdErr := os.Getwd()
+	if wdErr != nil {
+		return shared.NewMessage(shared.MsgError, shared.CmdCd, msg.ClientID,
+			map[string]interface{}{"error": fmt.Sprintf("get working directory failed: %v", wdErr)})
+	}
+
 	return shared.NewMessage(shared.MsgResponse, shared.CmdCd, msg.ClientID,
 		map[string]interface{}{"current_dir": currentDir})
 }
@@ -147,7 +165,10 @@ func handleShellExecBg(msg shared.Message) shared.Message {
 		}
 		cmd.Stdout = file
 		cmd.Stderr = file
-		defer file.Close()
+		go func() {
+			_ = cmd.Wait()
+			file.Close()
+		}()
 	}
 
 	err := cmd.Start()

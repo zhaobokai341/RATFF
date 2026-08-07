@@ -27,9 +27,10 @@
 - 每次编写完必须用 `golangci-lint run` 检查并修复
 - 新增需求必须同步更新 `docs/requirements/` 和 `docs/tasks/`
 - 任务完成必须记录到 `docs/completed-tasks/`
-- 单文件代码不超过 150 行，测试文件不超过 300 行
-- 错误处理必须完整，不能忽略 error（测试中可用 `_ =` 显式忽略）
+- 单文件代码不超过 150 行，测试文件不超过 300 行（如果重构后会影响复杂度和可读性，请忽略这条规定）
+- 错误处理必须完整，不能忽略 error（测试中可用 `_ =` 显式忽略），详见 `docs/dev-rules/001_development_guide.md` 第 2.6 节
 - 优先使用标准库和成熟第三方库，不要手写
+- 异常机制要处理完整，不要光做个功能就不管了，覆盖场景：文件不存在、权限不足、网络超时、连接断开、磁盘满、channel 满、goroutine 泄漏
 - `server_cli` 所有用户可见输出必须使用 `output.go` 等文件中定义的输出函数，详见 `docs/dev-rules/002_cli_output_styling.md`
 - WebSocket 工具函数使用 `shared/` 中的 `SetupHeartbeat`、`SendWSMessage`、`ReadWSMessage`，禁止重复定义
 - 密码等敏感配置从环境变量获取，不要硬编码

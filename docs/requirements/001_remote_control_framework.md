@@ -161,6 +161,16 @@ RATFF/
 - [x] After writing code, use `golangci-lint run` to check and fix issues
 - [x] Record completed tasks in `docs/completed-tasks/`
 
+### 5.6 Error Handling Standards
+
+- [x] All error return values must be checked, no silent ignoring
+- [x] Resource cleanup (`Close()`, `Shutdown()`) must verify return values
+- [x] Every feature must handle all failure scenarios (file not found, permission denied, timeout, connection lost, disk full, etc.)
+- [x] Error messages must include operation context and original error
+- [x] Channel sends must use `select { default: }` to prevent blocking
+- [x] Goroutines must have clear exit conditions, no leaks
+- [x] CLI user-facing errors must use i18n translation keys
+
 ## 6. Communication Protocol
 
 ### 6.1 Message Format (JSON)

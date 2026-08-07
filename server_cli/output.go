@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Base style definitions (globally initialized to avoid repeated memory allocation)
 var (
 	styleSuccess = lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
 	styleError   = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
@@ -16,37 +18,31 @@ var (
 	stylePrompt  = lipgloss.NewStyle().Foreground(lipgloss.Color("14"))
 )
 
-// PrintSuccess outputs success messages in green.
 func PrintSuccess(msg string) {
 	prefix := styleSuccess.Render("[+]")
 	fmt.Printf("%s %s\n", prefix, msg)
 }
 
-// PrintError outputs error messages in red.
 func PrintError(msg string) {
 	prefix := styleError.Render("[-]")
 	fmt.Printf("%s %s\n", prefix, msg)
 }
 
-// PrintInfo outputs informational messages in blue.
 func PrintInfo(msg string) {
 	prefix := styleInfo.Render("[*]")
 	fmt.Printf("%s %s\n", prefix, msg)
 }
 
-// PrintDebug outputs debug messages in gray.
 func PrintDebug(msg string) {
 	prefix := styleDebug.Render("[debug]")
 	fmt.Printf("%s %s\n", prefix, msg)
 }
 
-// PrintWarn outputs warning messages in yellow.
 func PrintWarn(msg string) {
 	prefix := styleWarn.Render("[!]")
 	fmt.Printf("%s %s\n", prefix, msg)
 }
 
-// BuildPrompt generates a colored CLI prompt string based on current mode.
 func BuildPrompt(id string, inCommandMode bool) string {
 	if id == "" {
 		return stylePrompt.Render("(server) >> ")
@@ -57,7 +53,6 @@ func BuildPrompt(id string, inCommandMode bool) string {
 	return stylePrompt.Render(fmt.Sprintf("(%s)(console) >> ", id))
 }
 
-// StyleCommandOutput renders command output in a bordered code block.
 func StyleCommandOutput(output string) string {
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -66,7 +61,6 @@ func StyleCommandOutput(output string) string {
 		Render(output)
 }
 
-// PrintCommandResult displays command execution result with stdout, stderr, and exit code.
 func PrintCommandResult(stdout, stderr string, exitCode int) {
 	if stdout != "" {
 		PrintInfo(T("command_stdout"))
@@ -85,4 +79,104 @@ func PrintCommandResult(stdout, stderr string, exitCode int) {
 	} else {
 		PrintError(Tf("command_exit_code", exitCode))
 	}
+}
+
+type ProgressBar struct {
+	mu        sync.Mutex
+	total     int64
+	current   int64
+	width     int
+	startTime time.Time
+	filename  string
+	done      bool
+}
+
+func NewProgressBar(total int64, filename string) *ProgressBar {
+	return &ProgressBar{
+		total:     total,
+		width:     30,
+		startTime: time.Now(),
+		filename:  filename,
+	}
+}
+
+func (p *ProgressBar) Add(n int64) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.current += n
+}
+
+func (p *ProgressBar) SetTotal(total int64) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.total = total
+}
+
+func (p *ProgressBar) MarkDone() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.done = true
+}
+
+func (p *ProgressBar) Display() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.total == 0 {
+		return
+	}
+
+	percent := float64(p.current) / float64(p.total) * 100
+	if percent > 100 {
+		percent = 100
+	}
+
+	filled := int(percent / 100 * float64(p.width))
+	bar := strings.Repeat("█", filled) + strings.Repeat("░", p.width-filled)
+
+	elapsed := time.Since(p.startTime).Seconds()
+	speed := float64(p.current) / 1024 / 1024 / elapsed
+
+	remaining := float64(p.total-p.current) / (float64(p.current) / elapsed)
+	eta := time.Duration(remaining * float64(time.Second))
+
+	line := fmt.Sprintf("\r[%s] %s %.1f%% | %s/%s | %.2f MB/s | ETA: %s",
+		bar,
+		p.filename,
+		percent,
+		formatBytes(p.current),
+		formatBytes(p.total),
+		speed,
+		formatDuration(eta),
+	)
+
+	if p.done {
+		fmt.Println()
+		return
+	}
+
+	fmt.Print(line)
+}
+
+func formatBytes(b int64) string {
+	const unit = 1024
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
+}
+
+func formatDuration(d time.Duration) string {
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%dm%ds", int(d.Minutes()), int(d.Seconds())%60)
+	}
+	return fmt.Sprintf("%dh%dm", int(d.Hours()), int(d.Minutes())%60)
 }

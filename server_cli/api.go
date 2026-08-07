@@ -47,6 +47,12 @@ func apiPost(path string, payload interface{}) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		var errResp struct {
+			Error string `json:"error"`
+		}
+		if jsonErr := json.NewDecoder(resp.Body).Decode(&errResp); jsonErr == nil && errResp.Error != "" {
+			return fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, errResp.Error)
+		}
 		return fmt.Errorf("API request failed with status: %d", resp.StatusCode)
 	}
 

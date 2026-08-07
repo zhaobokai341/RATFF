@@ -15,7 +15,8 @@ const WSPongTimeout = 60 * time.Second
 
 // SetupHeartbeat configures ping/pong for the WebSocket connection.
 // It sets a read deadline and pong handler, then starts a goroutine
-// that sends ping messages at regular intervals.
+// that sends ping messages at regular intervals. The goroutine exits
+// automatically when the connection is closed (WriteMessage fails).
 func SetupHeartbeat(conn *websocket.Conn) {
 	_ = conn.SetReadDeadline(time.Now().Add(WSPongTimeout))
 	conn.SetPongHandler(func(string) error {

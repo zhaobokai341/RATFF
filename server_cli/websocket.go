@@ -45,8 +45,10 @@ func listenResponses(conn *websocket.Conn) {
 		if msg.Type == shared.MsgResponse || msg.Type == shared.MsgError {
 			pendingMu.Lock()
 			if pc, ok := pendingCmd[msg.ClientID]; ok {
-				pc.ch <- msg
-				delete(pendingCmd, msg.ClientID)
+				select {
+				case pc.ch <- msg:
+				default:
+				}
 			}
 			pendingMu.Unlock()
 		}

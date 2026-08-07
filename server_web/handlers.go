@@ -109,12 +109,13 @@ func handleExecCommand(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	defer resp.Body.Close()
 
 	select {
 	case msg := <-ch:
+		resp.Body.Close()
 		c.JSON(200, gin.H{"status": "completed", "response": msg})
 	case <-time.After(10 * time.Second):
+		resp.Body.Close()
 		pendingMu.Lock()
 		delete(pendingCmd, req.ClientID)
 		pendingMu.Unlock()

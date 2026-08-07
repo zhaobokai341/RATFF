@@ -80,8 +80,12 @@ func handleMessage(conn *websocket.Conn, manager *ClientManager, clientID string
 	case shared.MsgCommand:
 		targetID := msg.ClientID
 		if !manager.IsOnline(targetID) {
-			return shared.SendWSMessage(conn, shared.NewMessage(shared.MsgError, "", "",
+			err := shared.SendWSMessage(conn, shared.NewMessage(shared.MsgError, "", "",
 				map[string]interface{}{"error": "client offline"}))
+			if err != nil {
+				log.WithError(err).Error("Failed to send error message")
+			}
+			return nil
 		}
 		return manager.Send(targetID, msg)
 

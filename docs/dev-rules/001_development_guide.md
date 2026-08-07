@@ -61,6 +61,7 @@ RATFF/
 - Critical operations must be logged
 
 ### 2.5 Error Handling
+
 ```go
 // Correct example
 if err != nil {
@@ -75,7 +76,117 @@ log.WithFields(logrus.Fields{
 }).Error("Execution failed")
 ```
 
-### 2.6 Concurrency Safety
+### 2.6 Error Handling Rules (Mandatory)
+
+**2.6.1 No Ignored Errors**
+- Every `error` return value must be checked
+- In test files, use `_ =` to explicitly indicate intentional ignoring
+- Never use blank identifier `_` in production code to swallow errors
+
+```go
+// ❌ Wrong - silently ignores error
+file.Close()
+os.Chdir(dir)
+os.Getwd()
+
+// ✅ Correct - handles error
+if err := file.Close(); err != nil {
+    return fmt.Errorf("close file failed: %v", err)
+}
+
+// ✅ Test file - explicitly ignored
+_ = conn.Close()
+```
+
+**2.6.2 Resource Cleanup Must Be Verified**
+- `Close()`, `Shutdown()`, `Cleanup()` calls must check return values
+- `defer` is acceptable only when the cleanup error is truly non-critical
+- For critical resources (files, connections), return errors on cleanup failure
+
+```go
+// ❌ Wrong - cleanup error ignored
+defer file.Close()
+
+// ✅ Correct - cleanup in goroutine with error handling (for long-running)
+go func() {
+    _ = cmd.Wait()
+    if err := file.Close(); err != nil {
+        log.Error("Failed to close output file: ", err)
+    }
+}()
+
+// ✅ Correct - immediate cleanup with error check
+if err := session.File.Close(); err != nil {
+    return shared.NewMessage(shared.MsgError, cmd, clientID,
+        map[string]interface{}{"error": fmt.Sprintf("close file failed: %v", err)})
+}
+```
+
+**2.6.3 Complete Exception Coverage**
+Every feature must handle all possible failure scenarios:
+
+| Scenario | Required Handling |
+|----------|------------------|
+| File not found | Check before operation, return clear error |
+| Permission denied | Catch and return, do not crash |
+| Network timeout | Set timeout, return error with context |
+| Connection lost | Detect, clean up resources, attempt reconnect |
+| Invalid input | Validate early, return descriptive error |
+| Disk full | Check before write, return error |
+| Channel full | Use `select { default: }` to avoid blocking |
+| Goroutine leak | Ensure exit on connection close or context cancel |
+
+**2.6.4 Error Messages Must Be Descriptive**
+- Include operation context: what was being done
+- Include the original error: `fmt.Sprintf("operation failed: %v", err)`
+- Use i18n keys for user-facing errors in CLI
+
+```go
+// ❌ Wrong - no context
+return err
+
+// ✅ Correct - with context
+return fmt.Errorf("upload chunk %d failed: %v", chunkIndex, err)
+
+// ✅ CLI user-facing
+PrintError(Tf("upload_chunk_failed", chunkIndex))
+```
+
+**2.6.5 Channel Operations Must Not Block Indefinitely**
+- Use `select` with `default` or `timeout` for sends
+- Never send to a channel without a receiver guarantee
+
+```go
+// ❌ Wrong - may block forever if channel is full
+pc.ch <- msg
+
+// ✅ Correct - non-blocking send
+select {
+case pc.ch <- msg:
+default:
+    // Channel full, message dropped
+}
+```
+
+**2.6.6 Goroutine Lifecycle Management**
+- Every goroutine must have a clear exit condition
+- Use `context.Context` or done channels for cancellation
+- Ticker/Timer must be stopped with `defer`
+
+```go
+// ✅ Correct - exits on connection close
+go func() {
+    ticker := time.NewTicker(interval)
+    defer ticker.Stop()
+    for range ticker.C {
+        if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+            return // Connection closed, exit goroutine
+        }
+    }
+}()
+```
+
+### 2.7 Concurrency Safety
 - Shared maps use `sync.RWMutex`
 - Read-heavy scenarios use `RLock/RUnlock`
 - Write operations use `Lock/Unlock`

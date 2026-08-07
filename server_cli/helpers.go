@@ -86,6 +86,30 @@ func handleConsoleMode(input string, selectedID string) string {
 		dir := strings.Join(args[1:], " ")
 		cdClient(selectedID, dir)
 		return ""
+	case "upload":
+		if len(args) < 2 {
+			PrintError(T("usage_upload"))
+			return ""
+		}
+		localPath := args[1]
+		var remotePath string
+		if len(args) >= 3 {
+			remotePath = args[2]
+		}
+		uploadFile(selectedID, localPath, remotePath)
+		return ""
+	case "download":
+		if len(args) < 2 {
+			PrintError(T("usage_download"))
+			return ""
+		}
+		remotePath := args[1]
+		var localPath string
+		if len(args) >= 3 {
+			localPath = args[2]
+		}
+		downloadFile(selectedID, remotePath, localPath)
+		return ""
 	case "back":
 		return "back"
 	case "exit":
@@ -104,7 +128,6 @@ func printServerHelp() {
 		{"list", T("cmd_list_desc")},
 		{"select <id>", T("cmd_select_desc")},
 		{"delete <id>", T("cmd_delete_desc")},
-		{"cd <id> <dir>", T("cmd_cd_desc")},
 		{"clear", T("cmd_clear_desc")},
 		{"help", T("cmd_help_desc")},
 		{"exit", T("cmd_exit_desc")},
@@ -116,6 +139,8 @@ func printConsoleHelp() {
 	PrintHelp([]HelpCommand{
 		{"command", T("cmd_command_desc")},
 		{"cd <dir>", T("cmd_cd_console_desc")},
+		{"upload <local> [remote]", T("cmd_upload_desc")},
+		{"download <remote> [local]", T("cmd_download_desc")},
 		{"bg <cmd> [file]", T("cmd_bg_desc")},
 		{"back", T("cmd_back_desc")},
 		{"help", T("cmd_help_desc")},
