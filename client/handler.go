@@ -46,6 +46,12 @@ func executeCommand(msg shared.Message) shared.Message {
 		return handleFileDownloadChunk(msg)
 	case shared.CmdFileDownloadComplete:
 		return handleFileDownloadComplete(msg)
+	case shared.CmdFileList:
+		return handleFileList(msg)
+	case shared.CmdFileMove:
+		return handleFileMove(msg)
+	case shared.CmdFileDelete:
+		return handleFileDelete(msg)
 	default:
 		return shared.NewMessage(shared.MsgError, msg.Command, msg.ClientID,
 			map[string]interface{}{"error": "unknown command"})

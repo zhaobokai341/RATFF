@@ -138,3 +138,123 @@ func rateLimitMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// sendFileCommand sends a file operation command to a client and waits for response.
+func sendFileCommand(c *gin.Context, cmdType string, clientID string, cmdPayload map[string]interface{}) {
+	token, pathPrefix := getAuthInfo(c)
+
+	ch := make(chan shared.Message, 1)
+	pendingMu.Lock()
+	pendingCmd[clientID] = &pendingCommand{ch: ch}
+	pendingMu.Unlock()
+
+	msg := shared.NewMessage(shared.MsgCommand, shared.CommandType(cmdType), clientID, cmdPayload)
+	data, err := json.Marshal(msg)
+	if err != nil {
+		pendingMu.Lock()
+		delete(pendingCmd, clientID)
+		pendingMu.Unlock()
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err = ensureResponseConn(pathPrefix)
+	if err != nil {
+		pendingMu.Lock()
+		delete(pendingCmd, clientID)
+		pendingMu.Unlock()
+		c.JSON(500, gin.H{"error": "websocket not connected: " + err.Error()})
+		return
+	}
+
+	commandURL := buildAPIURL(pathPrefix, "/api/command")
+
+	httpReq, err := http.NewRequest("POST", commandURL, bytes.NewBuffer(data))
+	if err != nil {
+		pendingMu.Lock()
+		delete(pendingCmd, clientID)
+		pendingMu.Unlock()
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		pendingMu.Lock()
+		delete(pendingCmd, clientID)
+		pendingMu.Unlock()
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	select {
+	case msg := <-ch:
+		resp.Body.Close()
+		if msg.Payload != nil {
+			if errMsg, ok := msg.Payload["error"].(string); ok {
+				c.JSON(400, gin.H{"error": errMsg})
+				return
+			}
+		}
+		c.JSON(200, gin.H{"status": "success", "response": msg.Payload})
+	case <-time.After(10 * time.Second):
+		resp.Body.Close()
+		pendingMu.Lock()
+		delete(pendingCmd, clientID)
+		pendingMu.Unlock()
+		c.JSON(504, gin.H{"error": "command timed out"})
+	}
+}
+
+// handleFileList handles POST /api/file/list
+func handleFileList(c *gin.Context) {
+	var req struct {
+		ClientID string `json:"client_id" binding:"required"`
+		Path     string `json:"path"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	sendFileCommand(c, "file_list", req.ClientID, map[string]interface{}{"path": req.Path})
+}
+
+// handleFileMove handles POST /api/file/move
+func handleFileMove(c *gin.Context) {
+	var req struct {
+		ClientID   string `json:"client_id" binding:"required"`
+		OriginPath string `json:"origin_path" binding:"required"`
+		NewPath    string `json:"new_path" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	sendFileCommand(c, "file_move", req.ClientID, map[string]interface{}{
+		"origin_path": req.OriginPath,
+		"new_path":    req.NewPath,
+	})
+}
+
+// handleFileDelete handles POST /api/file/delete
+func handleFileDelete(c *gin.Context) {
+	var req struct {
+		ClientID string `json:"client_id" binding:"required"`
+		Path     string `json:"path" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	sendFileCommand(c, "file_delete", req.ClientID, map[string]interface{}{"path": req.Path})
+}

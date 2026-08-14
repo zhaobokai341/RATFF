@@ -123,6 +123,30 @@ func handleConsoleMode(input string, selectedID string) string {
 		}
 		systeminfo(selectedID, fields)
 		return ""
+	case "ls":
+		var path string
+		if len(args) >= 2 {
+			path = strings.Join(args[1:], " ")
+		}
+		listFiles(selectedID, path)
+		return ""
+	case "mv":
+		if len(args) < 3 {
+			PrintError(T("usage_mv"))
+			return ""
+		}
+		originPath := args[1]
+		newPath := strings.Join(args[2:], " ")
+		moveFile(selectedID, originPath, newPath)
+		return ""
+	case "rm":
+		if len(args) < 2 {
+			PrintError(T("usage_rm"))
+			return ""
+		}
+		path := strings.Join(args[1:], " ")
+		deleteFile(selectedID, path)
+		return ""
 	default:
 		PrintError(T("invalid_command"))
 		return ""
@@ -132,27 +156,30 @@ func handleConsoleMode(input string, selectedID string) string {
 // printServerHelp displays available commands in server mode.
 func printServerHelp() {
 	PrintHelp([]HelpCommand{
-		{"list", T("cmd_list_desc")},
-		{"select <id>", T("cmd_select_desc")},
-		{"delete <id>", T("cmd_delete_desc")},
-		{"clear", T("cmd_clear_desc")},
-		{"help", T("cmd_help_desc")},
-		{"exit", T("cmd_exit_desc")},
+		{Cmd: "list", Desc: T("cmd_list_desc")},
+		{Cmd: "select <id>", Desc: T("cmd_select_desc")},
+		{Cmd: "delete <id>", Desc: T("cmd_delete_desc")},
+		{Cmd: "clear", Desc: T("cmd_clear_desc")},
+		{Cmd: "help", Desc: T("cmd_help_desc")},
+		{Cmd: "exit", Desc: T("cmd_exit_desc")},
 	})
 }
 
 // printConsoleHelp displays available commands in console mode.
 func printConsoleHelp() {
 	PrintHelp([]HelpCommand{
-		{"command", T("cmd_command_desc")},
-		{"cd <dir>", T("cmd_cd_console_desc")},
-		{"upload <local> [remote]", T("cmd_upload_desc")},
-		{"download <remote> [local]", T("cmd_download_desc")},
-		{"bg <cmd> [file]", T("cmd_bg_desc")},
-		{"systeminfo [fields...]", T("cmd_systeminfo_desc")},
-		{"back", T("cmd_back_desc")},
-		{"help", T("cmd_help_desc")},
-		{"exit", T("cmd_exit_desc")},
+		{Cmd: "command", Desc: T("cmd_command_desc")},
+		{Cmd: "cd <dir>", Desc: T("cmd_cd_console_desc")},
+		{Cmd: "ls [path]", Desc: T("cmd_ls_desc")},
+		{Cmd: "mv <origin> <destination>", Desc: T("cmd_mv_desc")},
+		{Cmd: "rm <path>", Desc: T("cmd_rm_desc")},
+		{Cmd: "upload <local> [remote]", Desc: T("cmd_upload_desc")},
+		{Cmd: "download <remote> [local]", Desc: T("cmd_download_desc")},
+		{Cmd: "bg <cmd> [file]", Desc: T("cmd_bg_desc")},
+		{Cmd: "systeminfo [fields...]", Desc: T("cmd_systeminfo_desc")},
+		{Cmd: "back", Desc: T("cmd_back_desc")},
+		{Cmd: "help", Desc: T("cmd_help_desc")},
+		{Cmd: "exit", Desc: T("cmd_exit_desc")},
 	})
 }
 

@@ -385,6 +385,79 @@ func waitForCommandResponse(id string, cmd shared.CommandType, payload map[strin
 	return waitForCommandResponseWithMsg(id, cmd, payload, timeout) != nil
 }
 
+func listFiles(id, path string) {
+	payload := map[string]interface{}{"path": path}
+
+	msg := waitForCommandResponseWithMsg(id, shared.CmdFileList, payload, 10*time.Second)
+	if msg == nil {
+		return
+	}
+
+	if msg.Payload == nil {
+		PrintError(T("file_list_empty"))
+		return
+	}
+
+	if errMsg, ok := msg.Payload["error"].(string); ok {
+		PrintError(Tf("file_list_failed", errMsg))
+		return
+	}
+
+	currentPath, _ := msg.Payload["path"].(string)
+	filesInterface, ok := msg.Payload["files"].([]interface{})
+	if !ok {
+		PrintError(T("file_list_parse_failed"))
+		return
+	}
+
+	PrintFileTable(currentPath, filesInterface)
+}
+
+func moveFile(id, originPath, newPath string) {
+	payload := map[string]interface{}{
+		"origin_path": originPath,
+		"new_path":    newPath,
+	}
+
+	msg := waitForCommandResponseWithMsg(id, shared.CmdFileMove, payload, 10*time.Second)
+	if msg == nil {
+		return
+	}
+
+	if msg.Payload == nil {
+		PrintError(T("file_move_failed"))
+		return
+	}
+
+	if errMsg, ok := msg.Payload["error"].(string); ok {
+		PrintError(Tf("file_move_failed_detail", errMsg))
+		return
+	}
+
+	PrintSuccess(Tf("file_move_success", originPath, newPath))
+}
+
+func deleteFile(id, path string) {
+	payload := map[string]interface{}{"path": path}
+
+	msg := waitForCommandResponseWithMsg(id, shared.CmdFileDelete, payload, 10*time.Second)
+	if msg == nil {
+		return
+	}
+
+	if msg.Payload == nil {
+		PrintError(T("file_delete_failed"))
+		return
+	}
+
+	if errMsg, ok := msg.Payload["error"].(string); ok {
+		PrintError(Tf("file_delete_failed_detail", errMsg))
+		return
+	}
+
+	PrintSuccess(Tf("file_delete_success", path))
+}
+
 func waitForCommandResponseWithMsg(id string, cmd shared.CommandType, payload map[string]interface{}, timeout time.Duration) *shared.Message {
 	fullPayload := map[string]interface{}{
 		"client_id": id,

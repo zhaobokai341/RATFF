@@ -135,7 +135,7 @@ func TestStyleCommandOutput(t *testing.T) {
 
 func TestPrintHelp(t *testing.T) {
 	PrintHelp([]HelpCommand{
-		{"test", "Test command"},
+		{Cmd: "test", Desc: "Test command"},
 	})
 }
 

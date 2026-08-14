@@ -1,15 +1,9 @@
-package main
+package output
 
 import (
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
-)
-
-// Help command style definitions (globally initialized)
-var (
-	helpCmdStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true).Width(18)
-	helpDescStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 )
 
 // HelpCommand represents a help command entry with name and description.
@@ -18,9 +12,14 @@ type HelpCommand struct {
 	Desc string
 }
 
+var (
+	helpCmdStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true).Width(18)
+	helpDescStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+)
+
 // PrintHelp outputs a formatted list of available commands.
-func PrintHelp(commands []HelpCommand) {
-	PrintInfo(T("available_commands"))
+func PrintHelp(commands []HelpCommand, t func(string) string) {
+	PrintInfo(t("available_commands"))
 	fmt.Println()
 
 	for _, cmd := range commands {

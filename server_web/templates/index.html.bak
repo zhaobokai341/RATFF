@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="{{.lang}}" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    <script src="/static/js/tailwind.min.js"></script>
+    <script src="/static/js/vue.global.prod.js"></script>
+    <script src="/static/js/lang-switcher.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        bg: '#0f0f0f',
+                        surface: '#1a1a1a',
+                        'surface-2': '#242424',
+                        border: '#2a2a2a',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [v-cloak] { display: none; }
+        .font-mono { font-family: 'SF Mono', 'Consolas', 'Monaco', monospace; }
+    </style>
+</head>
+<body class="bg-bg text-gray-200 min-h-screen font-sans">
+    <div id="app" v-cloak class="max-w-6xl mx-auto p-6">
+        <header class="flex justify-between items-center mb-8 pb-5 border-b border-border">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">${ labels.page_title }</h1>
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full" :class="clients.length > 0 ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-gray-500'"></div>
+                <span class="text-sm text-gray-400">${ statusText }</span>
+                <button @click="loadClients" class="px-3 py-1.5 text-sm bg-transparent border border-border rounded-lg text-gray-400 hover:bg-surface-2 hover:text-gray-200 transition">
+                    <svg class="w-3.5 h-3.5 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                    ${ labels.button_refresh }
+                </button>
+                <lang-switcher></lang-switcher>
+                <button @click="logout" class="px-3 py-1.5 text-sm bg-transparent border border-border rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition ml-2">
+                    <svg class="w-3.5 h-3.5 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                    ${ labels.button_logout }
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-border flex justify-between items-center">
+                    <h2 class="font-semibold">${ labels.clients_title }</h2>
+                    <span class="text-sm text-gray-400">${ clients.length } ${ labels.online_suffix }</span>
+                </div>
+                <div v-if="clients.length">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-xs uppercase text-gray-400 border-b border-border">
+                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.header_id }</th>
+                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.header_ip }</th>
+                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.header_hostname }</th>
+                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.header_os }</th>
+                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.header_actions }</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="c in clients" :key="c.id" class="border-b border-border hover:bg-surface-2 transition">
+                                <td class="px-4 py-3 font-mono text-sm text-indigo-400">${ c.id }</td>
+                                <td class="px-4 py-3 text-sm">${ c.ip }</td>
+                                <td class="px-4 py-3 text-sm">${ c.hostname }</td>
+                                <td class="px-4 py-3"><span class="inline-block px-2 py-0.5 text-xs rounded bg-surface-2 text-gray-400">${ c.os_info }</span></td>
+                                <td class="px-4 py-3">
+                                    <button @click="showFileManagerFor(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-green-400 hover:bg-green-500/10 transition mr-1">${ labels.button_file_manager }</button>
+                                    <button @click="showSysInfo(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-indigo-400 hover:bg-indigo-500/10 transition mr-1">${ labels.sysinfo_btn }</button>
+                                    <button @click="showDelete(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-red-500 hover:bg-red-500/10 transition">${ labels.button_delete }</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div v-else class="text-center py-10 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                    ${ labels.no_clients }
+                </div>
+            </div>
+
+            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-border">
+                    <h2 class="font-semibold">${ labels.exec_title }</h2>
+                </div>
+                <div class="p-5">
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.target_label }</label>
+                        <select v-model="selectedClient" class="w-full px-3.5 py-2.5 bg-surface-2 border border-border rounded-lg text-sm text-gray-200 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;">
+                            <option value="">${ labels.target_placeholder }</option>
+                            <option v-for="c in clients" :key="c.id" :value="c.id">${ c.id } (${ c.hostname })</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.command_label }</label>
+                        <input v-model="command" @keydown.enter="execCommand" :placeholder="labels.command_placeholder" class="w-full px-3.5 py-2.5 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.bg_output_label }</label>
+                        <input v-model="bgOutputFile" @keydown.enter="execBgCommand" :placeholder="labels.bg_output_placeholder" class="w-full px-3.5 py-2.5 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="flex gap-2 mb-4">
+                        <button :disabled="executing" @click="execCommand" class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 12 19 12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            ${ labels.exec_btn }
+                        </button>
+                        <button :disabled="executing" @click="execBgCommand" class="flex-1 px-4 py-2 bg-transparent border border-border hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 text-sm font-medium rounded-lg transition flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            ${ labels.bg_btn }
+                        </button>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.cd_label }</label>
+                        <div class="flex gap-2">
+                            <input v-model="cdDir" @keydown.enter="execCd" :placeholder="labels.cd_placeholder" class="flex-1 px-3.5 py-2.5 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-indigo-500">
+                            <button :disabled="executing" @click="execCd" class="px-4 py-2 bg-transparent border border-border hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 text-sm font-medium rounded-lg transition">
+                                ${ labels.cd_btn }
+                            </button>
+                        </div>
+                        <div v-if="currentDir" class="mt-2 text-xs font-mono text-gray-400">${ labels.current_dir_label }: <span class="text-indigo-400">${ currentDir }</span></div>
+                    </div>
+                    <div class="mt-4 space-y-3">
+                        <div v-if="outputStdout" class="p-3.5 bg-bg border border-border rounded-lg">
+                            <div class="text-xs text-gray-400 mb-2">${ labels.exec_stdout_label }</div>
+                            <pre class="font-mono text-sm leading-relaxed whitespace-pre-wrap break-all text-gray-200">${ outputStdout }</pre>
+                        </div>
+                        <div v-if="outputStderr" class="p-3.5 bg-bg border border-red-500/30 rounded-lg">
+                            <div class="text-xs text-red-400 mb-2">${ labels.exec_stderr_label }</div>
+                            <pre class="font-mono text-sm leading-relaxed whitespace-pre-wrap break-all text-red-400">${ outputStderr }</pre>
+                        </div>
+                        <div v-if="outputExitCode !== null" class="text-xs font-mono" :class="outputExitCode === 0 ? 'text-green-400' : 'text-red-400'">
+                            ${ labels.exec_exit_code_label }: ${ outputExitCode }
+                        </div>
+                        <div v-if="!outputStdout && !outputStderr && outputExitCode === null" class="p-3.5 bg-bg border border-border rounded-lg font-mono text-sm leading-relaxed min-h-[120px] max-h-[400px] overflow-y-auto whitespace-pre-wrap break-all" :class="outputType === 'success' ? 'border-green-500' : outputType === 'error' ? 'border-red-500 text-red-500' : 'text-gray-500'">${ output }</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="showFileManager" class="mt-5 bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-border flex justify-between items-center">
+                <h2 class="font-semibold">${ labels.fm_title }</h2>
+                <button @click="showFileManager = false" class="px-3 py-1 text-sm bg-transparent border border-border rounded-lg text-gray-400 hover:bg-surface-2 hover:text-gray-200 transition">${ labels.close_btn }</button>
+            </div>
+            <div class="p-5">
+                <div class="flex gap-2 mb-4">
+                    <button @click="fmGoBack" :disabled="!selectedClient" class="px-3 py-2 bg-transparent border border-border hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 text-sm font-medium rounded-lg transition">
+                        ${ labels.fm_back_btn }
+                    </button>
+                    <button @click="loadFiles" :disabled="!selectedClient || fmLoading" class="px-3 py-2 bg-transparent border border-border hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 text-sm font-medium rounded-lg transition">
+                        ${ labels.fm_refresh_btn }
+                    </button>
+                    <input v-model="fmPath" @keydown.enter="loadFiles" :placeholder="labels.fm_path_placeholder" class="flex-1 px-3.5 py-2 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-indigo-500">
+                    <button @click="loadFiles" :disabled="!selectedClient || fmLoading" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition">
+                        ${ labels.fm_go_btn }
+                    </button>
+                </div>
+                <div v-if="fmLoading" class="text-center py-10 text-gray-500">
+                    <svg class="w-8 h-8 mx-auto mb-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" class="animate-[spin_1s_linear_infinite]"/></svg>
+                    Loading...
+                </div>
+                <div v-else-if="fmFiles.length === 0" class="text-center py-10 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    ${ labels.fm_empty_dir }
+                </div>
+                <div v-else class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-xs uppercase text-gray-400 border-b border-border">
+                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.fm_header_type }</th>
+                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.fm_header_name }</th>
+                                <th class="text-right px-4 py-2.5 font-semibold">${ labels.fm_header_size }</th>
+                                <th class="text-center px-4 py-2.5 font-semibold">${ labels.fm_header_modified }</th>
+                                <th class="text-center px-4 py-2.5 font-semibold">${ labels.fm_header_permissions }</th>
+                                <th class="text-center px-4 py-2.5 font-semibold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="f in fmFiles" :key="f.name" class="border-b border-border hover:bg-surface-2 transition">
+                                <td class="px-4 py-2 text-sm">${ getFileTypeIcon(f) }</td>
+                                <td class="px-4 py-2">
+                                    <span class="text-sm cursor-pointer hover:text-indigo-400 transition" :class="f.is_dir ? 'text-indigo-400 font-medium' : 'text-gray-200'" @click="handleFileClick(f)">${ getDisplayName(f) }</span>
+                                </td>
+                                <td class="px-4 py-2 text-sm text-right font-mono">${ formatFileSize(f.size) }</td>
+                                <td class="px-4 py-2 text-sm text-center font-mono text-gray-400">${ formatModTime(f.mod_time) }</td>
+                                <td class="px-4 py-2 text-sm text-center font-mono text-gray-400">${ f.permissions }</td>
+                                <td class="px-4 py-2 text-center">
+                                    <button @click="showProperties(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-indigo-400 hover:bg-indigo-500/10 transition mr-1">Props</button>
+                                    <button @click="showDeleteFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-red-500 hover:bg-red-500/10 transition mr-1">${ labels.fm_action_delete }</button>
+                                    <button @click="showMoveFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-yellow-500 hover:bg-yellow-500/10 transition">${ labels.fm_action_move }</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="fmDeleteTarget" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="fmDeleteTarget = null">
+            <div class="bg-surface border border-border rounded-xl p-6 max-w-md w-[95%]">
+                <h3 class="text-lg font-semibold mb-4">${ labels.fm_delete_title }</h3>
+                <p class="text-sm text-gray-400 mb-2">${ labels.fm_delete_confirm }</p>
+                <p class="text-sm font-mono text-indigo-400 mb-6">${ fmDeleteTarget }</p>
+                <div class="flex gap-2">
+                    <button @click="fmDeleteTarget = null" class="flex-1 px-4 py-2 bg-transparent border border-border hover:bg-surface-2 text-gray-300 text-sm font-medium rounded-lg transition">${ labels.cancel_btn }</button>
+                    <button @click="confirmDeleteFile" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-lg transition">${ labels.confirm_delete_btn }</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="fmMoveTarget" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="fmMoveTarget = null">
+            <div class="bg-surface border border-border rounded-xl p-6 max-w-md w-[95%]">
+                <h3 class="text-lg font-semibold mb-4">${ labels.fm_move_title }</h3>
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.fm_move_origin_label }</label>
+                    <input v-model="fmMoveOrigin" readonly class="w-full px-3.5 py-2 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-400 cursor-not-allowed">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.fm_move_target_label }</label>
+                    <input v-model="fmMoveDest" @keydown.enter="confirmMoveFile" :placeholder="labels.fm_move_target_placeholder" class="w-full px-3.5 py-2 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex gap-2">
+                    <button @click="fmMoveTarget = null" class="flex-1 px-4 py-2 bg-transparent border border-border hover:bg-surface-2 text-gray-300 text-sm font-medium rounded-lg transition">${ labels.cancel_btn }</button>
+                    <button @click="confirmMoveFile" class="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-medium rounded-lg transition">Move</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="fmPropertiesTarget" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="fmPropertiesTarget = null">
+            <div class="bg-surface border border-border rounded-xl p-6 max-w-lg w-[95%]">
+                <h3 class="text-lg font-semibold mb-4">${ labels.fm_properties_title }</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_name }:</span><span class="text-sm font-mono">${ fmPropertiesTarget.name }</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_type }:</span><span class="text-sm">${ getFileTypeLabel(fmPropertiesTarget) }</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_size }:</span><span class="text-sm font-mono">${ formatFileSize(fmPropertiesTarget.size) }</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_modified }:</span><span class="text-sm font-mono">${ formatModTime(fmPropertiesTarget.mod_time) }</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_permissions }:</span><span class="text-sm font-mono">${ fmPropertiesTarget.permissions }</span></div>
+                    <div v-if="fmPropertiesTarget.link_target" class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_link_target }:</span><span class="text-sm font-mono text-indigo-400">${ fmPropertiesTarget.link_target }</span></div>
+                    <div v-if="fmPropertiesTarget.hidden" class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_hidden }:</span><span class="text-sm text-yellow-400">Yes</span></div>
+                </div>
+                <div class="mt-6">
+                    <button @click="fmPropertiesTarget = null" class="w-full px-4 py-2 bg-transparent border border-border hover:bg-surface-2 text-gray-300 text-sm font-medium rounded-lg transition">${ labels.close_btn }</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="sysinfoTarget" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="sysinfoTarget = null">
+            <div class="bg-surface border border-border rounded-xl p-6 max-w-5xl w-[95%] max-h-[85vh] overflow-hidden flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">${ labels.sysinfo_title }: ${ sysinfoTarget }</h3>
+                    <button @click="sysinfoTarget = null" class="px-3 py-1 text-sm bg-transparent border border-border rounded-lg text-gray-400 hover:bg-surface-2 hover:text-gray-200 transition">${ labels.close_btn }</button>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-400 mb-2">${ labels.sysinfo_fields_label }</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label v-for="field in availableFields" :key="field" class="flex items-center gap-1 px-2 py-1 bg-surface-2 border border-border rounded cursor-pointer hover:bg-border transition">
+                            <input type="checkbox" v-model="selectedFields" :value="field" class="w-3 h-3">
+                            <span class="text-xs font-mono">${ field }</span>
+                        </label>
+                    </div>
+                </div>
+                <button @click="fetchSysInfo" :disabled="sysinfoLoading" class="mb-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition">
+                    <svg v-if="sysinfoLoading" class="w-3.5 h-3.5 inline mr-1 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" class="animate-[spin_1s_linear_infinite]"/></svg>
+                    ${ sysinfoLoading ? labels.sysinfo_loading : labels.sysinfo_fetch_btn }
+                </button>
+                <div class="flex-1 overflow-y-auto font-mono text-xs space-y-4 pr-2">
+                    <div v-if="sysinfoData.host" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Host</h4>
+                        <div class="grid grid-cols-2 gap-1">
+                            <div class="text-gray-400">Hostname:</div><div class="text-gray-200">${ sysinfoData.host.hostname || 'N/A' }</div>
+                            <div class="text-gray-400">OS:</div><div class="text-gray-200">${ sysinfoData.host.os || 'N/A' }</div>
+                            <div class="text-gray-400">Platform:</div><div class="text-gray-200">${ sysinfoData.host.platform || 'N/A' } ${ sysinfoData.host.platform_version || '' }</div>
+                            <div class="text-gray-400">Platform Family:</div><div class="text-gray-200">${ sysinfoData.host.platform_family || 'N/A' }</div>
+                            <div class="text-gray-400">Kernel:</div><div class="text-gray-200">${ sysinfoData.host.kernel_version || 'N/A' } ${ sysinfoData.host.kernel_arch || '' }</div>
+                            <div class="text-gray-400">Uptime:</div><div class="text-gray-200">${ formatUptime(sysinfoData.host.uptime) }</div>
+                            <div class="text-gray-400">Boot Time:</div><div class="text-gray-200">${ sysinfoData.host.boot_time ? new Date(sysinfoData.host.boot_time * 1000).toLocaleString() : 'N/A' }</div>
+                            <div class="text-gray-400">Processes:</div><div class="text-gray-200">${ sysinfoData.host.procs || 'N/A' }</div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.cpu" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">CPU</h4>
+                        <div v-for="(cpu, idx) in sysinfoData.cpu.cpus" :key="idx" class="mb-2">
+                            <div class="text-gray-300 font-semibold">CPU ${ idx }:</div>
+                            <div class="grid grid-cols-2 gap-1 ml-4">
+                                <div class="text-gray-400">Model:</div><div class="text-gray-200">${ cpu.model_name || 'N/A' }</div>
+                                <div class="text-gray-400">Cores:</div><div class="text-gray-200">${ cpu.cores || 'N/A' }</div>
+                                <div class="text-gray-400">MHz:</div><div class="text-gray-200">${ cpu.mhz ? cpu.mhz.toFixed(2) : 'N/A' }</div>
+                                <div class="text-gray-400">Cache:</div><div class="text-gray-200">${ cpu.cache_size ? cpu.cache_size + ' KB' : 'N/A' }</div>
+                                <div class="text-gray-400">Vendor:</div><div class="text-gray-200">${ cpu.vendor_id || 'N/A' }</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.memory" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Memory</h4>
+                        <div class="grid grid-cols-2 gap-1">
+                            <div class="text-gray-400">Total:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.total) }</div>
+                            <div class="text-gray-400">Used:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.used) } (${ sysinfoData.memory.used_percent ? sysinfoData.memory.used_percent.toFixed(1) : 0 }%)</div>
+                            <div class="text-gray-400">Available:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.available) }</div>
+                            <div class="text-gray-400">Free:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.free) }</div>
+                            <div class="text-gray-400">Active:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.active) }</div>
+                            <div class="text-gray-400">Inactive:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.inactive) }</div>
+                            <div class="text-gray-400">Buffers:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.buffers) }</div>
+                            <div class="text-gray-400">Cached:</div><div class="text-gray-200">${ formatBytes(sysinfoData.memory.cached) }</div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.swap_memory" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Swap Memory</h4>
+                        <div class="grid grid-cols-2 gap-1">
+                            <div class="text-gray-400">Total:</div><div class="text-gray-200">${ formatBytes(sysinfoData.swap_memory.total) }</div>
+                            <div class="text-gray-400">Used:</div><div class="text-gray-200">${ formatBytes(sysinfoData.swap_memory.used) } (${ sysinfoData.swap_memory.used_percent ? sysinfoData.swap_memory.used_percent.toFixed(1) : 0 }%)</div>
+                            <div class="text-gray-400">Free:</div><div class="text-gray-200">${ formatBytes(sysinfoData.swap_memory.free) }</div>
+                            <div class="text-gray-400">Sin:</div><div class="text-gray-200">${ formatBytes(sysinfoData.swap_memory.sin) }</div>
+                            <div class="text-gray-400">Sout:</div><div class="text-gray-200">${ formatBytes(sysinfoData.swap_memory.sout) }</div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.partition" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Partitions</h4>
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-gray-400 border-b border-border">
+                                    <th class="text-left py-1">Device</th>
+                                    <th class="text-left py-1">Mountpoint</th>
+                                    <th class="text-left py-1">Type</th>
+                                    <th class="text-right py-1">Total</th>
+                                    <th class="text-right py-1">Used</th>
+                                    <th class="text-right py-1">Free</th>
+                                    <th class="text-right py-1">Use%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(p, idx) in sysinfoData.partition.partitions" :key="idx" class="border-b border-border/50">
+                                    <td class="py-1 font-mono">${ p.device || 'N/A' }</td>
+                                    <td class="py-1 font-mono">${ p.mountpoint || 'N/A' }</td>
+                                    <td class="py-1">${ p.fstype || 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.total ? formatBytes(p.total) : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.used ? formatBytes(p.used) : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.free ? formatBytes(p.free) : 'N/A' }</td>
+                                    <td class="py-1 text-right" :class="p.used_percent > 90 ? 'text-red-400' : 'text-gray-200'">${ p.used_percent ? p.used_percent.toFixed(1) + '%' : 'N/A' }</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-if="sysinfoData.io_disk" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Disk I/O</h4>
+                        <div v-for="(counter, name) in sysinfoData.io_disk" :key="name" class="mb-2">
+                            <div class="text-gray-300 font-semibold">${ name }:</div>
+                            <div class="grid grid-cols-2 gap-1 ml-4">
+                                <div class="text-gray-400">Read Count:</div><div class="text-gray-200">${ counter.read_count || 0 }</div>
+                                <div class="text-gray-400">Write Count:</div><div class="text-gray-200">${ counter.write_count || 0 }</div>
+                                <div class="text-gray-400">Read Bytes:</div><div class="text-gray-200">${ formatBytes(counter.read_bytes) }</div>
+                                <div class="text-gray-400">Write Bytes:</div><div class="text-gray-200">${ formatBytes(counter.write_bytes) }</div>
+                                <div class="text-gray-400">Read Time:</div><div class="text-gray-200">${ counter.read_time || 0 } ms</div>
+                                <div class="text-gray-400">Write Time:</div><div class="text-gray-200">${ counter.write_time || 0 } ms</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.interfaces" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Network Interfaces</h4>
+                        <div v-for="(iface, idx) in sysinfoData.interfaces.interfaces" :key="idx" class="mb-2">
+                            <div class="text-gray-300 font-semibold">${ iface.name }:</div>
+                            <div class="grid grid-cols-2 gap-1 ml-4">
+                                <div class="text-gray-400">MTU:</div><div class="text-gray-200">${ iface.mtu || 'N/A' }</div>
+                                <div class="text-gray-400">Flags:</div><div class="text-gray-200">${ iface.flags ? iface.flags.join(', ') : 'N/A' }</div>
+                                <div class="text-gray-400">Addresses:</div><div class="text-gray-200">${ iface.addresses ? iface.addresses.join(', ') : 'N/A' }</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.io_network" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Network I/O</h4>
+                        <div v-for="(counter, idx) in sysinfoData.io_network.io_counters" :key="idx" class="mb-2">
+                            <div class="text-gray-300 font-semibold">${ counter.name }:</div>
+                            <div class="grid grid-cols-2 gap-1 ml-4">
+                                <div class="text-gray-400">Bytes Sent:</div><div class="text-gray-200">${ formatBytes(counter.bytes_sent) }</div>
+                                <div class="text-gray-400">Bytes Recv:</div><div class="text-gray-200">${ formatBytes(counter.bytes_recv) }</div>
+                                <div class="text-gray-400">Packets Sent:</div><div class="text-gray-200">${ counter.packets_sent || 0 }</div>
+                                <div class="text-gray-400">Packets Recv:</div><div class="text-gray-200">${ counter.packets_recv || 0 }</div>
+                                <div class="text-gray-400">Errors In:</div><div class="text-gray-200">${ counter.errin || 0 }</div>
+                                <div class="text-gray-400">Errors Out:</div><div class="text-gray-200">${ counter.errout || 0 }</div>
+                                <div class="text-gray-400">Dropped In:</div><div class="text-gray-200">${ counter.dropin || 0 }</div>
+                                <div class="text-gray-400">Dropped Out:</div><div class="text-gray-200">${ counter.dropout || 0 }</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="sysinfoData.processes" class="p-3 bg-bg border border-border rounded-lg">
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Processes (${ sysinfoData.processes.count })</h4>
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-gray-400 border-b border-border">
+                                    <th class="text-left py-1">PID</th>
+                                    <th class="text-left py-1">Name</th>
+                                    <th class="text-left py-1">Status</th>
+                                    <th class="text-right py-1">CPU%</th>
+                                    <th class="text-right py-1">Mem%</th>
+                                    <th class="text-left py-1">Start Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(p, idx) in sysinfoData.processes.processes.slice(0, 100)" :key="idx" class="border-b border-border/50">
+                                    <td class="py-1 font-mono">${ p.pid }</td>
+                                    <td class="py-1 font-mono">${ p.name }</td>
+                                    <td class="py-1">${ p.status ? p.status[0] : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.cpu_percent ? p.cpu_percent.toFixed(1) : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.memory_percent ? p.memory_percent.toFixed(1) : 'N/A' }</td>
+                                    <td class="py-1 font-mono">${ p.create_time ? new Date(p.create_time * 1000).toLocaleTimeString() : 'N/A' }</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div v-if="sysinfoData.processes.count > 100" class="text-center text-gray-400 mt-2">Showing first 100 of ${ sysinfoData.processes.count } processes</div>
+                    </div>
+                    <div v-if="Object.keys(sysinfoData).length === 0 && !sysinfoLoading" class="text-center py-10 text-gray-500">
+                        ${ labels.sysinfo_no_data }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="deleteTarget" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="deleteTarget = null">
+            <div class="bg-surface border border-border rounded-xl p-6 max-w-sm w-[90%]">
+                <h3 class="text-lg font-semibold mb-3">${ labels.delete_title }</h3>
+                <p class="text-gray-400 text-sm mb-5">${ labels.delete_confirm_prefix } <strong class="text-gray-200">${ deleteTarget }</strong>${ labels.delete_confirm_suffix }</p>
+                <div class="flex gap-2 justify-end">
+                    <button @click="deleteTarget = null" class="px-4 py-2 bg-transparent border border-border rounded-lg text-sm text-gray-400 hover:bg-surface-2 hover:text-gray-200 transition">${ labels.cancel_btn }</button>
+                    <button @click="confirmDelete" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-lg transition">${ labels.confirm_delete_btn }</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="fixed bottom-6 right-6 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 translate-y-[100px] opacity-0" :class="[toastType, toast ? 'translate-y-0 opacity-100' : '']">${ toast }</div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        // Extract path prefix from current URL
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        const basePath = pathParts.length > 0 ? '/' + pathParts[0] : '';
+
+        const messages = {
+            zh: {
+                page_title: '远程控制',
+                status_connected: '已连接',
+                status_disconnected: '未连接',
+                button_refresh: '刷新',
+                button_logout: '退出登录',
+                clients_title: '已连接的客户端',
+                online_suffix: '在线',
+                header_id: 'ID',
+                header_ip: 'IP',
+                header_hostname: '主机名',
+                header_os: '操作系统',
+                header_actions: '操作',
+                button_delete: '删除',
+                no_clients: '暂无客户端连接',
+                exec_title: '执行命令',
+                target_label: '目标客户端',
+                target_placeholder: '选择客户端...',
+                command_label: '命令',
+                command_placeholder: '例如: ls -la /tmp',
+                exec_btn: '执行',
+                bg_btn: '后台执行',
+                bg_output_label: '输出文件（可选）',
+                bg_output_placeholder: '例如: /tmp/output.txt',
+                cd_label: '切换目录',
+                cd_placeholder: '例如: /tmp',
+                cd_btn: '切换',
+                current_dir_label: '当前目录',
+                exec_waiting: '等待命令...',
+                exec_executing: '执行中...',
+                exec_stdout_label: '标准输出',
+                exec_stderr_label: '错误输出',
+                exec_exit_code_label: '退出码',
+                delete_title: '删除客户端',
+                delete_confirm_prefix: '确定要删除',
+                delete_confirm_suffix: '？这将发送退出命令。',
+                cancel_btn: '取消',
+                confirm_delete_btn: '删除',
+                toast_delete_success: '客户端已删除',
+                toast_exit_sent_prefix: '已向',
+                toast_select_client: '请选择客户端',
+                toast_enter_command: '请输入命令',
+                toast_enter_dir: '请输入目录路径',
+                toast_cd_success: '已切换到目录',
+                toast_cd_failed: '切换目录失败',
+                toast_bg_started: '后台命令已启动',
+                toast_failed_load_clients: '加载客户端失败',
+                sysinfo_btn: '系统信息',
+                sysinfo_title: '系统信息',
+                sysinfo_fields_label: '选择字段',
+                sysinfo_fetch_btn: '获取信息',
+                sysinfo_loading: '加载中...',
+                sysinfo_no_data: '点击"获取信息"按钮查看系统信息',
+                close_btn: '关闭',
+                button_file_manager: '文件管理器',
+                fm_title: '文件管理器',
+                fm_path_label: '路径',
+                fm_path_placeholder: '输入路径...',
+                fm_go_btn: '跳转',
+                fm_back_btn: '返回上级',
+                fm_refresh_btn: '刷新',
+                fm_header_type: '类型',
+                fm_header_name: '名称',
+                fm_header_size: '大小',
+                fm_header_modified: '修改时间',
+                fm_header_permissions: '权限',
+                fm_empty_dir: '空目录',
+                fm_type_directory: '文件夹',
+                fm_type_file: '文件',
+                fm_type_symlink: '链接',
+                fm_type_shortcut: '快捷方式',
+                fm_hidden_prefix: '.',
+                fm_action_delete: '删除',
+                fm_action_move: '移动',
+                fm_delete_title: '删除文件/文件夹',
+                fm_delete_confirm: '确定要删除吗？',
+                fm_delete_confirm_path: '路径: {path}',
+                fm_delete_success: '删除成功',
+                fm_delete_failed: '删除失败: {error}',
+                fm_move_title: '移动文件/文件夹',
+                fm_move_origin_label: '原路径',
+                fm_move_target_label: '目标路径',
+                fm_move_target_placeholder: '输入目标路径...',
+                fm_move_success: '移动成功',
+                fm_move_failed: '移动失败: {error}',
+                fm_load_failed: '加载文件失败: {error}',
+                fm_toast_select_client: '请先选择客户端',
+                fm_properties_title: '属性',
+                fm_prop_name: '名称',
+                fm_prop_type: '类型',
+                fm_prop_size: '大小',
+                fm_prop_modified: '修改时间',
+                fm_prop_permissions: '权限',
+                fm_prop_link_target: '链接目标',
+                fm_prop_hidden: '隐藏'
+            },
+            en: {
+                page_title: 'Remote Control',
+                status_connected: 'Connected',
+                status_disconnected: 'Disconnected',
+                button_refresh: 'Refresh',
+                button_logout: 'Logout',
+                clients_title: 'Connected Clients',
+                online_suffix: 'online',
+                header_id: 'ID',
+                header_ip: 'IP',
+                header_hostname: 'Hostname',
+                header_os: 'OS',
+                header_actions: 'Actions',
+                button_delete: 'Delete',
+                no_clients: 'No clients connected',
+                exec_title: 'Execute Command',
+                target_label: 'Target Client',
+                target_placeholder: 'Select a client...',
+                command_label: 'Command',
+                command_placeholder: 'e.g. ls -la /tmp',
+                exec_btn: 'Execute',
+                bg_btn: 'Background',
+                bg_output_label: 'Output File (Optional)',
+                bg_output_placeholder: 'e.g. /tmp/output.txt',
+                cd_label: 'Change Directory',
+                cd_placeholder: 'e.g. /tmp',
+                cd_btn: 'Change',
+                current_dir_label: 'Current Directory',
+                exec_waiting: 'Waiting for command...',
+                exec_executing: 'Executing...',
+                exec_stdout_label: 'Standard Output',
+                exec_stderr_label: 'Error Output',
+                exec_exit_code_label: 'Exit Code',
+                delete_title: 'Delete Client',
+                delete_confirm_prefix: 'Are you sure you want to delete',
+                delete_confirm_suffix: '? This will send an exit command.',
+                cancel_btn: 'Cancel',
+                confirm_delete_btn: 'Delete',
+                toast_delete_success: 'Client deleted',
+                toast_exit_sent_prefix: 'Exit command sent to',
+                toast_select_client: 'Select a client',
+                toast_enter_command: 'Enter a command',
+                toast_enter_dir: 'Enter a directory path',
+                toast_cd_success: 'Changed to directory',
+                toast_cd_failed: 'Failed to change directory',
+                toast_bg_started: 'Background command started',
+                toast_failed_load_clients: 'Failed to load clients',
+                sysinfo_btn: 'System Info',
+                sysinfo_title: 'System Information',
+                sysinfo_fields_label: 'Select Fields',
+                sysinfo_fetch_btn: 'Fetch Info',
+                sysinfo_loading: 'Loading...',
+                sysinfo_no_data: 'Click "Fetch Info" button to view system information',
+                close_btn: 'Close',
+                button_file_manager: 'File Manager',
+                fm_title: 'File Manager',
+                fm_path_label: 'Path',
+                fm_path_placeholder: 'Enter path...',
+                fm_go_btn: 'Go',
+                fm_back_btn: 'Back',
+                fm_refresh_btn: 'Refresh',
+                fm_header_type: 'Type',
+                fm_header_name: 'Name',
+                fm_header_size: 'Size',
+                fm_header_modified: 'Modified',
+                fm_header_permissions: 'Permissions',
+                fm_empty_dir: 'Empty directory',
+                fm_type_directory: 'Folder',
+                fm_type_file: 'File',
+                fm_type_symlink: 'Link',
+                fm_type_shortcut: 'Shortcut',
+                fm_hidden_prefix: '.',
+                fm_action_delete: 'Delete',
+                fm_action_move: 'Move',
+                fm_delete_title: 'Delete File/Folder',
+                fm_delete_confirm: 'Are you sure you want to delete this?',
+                fm_delete_confirm_path: 'Path: {path}',
+                fm_delete_success: 'Deleted successfully',
+                fm_delete_failed: 'Delete failed: {error}',
+                fm_move_title: 'Move File/Folder',
+                fm_move_origin_label: 'Origin Path',
+                fm_move_target_label: 'Target Path',
+                fm_move_target_placeholder: 'Enter target path...',
+                fm_move_success: 'Moved successfully',
+                fm_move_failed: 'Move failed: {error}',
+                fm_load_failed: 'Failed to load files: {error}',
+                fm_toast_select_client: 'Select a client first',
+                fm_properties_title: 'Properties',
+                fm_prop_name: 'Name',
+                fm_prop_type: 'Type',
+                fm_prop_size: 'Size',
+                fm_prop_modified: 'Modified',
+                fm_prop_permissions: 'Permissions',
+                fm_prop_link_target: 'Link Target',
+                fm_prop_hidden: 'Hidden'
+            }
+        };
+
+        createApp({
+            delimiters: ['${', '}'],
+            components: {
+                'lang-switcher': LangSwitcher
+            },
+            setup() {
+                var lang = '{{.lang}}' || 'zh';
+                var labels = messages[lang] || messages.zh;
+
+                const clients = ref([]);
+                const selectedClient = ref('');
+                const command = ref('');
+                const cdDir = ref('');
+                const currentDir = ref('');
+                const bgOutputFile = ref('');
+                const output = ref(labels.exec_waiting);
+                const outputType = ref('loading');
+                const outputStdout = ref('');
+                const outputStderr = ref('');
+                const outputExitCode = ref(null);
+                const executing = ref(false);
+                const deleteTarget = ref(null);
+                const toast = ref('');
+                const toastType = ref('');
+                const sysinfoTarget = ref(null);
+                const sysinfoData = ref({});
+                const sysinfoLoading = ref(false);
+                const selectedFields = ref([]);
+                const availableFields = ['host', 'cpu', 'memory', 'swap_memory', 'partition', 'io_disk', 'interfaces', 'io_network', 'processes'];
+
+                const showFileManager = ref(false);
+                const fmPath = ref('');
+                const fmFiles = ref([]);
+                const fmLoading = ref(false);
+                const fmDeleteTarget = ref(null);
+                const fmMoveTarget = ref(false);
+                const fmMoveOrigin = ref('');
+                const fmMoveDest = ref('');
+                const fmPropertiesTarget = ref(null);
+
+                const statusText = computed(() => clients.value.length > 0 ? labels.status_connected : labels.status_disconnected);
+
+                const api = async (url, opts = {}) => {
+                    const fullUrl = basePath + url;
+                    const res = await fetch(fullUrl, { headers: { 'Content-Type': 'application/json' }, ...opts });
+                    return res.json();
+                };
+
+                const loadClients = async () => {
+                    try {
+                        const data = await api('/api/clients');
+                        clients.value = data.clients || [];
+                    } catch (e) {
+                        showToast(labels.toast_failed_load_clients, 'error');
+                    }
+                };
+
+                const sendCommand = async (clientId, cmd, payload) => {
+                    executing.value = true;
+                    output.value = labels.exec_executing;
+                    outputType.value = 'loading';
+                    outputStdout.value = '';
+                    outputStderr.value = '';
+                    outputExitCode.value = null;
+                    try {
+                        const data = await api('/api/command', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: clientId, command: cmd, payload: payload || {} })
+                        });
+                        if (data.error) {
+                            output.value = 'Error: ' + data.error;
+                            outputType.value = 'error';
+                        } else if (data.response && data.response.payload) {
+                            var p = data.response.payload;
+                            if (p.stdout !== undefined || p.stderr !== undefined || p.exit_code !== undefined) {
+                                outputStdout.value = p.stdout || '';
+                                outputStderr.value = p.stderr || '';
+                                outputExitCode.value = p.exit_code !== undefined ? p.exit_code : null;
+                                outputType.value = (p.exit_code === 0) ? 'success' : 'error';
+                            } else {
+                                output.value = p.output || (p.error ? '[Error] ' + p.error : '[No output]');
+                                outputType.value = p.error ? 'error' : 'success';
+                            }
+                        } else {
+                            output.value = JSON.stringify(data, null, 2);
+                            outputType.value = 'success';
+                        }
+                    } catch (e) {
+                        output.value = 'Request failed: ' + e.message;
+                        outputType.value = 'error';
+                    } finally {
+                        executing.value = false;
+                    }
+                };
+
+                const execCommand = function() {
+                    if (!selectedClient.value) return showToast(labels.toast_select_client, 'error');
+                    if (!command.value.trim()) return showToast(labels.toast_enter_command, 'error');
+                    sendCommand(selectedClient.value, 'shell_exec', { cmd: command.value.trim() });
+                };
+
+                const execBgCommand = function() {
+                    if (!selectedClient.value) return showToast(labels.toast_select_client, 'error');
+                    if (!command.value.trim()) return showToast(labels.toast_enter_command, 'error');
+                    executing.value = true;
+                    output.value = labels.exec_executing;
+                    outputType.value = 'loading';
+                    var payload = { cmd: command.value.trim() };
+                    if (bgOutputFile.value.trim()) {
+                        payload.output_file = bgOutputFile.value.trim();
+                    }
+                    try {
+                        api('/api/command', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: selectedClient.value, command: 'shell_exec_bg', payload: payload })
+                        }).then(function(data) {
+                            if (data.response && data.response.payload && data.response.payload.status === 'started') {
+                                var outFile = data.response.payload.output_file;
+                                var msg = labels.toast_bg_started + ': ' + command.value.trim();
+                                if (outFile) {
+                                    msg += ' (output: ' + outFile + ')';
+                                }
+                                output.value = msg;
+                                outputType.value = 'success';
+                                showToast(labels.toast_bg_started, 'success');
+                            } else if (data.error) {
+                                output.value = 'Error: ' + data.error;
+                                outputType.value = 'error';
+                            }
+                        }).catch(function(e) {
+                            output.value = 'Request failed: ' + e.message;
+                            outputType.value = 'error';
+                        });
+                    } finally {
+                        executing.value = false;
+                    }
+                };
+
+                const execCd = function() {
+                    if (!selectedClient.value) return showToast(labels.toast_select_client, 'error');
+                    if (!cdDir.value.trim()) return showToast(labels.toast_enter_dir, 'error');
+                    executing.value = true;
+                    try {
+                        api('/api/command', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: selectedClient.value, command: 'cd', payload: { dir: cdDir.value.trim() } })
+                        }).then(function(data) {
+                            if (data.response && data.response.payload) {
+                                var p = data.response.payload;
+                                if (p.current_dir) {
+                                    currentDir.value = p.current_dir;
+                                    output.value = labels.toast_cd_success + ': ' + p.current_dir;
+                                    outputType.value = 'success';
+                                    showToast(labels.toast_cd_success, 'success');
+                                } else if (p.error) {
+                                    output.value = labels.toast_cd_failed + ': ' + p.error;
+                                    outputType.value = 'error';
+                                    showToast(labels.toast_cd_failed, 'error');
+                                }
+                            } else if (data.error) {
+                                output.value = labels.toast_cd_failed + ': ' + data.error;
+                                outputType.value = 'error';
+                                showToast(labels.toast_cd_failed, 'error');
+                            }
+                        }).catch(function(e) {
+                            output.value = 'Request failed: ' + e.message;
+                            outputType.value = 'error';
+                        });
+                    } finally {
+                        executing.value = false;
+                    }
+                };
+
+                const selectAndInfo = function(id) {
+                    selectedClient.value = id;
+                    sendCommand(id, 'system_info', {});
+                };
+
+                const showDelete = function(id) { deleteTarget.value = id; };
+
+                const showSysInfo = function(id) {
+                    sysinfoTarget.value = id;
+                    sysinfoData.value = {};
+                    selectedFields.value = [];
+                };
+
+                const fetchSysInfo = async function() {
+                    if (!sysinfoTarget.value) return;
+                    sysinfoLoading.value = true;
+                    sysinfoData.value = {};
+                    try {
+                        var fields = selectedFields.value.length > 0 ? selectedFields.value : availableFields;
+                        var data = await api('/api/command', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                client_id: sysinfoTarget.value,
+                                command: 'system_info',
+                                payload: { fields: fields }
+                            })
+                        });
+                        if (data.response && data.response.payload) {
+                            sysinfoData.value = data.response.payload;
+                        } else if (data.error) {
+                            showToast('Error: ' + data.error, 'error');
+                        }
+                    } catch (e) {
+                        showToast('Request failed: ' + e.message, 'error');
+                    } finally {
+                        sysinfoLoading.value = false;
+                    }
+                };
+
+                const formatBytes = function(bytes) {
+                    if (!bytes || bytes === 0) return '0 B';
+                    var units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+                    var unitIndex = 0;
+                    var value = parseFloat(bytes);
+                    while (value >= 1024 && unitIndex < units.length - 1) {
+                        value /= 1024;
+                        unitIndex++;
+                    }
+                    return value.toFixed(1) + ' ' + units[unitIndex];
+                };
+
+                const formatUptime = function(seconds) {
+                    if (!seconds || seconds === 0) return '0s';
+                    var days = Math.floor(seconds / 86400);
+                    var hours = Math.floor((seconds % 86400) / 3600);
+                    var minutes = Math.floor((seconds % 3600) / 60);
+                    var secs = seconds % 60;
+                    var result = '';
+                    if (days > 0) result += days + 'd ';
+                    if (hours > 0) result += hours + 'h ';
+                    if (minutes > 0) result += minutes + 'm ';
+                    result += secs + 's';
+                    return result;
+                };
+
+                const confirmDelete = async function() {
+                    var id = deleteTarget.value;
+                    deleteTarget.value = null;
+                    output.value = labels.toast_exit_sent_prefix + ' ' + id + '...';
+                    outputType.value = 'loading';
+                    try {
+                        var data = await api('/api/command', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: id, command: 'exit' })
+                        });
+                        if (data.error) {
+                            output.value = 'Error: ' + data.error;
+                            outputType.value = 'error';
+                        } else {
+                            output.value = '"' + id + '" ' + labels.toast_exit_sent_prefix + '.';
+                            outputType.value = 'success';
+                            showToast(labels.toast_delete_success, 'success');
+                            setTimeout(loadClients, 1000);
+                        }
+                    } catch (e) {
+                        output.value = 'Request failed: ' + e.message;
+                        outputType.value = 'error';
+                    }
+                };
+
+                const showToast = function(msg, type) {
+                    toast.value = msg;
+                    toastType.value = type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white';
+                    setTimeout(function() { toast.value = ''; }, 3000);
+                };
+
+                const logout = function() {
+                    window.location.href = '/logout';
+                };
+
+                const showFileManagerFor = function(id) {
+                    selectedClient.value = id;
+                    showFileManager.value = true;
+                    fmPath.value = '';
+                    loadFiles();
+                };
+
+                const loadFiles = async function() {
+                    if (!selectedClient.value) return showToast(labels.fm_toast_select_client, 'error');
+                    fmLoading.value = true;
+                    try {
+                        var data = await api('/api/file/list', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: selectedClient.value, path: fmPath.value })
+                        });
+                        if (data.response) {
+                            var resp = data.response;
+                            fmPath.value = resp.path || fmPath.value;
+                            fmFiles.value = resp.files || [];
+                        } else if (data.error) {
+                            showToast(labels.fm_load_failed.replace('{error}', data.error), 'error');
+                            fmFiles.value = [];
+                        }
+                    } catch (e) {
+                        showToast(labels.fm_load_failed.replace('{error}', e.message), 'error');
+                        fmFiles.value = [];
+                    } finally {
+                        fmLoading.value = false;
+                    }
+                };
+
+                const fmGoBack = function() {
+                    if (!fmPath.value || fmPath.value === '/') {
+                        fmPath.value = '';
+                    } else {
+                        var parts = fmPath.value.split(/[\/\\]/).filter(function(p) { return p; });
+                        parts.pop();
+                        fmPath.value = parts.length > 0 ? (fmPath.value.includes('\\') ? parts.join('\\') : '/' + parts.join('/')) : '';
+                    }
+                    loadFiles();
+                };
+
+                const handleFileClick = function(f) {
+                    if (f.is_dir) {
+                        var sep = fmPath.value.includes('\\') ? '\\' : '/';
+                        var newPath = fmPath.value ? (fmPath.value.endsWith(sep) ? fmPath.value + f.name : fmPath.value + sep + f.name) : f.name;
+                        fmPath.value = newPath;
+                        loadFiles();
+                    }
+                };
+
+                const getDisplayName = function(f) {
+                    var name = f.name;
+                    if (f.hidden) {
+                        name = labels.fm_hidden_prefix + name;
+                    }
+                    if (f.link_target) {
+                        name += ' -> ' + f.link_target;
+                    }
+                    return name;
+                };
+
+                const getFileTypeIcon = function(f) {
+                    if (f.type === 'symlink' || f.type === 'shortcut') return '🔗';
+                    if (f.is_dir) return '📁';
+                    return '📄';
+                };
+
+                const getFileTypeLabel = function(f) {
+                    if (f.type === 'symlink') return labels.fm_type_symlink;
+                    if (f.type === 'shortcut') return labels.fm_type_shortcut;
+                    if (f.is_dir) return labels.fm_type_directory;
+                    return labels.fm_type_file;
+                };
+
+                const formatFileSize = function(bytes) {
+                    if (!bytes || bytes === 0) return '0 B';
+                    var units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+                    var unitIndex = 0;
+                    var value = parseFloat(bytes);
+                    while (value >= 1024 && unitIndex < units.length - 1) {
+                        value /= 1024;
+                        unitIndex++;
+                    }
+                    return value.toFixed(1) + ' ' + units[unitIndex];
+                };
+
+                const formatModTime = function(unixTime) {
+                    if (!unixTime) return 'N/A';
+                    var d = new Date(unixTime * 1000);
+                    return d.toLocaleString();
+                };
+
+                const showDeleteFile = function(f) {
+                    var sep = fmPath.value.includes('\\') ? '\\' : '/';
+                    var fullPath = fmPath.value ? (fmPath.value.endsWith(sep) ? fmPath.value + f.name : fmPath.value + sep + f.name) : f.name;
+                    fmDeleteTarget.value = fullPath;
+                };
+
+                const confirmDeleteFile = async function() {
+                    var path = fmDeleteTarget.value;
+                    fmDeleteTarget.value = null;
+                    try {
+                        var data = await api('/api/file/delete', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: selectedClient.value, path: path })
+                        });
+                        if (data.error) {
+                            showToast(labels.fm_delete_failed.replace('{error}', data.error), 'error');
+                        } else {
+                            showToast(labels.fm_delete_success, 'success');
+                            loadFiles();
+                        }
+                    } catch (e) {
+                        showToast(labels.fm_delete_failed.replace('{error}', e.message), 'error');
+                    }
+                };
+
+                const showMoveFile = function(f) {
+                    var sep = fmPath.value.includes('\\') ? '\\' : '/';
+                    var fullPath = fmPath.value ? (fmPath.value.endsWith(sep) ? fmPath.value + f.name : fmPath.value + sep + f.name) : f.name;
+                    fmMoveOrigin.value = fullPath;
+                    fmMoveDest.value = '';
+                    fmMoveTarget.value = true;
+                };
+
+                const resolvePath = function(base, target) {
+                    if (!target) return base;
+
+                    var isWindows = target.includes(':') || (base && base.includes(':'));
+                    var sep = isWindows ? '\\' : '/';
+
+                    if (isWindows && target.includes(':') && target[1] === ':') {
+                        var resolved = normalizePathParts(target.split(/[\/\\]/), sep);
+                        return resolved.join(sep);
+                    }
+
+                    if (target.startsWith('/') || (isWindows && target.startsWith('\\'))) {
+                        var resolved = normalizePathParts(target.split(/[\/\\]/), sep);
+                        return isWindows ? resolved.join(sep) : sep + resolved.join(sep);
+                    }
+
+                    var basePath = base || '';
+                    var baseParts = basePath.split(/[\/\\]/).filter(function(p) { return p; });
+                    var targetParts = target.split(/[\/\\]/).filter(function(p) { return p; });
+                    var allParts = baseParts.concat(targetParts);
+                    var resolved = normalizePathParts(allParts, sep);
+
+                    if (!isWindows && basePath.startsWith('/')) {
+                        return sep + resolved.join(sep);
+                    }
+                    if (isWindows && basePath.includes(':')) {
+                        var drive = basePath.substring(0, 2);
+                        return drive + sep + resolved.join(sep);
+                    }
+                    return resolved.join(sep);
+                };
+
+                const normalizePathParts = function(parts, sep) {
+                    var stack = [];
+                    for (var i = 0; i < parts.length; i++) {
+                        var part = parts[i];
+                        if (part === '.' || part === '') {
+                            continue;
+                        } else if (part === '..') {
+                            if (stack.length > 0) {
+                                stack.pop();
+                            }
+                        } else {
+                            stack.push(part);
+                        }
+                    }
+                    return stack;
+                };
+
+                const confirmMoveFile = async function() {
+                    if (!fmMoveDest.value.trim()) return;
+                    var origin = fmMoveOrigin.value;
+                    var dest = fmMoveDest.value.trim();
+                    fmMoveTarget.value = false;
+
+                    dest = resolvePath(fmPath.value, dest);
+
+                    try {
+                        var data = await api('/api/file/move', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: selectedClient.value, origin_path: origin, new_path: dest })
+                        });
+                        if (data.error) {
+                            showToast(labels.fm_move_failed.replace('{error}', data.error), 'error');
+                        } else {
+                            showToast(labels.fm_move_success, 'success');
+                            loadFiles();
+                        }
+                    } catch (e) {
+                        showToast(labels.fm_move_failed.replace('{error}', e.message), 'error');
+                    }
+                };
+
+                const showProperties = function(f) {
+                    fmPropertiesTarget.value = f;
+                };
+
+                loadClients();
+
+                return {
+                    clients: clients,
+                    selectedClient: selectedClient,
+                    command: command,
+                    cdDir: cdDir,
+                    currentDir: currentDir,
+                    bgOutputFile: bgOutputFile,
+                    output: output,
+                    outputType: outputType,
+                    outputStdout: outputStdout,
+                    outputStderr: outputStderr,
+                    outputExitCode: outputExitCode,
+                    executing: executing,
+                    deleteTarget: deleteTarget,
+                    toast: toast,
+                    toastType: toastType,
+                    statusText: statusText,
+                    labels: labels,
+                    loadClients: loadClients,
+                    execCommand: execCommand,
+                    execBgCommand: execBgCommand,
+                    execCd: execCd,
+                    selectAndInfo: selectAndInfo,
+                    showDelete: showDelete,
+                    confirmDelete: confirmDelete,
+                    logout: logout,
+                    sysinfoTarget: sysinfoTarget,
+                    sysinfoData: sysinfoData,
+                    sysinfoLoading: sysinfoLoading,
+                    selectedFields: selectedFields,
+                    availableFields: availableFields,
+                    showSysInfo: showSysInfo,
+                    fetchSysInfo: fetchSysInfo,
+                    formatBytes: formatBytes,
+                    formatUptime: formatUptime,
+                    showFileManager: showFileManager,
+                    fmPath: fmPath,
+                    fmFiles: fmFiles,
+                    fmLoading: fmLoading,
+                    fmDeleteTarget: fmDeleteTarget,
+                    fmMoveTarget: fmMoveTarget,
+                    fmMoveOrigin: fmMoveOrigin,
+                    fmMoveDest: fmMoveDest,
+                    fmPropertiesTarget: fmPropertiesTarget,
+                    showFileManagerFor: showFileManagerFor,
+                    loadFiles: loadFiles,
+                    fmGoBack: fmGoBack,
+                    handleFileClick: handleFileClick,
+                    getDisplayName: getDisplayName,
+                    getFileTypeIcon: getFileTypeIcon,
+                    getFileTypeLabel: getFileTypeLabel,
+                    formatFileSize: formatFileSize,
+                    formatModTime: formatModTime,
+                    showDeleteFile: showDeleteFile,
+                    confirmDeleteFile: confirmDeleteFile,
+                    showMoveFile: showMoveFile,
+                    confirmMoveFile: confirmMoveFile,
+                    showProperties: showProperties
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -95,7 +95,9 @@ func handleLogin(c *gin.Context) {
 		log.WithError(err).Warn("Failed to connect WebSocket")
 	} else {
 		wsConn = newConn
-		go listenResponses(wsConn)
+		go func() {
+			_ = listenResponses(wsConn)
+		}()
 		log.Info("Connected to WebSocket server")
 	}
 	wsConnMu.Unlock()

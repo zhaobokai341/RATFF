@@ -29,6 +29,8 @@ const (
 	CmdFileDownloadStart    CommandType = "file_download_start"
 	CmdFileDownloadChunk    CommandType = "file_download_chunk"
 	CmdFileDownloadComplete CommandType = "file_download_complete"
+	CmdFileMove             CommandType = "file_move"
+	CmdFileDelete           CommandType = "file_delete"
 	CmdSystemInfo           CommandType = "system_info"
 	CmdExit                 CommandType = "exit"
 	CmdCd                   CommandType = "cd"

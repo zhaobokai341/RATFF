@@ -1,4 +1,4 @@
-package main
+package output
 
 import (
 	"fmt"
@@ -53,31 +53,31 @@ func BuildPrompt(id string, inCommandMode bool) string {
 	return stylePrompt.Render(fmt.Sprintf("(%s)(console) >> ", id))
 }
 
-func StyleCommandOutput(output string) string {
+func StyleCommandOutput(outputStr string) string {
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("240")).
 		Padding(0, 2).
-		Render(output)
+		Render(outputStr)
 }
 
-func PrintCommandResult(stdout, stderr string, exitCode int) {
+func PrintCommandResult(stdout, stderr string, exitCode int, t func(string) string, tf func(string, ...interface{}) string) {
 	if stdout != "" {
-		PrintInfo(T("command_stdout"))
+		PrintInfo(t("command_stdout"))
 		fmt.Println(StyleCommandOutput(stdout))
 		fmt.Println()
 	}
 
 	if stderr != "" {
-		PrintError(T("command_stderr"))
+		PrintError(t("command_stderr"))
 		fmt.Println(StyleCommandOutput(stderr))
 		fmt.Println()
 	}
 
 	if exitCode == 0 {
-		PrintSuccess(Tf("command_exit_code", exitCode))
+		PrintSuccess(tf("command_exit_code", exitCode))
 	} else {
-		PrintError(Tf("command_exit_code", exitCode))
+		PrintError(tf("command_exit_code", exitCode))
 	}
 }
 
@@ -144,10 +144,10 @@ func (p *ProgressBar) Display() {
 		bar,
 		p.filename,
 		percent,
-		formatBytes(p.current),
-		formatBytes(p.total),
+		FormatBytes(p.current),
+		FormatBytes(p.total),
 		speed,
-		formatDuration(eta),
+		FormatDuration(eta),
 	)
 
 	if p.done {
@@ -158,7 +158,7 @@ func (p *ProgressBar) Display() {
 	fmt.Print(line)
 }
 
-func formatBytes(b int64) string {
+func FormatBytes(b int64) string {
 	const unit = 1024
 	if b < unit {
 		return fmt.Sprintf("%d B", b)
@@ -171,7 +171,7 @@ func formatBytes(b int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
-func formatDuration(d time.Duration) string {
+func FormatDuration(d time.Duration) string {
 	if d < time.Minute {
 		return fmt.Sprintf("%ds", int(d.Seconds()))
 	}

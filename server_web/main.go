@@ -33,7 +33,7 @@ func setupRouter() *gin.Engine {
 	r.Use(languageMiddleware())
 
 	r.Static("/static", "./static")
-	r.LoadHTMLGlob("templates/*")
+	r.LoadHTMLGlob("templates/*.html")
 
 	r.GET("/login", handleLoginPage)
 	r.POST("/login", handleLogin)
@@ -54,6 +54,9 @@ func setupRouter() *gin.Engine {
 	r.GET("/ws", handleWebSocketRoot)
 	r.GET("/api/clients", handleAPIClientsRoot)
 	r.POST("/api/command", handleExecCommand)
+	r.POST("/api/file/list", handleFileList)
+	r.POST("/api/file/move", handleFileMove)
+	r.POST("/api/file/delete", handleFileDelete)
 
 	r.GET("/:pathPassword", handlePathIndex)
 	r.GET("/:pathPassword/", handlePathIndex)
@@ -61,6 +64,9 @@ func setupRouter() *gin.Engine {
 	r.GET("/:pathPassword/ws", handlePathWebSocket)
 	r.GET("/:pathPassword/api/clients", handlePathAPIClients)
 	r.POST("/:pathPassword/api/command", handleExecCommand)
+	r.POST("/:pathPassword/api/file/list", handleFileList)
+	r.POST("/:pathPassword/api/file/move", handleFileMove)
+	r.POST("/:pathPassword/api/file/delete", handleFileDelete)
 
 	return r
 }
