@@ -9,7 +9,7 @@
                 'lang-switcher': LangSwitcher
             },
             setup() {
-                var lang = '{{.lang}}' || 'zh';
+                var lang = window.APP_LANG || 'zh';
                 var labels = messages[lang] || messages.zh;
 
                 const clients = ref([]);
@@ -243,49 +243,49 @@
 
                 const formatFieldName = function(key) {
                     var nameMap = {
-                        'total': 'Total',
-                        'used': 'Used',
-                        'available': 'Available',
-                        'free': 'Free',
-                        'active': 'Active',
-                        'inactive': 'Inactive',
-                        'buffers': 'Buffers',
-                        'cached': 'Cached',
-                        'sin': 'Sin',
-                        'sout': 'Sout',
-                        'used_percent': 'Used Percent',
-                        'hostname': 'Hostname',
-                        'os': 'OS',
-                        'platform': 'Platform',
-                        'platform_version': 'Platform Version',
-                        'platform_family': 'Platform Family',
-                        'kernel_version': 'Kernel Version',
-                        'kernel_arch': 'Kernel Arch',
-                        'uptime': 'Uptime',
-                        'boot_time': 'Boot Time',
-                        'procs': 'Processes',
-                        'model_name': 'Model',
-                        'cores': 'Cores',
-                        'mhz': 'MHz',
-                        'cache_size': 'Cache Size',
-                        'vendor_id': 'Vendor',
-                        'read_count': 'Read Count',
-                        'write_count': 'Write Count',
-                        'read_bytes': 'Read Bytes',
-                        'write_bytes': 'Write Bytes',
-                        'read_time': 'Read Time',
-                        'write_time': 'Write Time',
-                        'bytes_sent': 'Bytes Sent',
-                        'bytes_recv': 'Bytes Recv',
-                        'packets_sent': 'Packets Sent',
-                        'packets_recv': 'Packets Recv',
-                        'errin': 'Errors In',
-                        'errout': 'Errors Out',
-                        'dropin': 'Dropped In',
-                        'dropout': 'Dropped Out',
-                        'mtu': 'MTU',
-                        'flags': 'Flags',
-                        'addresses': 'Addresses'
+                        'total': labels.sysinfo_table_total,
+                        'used': labels.sysinfo_table_used,
+                        'available': labels.sysinfo_na,
+                        'free': labels.sysinfo_table_free,
+                        'active': labels.sysinfo_na,
+                        'inactive': labels.sysinfo_na,
+                        'buffers': labels.sysinfo_na,
+                        'cached': labels.sysinfo_na,
+                        'sin': labels.sysinfo_na,
+                        'sout': labels.sysinfo_na,
+                        'used_percent': labels.sysinfo_na,
+                        'hostname': labels.sysinfo_hostname,
+                        'os': labels.sysinfo_os,
+                        'platform': labels.sysinfo_platform,
+                        'platform_version': labels.sysinfo_na,
+                        'platform_family': labels.sysinfo_platform_family,
+                        'kernel_version': labels.sysinfo_kernel_version,
+                        'kernel_arch': labels.sysinfo_kernel_arch,
+                        'uptime': labels.sysinfo_uptime,
+                        'boot_time': labels.sysinfo_boot_time,
+                        'procs': labels.sysinfo_processes_count_label,
+                        'model_name': labels.sysinfo_model,
+                        'cores': labels.sysinfo_cores,
+                        'mhz': labels.sysinfo_mhz,
+                        'cache_size': labels.sysinfo_cache_size,
+                        'vendor_id': labels.sysinfo_vendor,
+                        'read_count': labels.sysinfo_read_count,
+                        'write_count': labels.sysinfo_write_count,
+                        'read_bytes': labels.sysinfo_read_bytes,
+                        'write_bytes': labels.sysinfo_write_bytes,
+                        'read_time': labels.sysinfo_read_time,
+                        'write_time': labels.sysinfo_write_time,
+                        'bytes_sent': labels.sysinfo_bytes_sent,
+                        'bytes_recv': labels.sysinfo_bytes_recv,
+                        'packets_sent': labels.sysinfo_packets_sent,
+                        'packets_recv': labels.sysinfo_packets_recv,
+                        'errin': labels.sysinfo_errors_in,
+                        'errout': labels.sysinfo_errors_out,
+                        'dropin': labels.sysinfo_dropped_in,
+                        'dropout': labels.sysinfo_dropped_out,
+                        'mtu': labels.sysinfo_mtu,
+                        'flags': labels.sysinfo_flags,
+                        'addresses': labels.sysinfo_addresses
                     };
                     if (nameMap[key]) {
                         return nameMap[key];
@@ -296,31 +296,31 @@
                 };
 
                 const formatFieldValue = function(key, value) {
-                    if (value === undefined || value === null) return 'N/A';
+                    if (value === undefined || value === null) return labels.sysinfo_na;
                     
                     switch (key) {
                         case 'used_percent':
-                            return typeof value === 'number' ? value.toFixed(1) + '%' : 'N/A';
+                            return typeof value === 'number' ? value.toFixed(1) + '%' : labels.sysinfo_na;
                         case 'uptime':
                             return formatUptime(value);
                         case 'boot_time':
-                            return value ? new Date(value * 1000).toLocaleString() : 'N/A';
+                            return value ? new Date(value * 1000).toLocaleString() : labels.sysinfo_na;
                         case 'cache_size':
-                            return typeof value === 'number' ? value + ' KB' : 'N/A';
+                            return typeof value === 'number' ? value + ' KB' : labels.sysinfo_na;
                         case 'mhz':
-                            return typeof value === 'number' ? value.toFixed(2) : 'N/A';
+                            return typeof value === 'number' ? value.toFixed(2) : labels.sysinfo_na;
                         case 'read_time':
                         case 'write_time':
-                            return typeof value === 'number' ? value + ' ms' : 'N/A';
+                            return typeof value === 'number' ? value + ' ms' : labels.sysinfo_na;
                         case 'flags':
-                            return Array.isArray(value) ? value.join(', ') : (value || 'N/A');
+                            return Array.isArray(value) ? value.join(', ') : (value || labels.sysinfo_na);
                         case 'addresses':
-                            return Array.isArray(value) ? value.join(', ') : (value || 'N/A');
+                            return Array.isArray(value) ? value.join(', ') : (value || labels.sysinfo_na);
                         default:
                             if (typeof value === 'number' && (key.includes('bytes') || key === 'total' || key === 'used' || key === 'free' || key === 'available' || key === 'active' || key === 'inactive' || key === 'buffers' || key === 'cached' || key === 'sin' || key === 'sout' || key.includes('sent') || key.includes('recv'))) {
                                 return formatBytes(value);
                             }
-                            return value || 'N/A';
+                            return value || labels.sysinfo_na;
                     }
                 };
 
@@ -447,7 +447,7 @@
                 };
 
                 const formatModTime = function(unixTime) {
-                    if (!unixTime) return 'N/A';
+                    if (!unixTime) return labels.sysinfo_na;
                     var d = new Date(unixTime * 1000);
                     return d.toLocaleString();
                 };

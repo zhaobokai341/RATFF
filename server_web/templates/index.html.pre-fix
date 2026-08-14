@@ -162,7 +162,7 @@
                 </div>
                 <div v-if="fmLoading" class="text-center py-10 text-gray-500">
                     <svg class="w-8 h-8 mx-auto mb-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" class="animate-[spin_1s_linear_infinite]"/></svg>
-                    ${ labels.fm_loading }
+                    Loading...
                 </div>
                 <div v-else-if="fmFiles.length === 0" class="text-center py-10 text-gray-500">
                     <svg class="w-12 h-12 mx-auto mb-3 opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
@@ -177,7 +177,7 @@
                                 <th class="text-right px-4 py-2.5 font-semibold">${ labels.fm_header_size }</th>
                                 <th class="text-center px-4 py-2.5 font-semibold">${ labels.fm_header_modified }</th>
                                 <th class="text-center px-4 py-2.5 font-semibold">${ labels.fm_header_permissions }</th>
-                                <th class="text-center px-4 py-2.5 font-semibold">${ labels.fm_header_actions }</th>
+                                <th class="text-center px-4 py-2.5 font-semibold">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -190,9 +190,9 @@
                                 <td class="px-4 py-2 text-sm text-center font-mono text-gray-400">${ formatModTime(f.mod_time) }</td>
                                 <td class="px-4 py-2 text-sm text-center font-mono text-gray-400">${ f.permissions }</td>
                                 <td class="px-4 py-2 text-center">
-                                    <button @click="showProperties(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-indigo-400 hover:bg-indigo-500/10 transition mr-1">${ labels.fm_action_props }</button>
+                                    <button @click="showProperties(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-indigo-400 hover:bg-indigo-500/10 transition mr-1">Props</button>
                                     <button @click="showDeleteFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-red-500 hover:bg-red-500/10 transition mr-1">${ labels.fm_action_delete }</button>
-                                    <button @click="showMoveFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-yellow-500 hover:bg-yellow-500/10 transition">${ labels.fm_action_move_confirm }</button>
+                                    <button @click="showMoveFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-yellow-500 hover:bg-yellow-500/10 transition">${ labels.fm_action_move }</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -226,7 +226,7 @@
                 </div>
                 <div class="flex gap-2">
                     <button @click="fmMoveTarget = null" class="flex-1 px-4 py-2 bg-transparent border border-border hover:bg-surface-2 text-gray-300 text-sm font-medium rounded-lg transition">${ labels.cancel_btn }</button>
-                    <button @click="confirmMoveFile" class="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-medium rounded-lg transition">${ labels.fm_action_move_confirm }</button>
+                    <button @click="confirmMoveFile" class="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-medium rounded-lg transition">Move</button>
                 </div>
             </div>
         </div>
@@ -241,7 +241,7 @@
                     <div class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_modified }:</span><span class="text-sm font-mono">${ formatModTime(fmPropertiesTarget.mod_time) }</span></div>
                     <div class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_permissions }:</span><span class="text-sm font-mono">${ fmPropertiesTarget.permissions }</span></div>
                     <div v-if="fmPropertiesTarget.link_target" class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_link_target }:</span><span class="text-sm font-mono text-indigo-400">${ fmPropertiesTarget.link_target }</span></div>
-                    <div v-if="fmPropertiesTarget.hidden" class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_hidden }:</span><span class="text-sm text-yellow-400">${ labels.sysinfo_na }</span></div>
+                    <div v-if="fmPropertiesTarget.hidden" class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_hidden }:</span><span class="text-sm text-yellow-400">Yes</span></div>
                 </div>
                 <div class="mt-6">
                     <button @click="fmPropertiesTarget = null" class="w-full px-4 py-2 bg-transparent border border-border hover:bg-surface-2 text-gray-300 text-sm font-medium rounded-lg transition">${ labels.close_btn }</button>
@@ -270,38 +270,38 @@
                 </button>
                 <div class="flex-1 overflow-y-auto font-mono text-xs space-y-4 pr-2">
                     <div v-if="sysinfoData.host" class="p-3 bg-bg border border-border rounded-lg">
-                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">${ labels.sysinfo_section_host }</h4>
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Host</h4>
                         <div class="grid grid-cols-2 gap-1">
-                            <div class="text-gray-400">${ labels.sysinfo_hostname }:</div><div class="text-gray-200">${ sysinfoData.host.hostname || labels.sysinfo_na }</div>
-                            <div class="text-gray-400">${ labels.sysinfo_os }:</div><div class="text-gray-200">${ sysinfoData.host.os || labels.sysinfo_na }</div>
-                            <div class="text-gray-400">${ labels.sysinfo_platform }:</div><div class="text-gray-200">${ sysinfoData.host.platform || labels.sysinfo_na } ${ sysinfoData.host.platform_version || '' }</div>
-                            <div class="text-gray-400">${ labels.sysinfo_platform_family }:</div><div class="text-gray-200">${ sysinfoData.host.platform_family || labels.sysinfo_na }</div>
-                            <div class="text-gray-400">${ labels.sysinfo_kernel_version }:</div><div class="text-gray-200">${ sysinfoData.host.kernel_version || labels.sysinfo_na } ${ sysinfoData.host.kernel_arch || '' }</div>
-                            <div class="text-gray-400">${ labels.sysinfo_uptime }:</div><div class="text-gray-200">${ formatUptime(sysinfoData.host.uptime) }</div>
-                            <div class="text-gray-400">${ labels.sysinfo_boot_time }:</div><div class="text-gray-200">${ sysinfoData.host.boot_time ? new Date(sysinfoData.host.boot_time * 1000).toLocaleString() : labels.sysinfo_na }</div>
-                            <div class="text-gray-400">${ labels.sysinfo_processes_count_label }:</div><div class="text-gray-200">${ sysinfoData.host.procs || labels.sysinfo_na }</div>
+                            <div class="text-gray-400">Hostname:</div><div class="text-gray-200">${ sysinfoData.host.hostname || 'N/A' }</div>
+                            <div class="text-gray-400">OS:</div><div class="text-gray-200">${ sysinfoData.host.os || 'N/A' }</div>
+                            <div class="text-gray-400">Platform:</div><div class="text-gray-200">${ sysinfoData.host.platform || 'N/A' } ${ sysinfoData.host.platform_version || '' }</div>
+                            <div class="text-gray-400">Platform Family:</div><div class="text-gray-200">${ sysinfoData.host.platform_family || 'N/A' }</div>
+                            <div class="text-gray-400">Kernel:</div><div class="text-gray-200">${ sysinfoData.host.kernel_version || 'N/A' } ${ sysinfoData.host.kernel_arch || '' }</div>
+                            <div class="text-gray-400">Uptime:</div><div class="text-gray-200">${ formatUptime(sysinfoData.host.uptime) }</div>
+                            <div class="text-gray-400">Boot Time:</div><div class="text-gray-200">${ sysinfoData.host.boot_time ? new Date(sysinfoData.host.boot_time * 1000).toLocaleString() : 'N/A' }</div>
+                            <div class="text-gray-400">Processes:</div><div class="text-gray-200">${ sysinfoData.host.procs || 'N/A' }</div>
                         </div>
                     </div>
                     <div v-if="sysinfoData.cpu" class="p-3 bg-bg border border-border rounded-lg">
-                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">${ labels.sysinfo_section_cpu }</h4>
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">CPU</h4>
                         <div v-for="(cpu, idx) in sysinfoData.cpu.cpus" :key="idx" class="mb-2">
-                            <div class="text-gray-300 font-semibold">${ labels.sysinfo_cpu_label } ${ idx }:</div>
+                            <div class="text-gray-300 font-semibold">CPU ${ idx }:</div>
                             <div class="grid grid-cols-2 gap-1 ml-4">
-                                <div class="text-gray-400">${ labels.sysinfo_model }:</div><div class="text-gray-200">${ cpu.model_name || labels.sysinfo_na }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_cores }:</div><div class="text-gray-200">${ cpu.cores || labels.sysinfo_na }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_mhz }:</div><div class="text-gray-200">${ cpu.mhz ? cpu.mhz.toFixed(2) : labels.sysinfo_na }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_cache_size }:</div><div class="text-gray-200">${ cpu.cache_size ? cpu.cache_size + ' KB' : labels.sysinfo_na }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_vendor }:</div><div class="text-gray-200">${ cpu.vendor_id || labels.sysinfo_na }</div>
+                                <div class="text-gray-400">Model:</div><div class="text-gray-200">${ cpu.model_name || 'N/A' }</div>
+                                <div class="text-gray-400">Cores:</div><div class="text-gray-200">${ cpu.cores || 'N/A' }</div>
+                                <div class="text-gray-400">MHz:</div><div class="text-gray-200">${ cpu.mhz ? cpu.mhz.toFixed(2) : 'N/A' }</div>
+                                <div class="text-gray-400">Cache:</div><div class="text-gray-200">${ cpu.cache_size ? cpu.cache_size + ' KB' : 'N/A' }</div>
+                                <div class="text-gray-400">Vendor:</div><div class="text-gray-200">${ cpu.vendor_id || 'N/A' }</div>
                             </div>
                         </div>
                     </div>
                     <div v-if="sysinfoData.memory" class="p-3 bg-bg border border-border rounded-lg">
-                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">${ labels.sysinfo_section_memory }</h4>
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Memory</h4>
                         <div class="grid grid-cols-2 gap-1">
                             <template v-for="(value, key) in sysinfoData.memory" :key="key">
                                 <template v-if="key === 'used_percent'">
-                                    <div class="text-gray-400">${ labels.sysinfo_table_use_percent }:</div>
-                                    <div class="text-gray-200">${ value ? value.toFixed(1) + '%' : labels.sysinfo_na }</div>
+                                    <div class="text-gray-400">Used Percent:</div>
+                                    <div class="text-gray-200">${ value ? value.toFixed(1) + '%' : 'N/A' }</div>
                                 </template>
                                 <template v-else>
                                     <div class="text-gray-400">${ formatFieldName(key) }:</div>
@@ -311,12 +311,12 @@
                         </div>
                     </div>
                     <div v-if="sysinfoData.swap_memory" class="p-3 bg-bg border border-border rounded-lg">
-                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">${ labels.sysinfo_section_swap }</h4>
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Swap Memory</h4>
                         <div class="grid grid-cols-2 gap-1">
                             <template v-for="(value, key) in sysinfoData.swap_memory" :key="key">
                                 <template v-if="key === 'used_percent'">
-                                    <div class="text-gray-400">${ labels.sysinfo_table_use_percent }:</div>
-                                    <div class="text-gray-200">${ value ? value.toFixed(1) + '%' : labels.sysinfo_na }</div>
+                                    <div class="text-gray-400">Used Percent:</div>
+                                    <div class="text-gray-200">${ value ? value.toFixed(1) + '%' : 'N/A' }</div>
                                 </template>
                                 <template v-else>
                                     <div class="text-gray-400">${ formatFieldName(key) }:</div>
@@ -326,98 +326,98 @@
                         </div>
                     </div>
                     <div v-if="sysinfoData.partition" class="p-3 bg-bg border border-border rounded-lg">
-                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">${ labels.sysinfo_section_partitions }</h4>
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Partitions</h4>
                         <table class="w-full text-xs">
                             <thead>
                                 <tr class="text-gray-400 border-b border-border">
-                                    <th class="text-left py-1">${ labels.sysinfo_table_device }</th>
-                                    <th class="text-left py-1">${ labels.sysinfo_table_mountpoint }</th>
-                                    <th class="text-left py-1">${ labels.sysinfo_table_type }</th>
-                                    <th class="text-right py-1">${ labels.sysinfo_table_total }</th>
-                                    <th class="text-right py-1">${ labels.sysinfo_table_used }</th>
-                                    <th class="text-right py-1">${ labels.sysinfo_table_free }</th>
-                                    <th class="text-right py-1">${ labels.sysinfo_table_use_percent }</th>
+                                    <th class="text-left py-1">Device</th>
+                                    <th class="text-left py-1">Mountpoint</th>
+                                    <th class="text-left py-1">Type</th>
+                                    <th class="text-right py-1">Total</th>
+                                    <th class="text-right py-1">Used</th>
+                                    <th class="text-right py-1">Free</th>
+                                    <th class="text-right py-1">Use%</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="(p, idx) in sysinfoData.partition.partitions" :key="idx" class="border-b border-border/50">
-                                    <td class="py-1 font-mono">${ p.device || labels.sysinfo_na }</td>
-                                    <td class="py-1 font-mono">${ p.mountpoint || labels.sysinfo_na }</td>
-                                    <td class="py-1">${ p.fstype || labels.sysinfo_na }</td>
-                                    <td class="py-1 text-right">${ p.total ? formatBytes(p.total) : labels.sysinfo_na }</td>
-                                    <td class="py-1 text-right">${ p.used ? formatBytes(p.used) : labels.sysinfo_na }</td>
-                                    <td class="py-1 text-right">${ p.free ? formatBytes(p.free) : labels.sysinfo_na }</td>
-                                    <td class="py-1 text-right" :class="p.used_percent > 90 ? 'text-red-400' : 'text-gray-200'">${ p.used_percent ? p.used_percent.toFixed(1) + '%' : labels.sysinfo_na }</td>
+                                    <td class="py-1 font-mono">${ p.device || 'N/A' }</td>
+                                    <td class="py-1 font-mono">${ p.mountpoint || 'N/A' }</td>
+                                    <td class="py-1">${ p.fstype || 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.total ? formatBytes(p.total) : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.used ? formatBytes(p.used) : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.free ? formatBytes(p.free) : 'N/A' }</td>
+                                    <td class="py-1 text-right" :class="p.used_percent > 90 ? 'text-red-400' : 'text-gray-200'">${ p.used_percent ? p.used_percent.toFixed(1) + '%' : 'N/A' }</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <div v-if="sysinfoData.io_disk" class="p-3 bg-bg border border-border rounded-lg">
-                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">${ labels.sysinfo_section_disk_io }</h4>
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Disk I/O</h4>
                         <div v-for="(counter, name) in sysinfoData.io_disk" :key="name" class="mb-2">
                             <div class="text-gray-300 font-semibold">${ name }:</div>
                             <div class="grid grid-cols-2 gap-1 ml-4">
-                                <div class="text-gray-400">${ labels.sysinfo_read_count }:</div><div class="text-gray-200">${ counter.read_count || 0 }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_write_count }:</div><div class="text-gray-200">${ counter.write_count || 0 }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_read_bytes }:</div><div class="text-gray-200">${ formatBytes(counter.read_bytes) }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_write_bytes }:</div><div class="text-gray-200">${ formatBytes(counter.write_bytes) }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_read_time }:</div><div class="text-gray-200">${ counter.read_time || 0 } ms</div>
-                                <div class="text-gray-400">${ labels.sysinfo_write_time }:</div><div class="text-gray-200">${ counter.write_time || 0 } ms</div>
+                                <div class="text-gray-400">Read Count:</div><div class="text-gray-200">${ counter.read_count || 0 }</div>
+                                <div class="text-gray-400">Write Count:</div><div class="text-gray-200">${ counter.write_count || 0 }</div>
+                                <div class="text-gray-400">Read Bytes:</div><div class="text-gray-200">${ formatBytes(counter.read_bytes) }</div>
+                                <div class="text-gray-400">Write Bytes:</div><div class="text-gray-200">${ formatBytes(counter.write_bytes) }</div>
+                                <div class="text-gray-400">Read Time:</div><div class="text-gray-200">${ counter.read_time || 0 } ms</div>
+                                <div class="text-gray-400">Write Time:</div><div class="text-gray-200">${ counter.write_time || 0 } ms</div>
                             </div>
                         </div>
                     </div>
                     <div v-if="sysinfoData.interfaces" class="p-3 bg-bg border border-border rounded-lg">
-                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">${ labels.sysinfo_section_network_interfaces }</h4>
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Network Interfaces</h4>
                         <div v-for="(iface, idx) in sysinfoData.interfaces.interfaces" :key="idx" class="mb-2">
                             <div class="text-gray-300 font-semibold">${ iface.name }:</div>
                             <div class="grid grid-cols-2 gap-1 ml-4">
-                                <div class="text-gray-400">${ labels.sysinfo_mtu }:</div><div class="text-gray-200">${ iface.mtu || labels.sysinfo_na }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_flags }:</div><div class="text-gray-200">${ iface.flags ? iface.flags.join(', ') : labels.sysinfo_na }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_addresses }:</div><div class="text-gray-200">${ iface.addresses ? iface.addresses.join(', ') : labels.sysinfo_na }</div>
+                                <div class="text-gray-400">MTU:</div><div class="text-gray-200">${ iface.mtu || 'N/A' }</div>
+                                <div class="text-gray-400">Flags:</div><div class="text-gray-200">${ iface.flags ? iface.flags.join(', ') : 'N/A' }</div>
+                                <div class="text-gray-400">Addresses:</div><div class="text-gray-200">${ iface.addresses ? iface.addresses.join(', ') : 'N/A' }</div>
                             </div>
                         </div>
                     </div>
                     <div v-if="sysinfoData.io_network" class="p-3 bg-bg border border-border rounded-lg">
-                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">${ labels.sysinfo_section_network_io }</h4>
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Network I/O</h4>
                         <div v-for="(counter, idx) in sysinfoData.io_network.io_counters" :key="idx" class="mb-2">
                             <div class="text-gray-300 font-semibold">${ counter.name }:</div>
                             <div class="grid grid-cols-2 gap-1 ml-4">
-                                <div class="text-gray-400">${ labels.sysinfo_bytes_sent }:</div><div class="text-gray-200">${ formatBytes(counter.bytes_sent) }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_bytes_recv }:</div><div class="text-gray-200">${ formatBytes(counter.bytes_recv) }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_packets_sent }:</div><div class="text-gray-200">${ counter.packets_sent || 0 }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_packets_recv }:</div><div class="text-gray-200">${ counter.packets_recv || 0 }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_errors_in }:</div><div class="text-gray-200">${ counter.errin || 0 }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_errors_out }:</div><div class="text-gray-200">${ counter.errout || 0 }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_dropped_in }:</div><div class="text-gray-200">${ counter.dropin || 0 }</div>
-                                <div class="text-gray-400">${ labels.sysinfo_dropped_out }:</div><div class="text-gray-200">${ counter.dropout || 0 }</div>
+                                <div class="text-gray-400">Bytes Sent:</div><div class="text-gray-200">${ formatBytes(counter.bytes_sent) }</div>
+                                <div class="text-gray-400">Bytes Recv:</div><div class="text-gray-200">${ formatBytes(counter.bytes_recv) }</div>
+                                <div class="text-gray-400">Packets Sent:</div><div class="text-gray-200">${ counter.packets_sent || 0 }</div>
+                                <div class="text-gray-400">Packets Recv:</div><div class="text-gray-200">${ counter.packets_recv || 0 }</div>
+                                <div class="text-gray-400">Errors In:</div><div class="text-gray-200">${ counter.errin || 0 }</div>
+                                <div class="text-gray-400">Errors Out:</div><div class="text-gray-200">${ counter.errout || 0 }</div>
+                                <div class="text-gray-400">Dropped In:</div><div class="text-gray-200">${ counter.dropin || 0 }</div>
+                                <div class="text-gray-400">Dropped Out:</div><div class="text-gray-200">${ counter.dropout || 0 }</div>
                             </div>
                         </div>
                     </div>
                     <div v-if="sysinfoData.processes" class="p-3 bg-bg border border-border rounded-lg">
-                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">${ labels.sysinfo_section_processes } (${ sysinfoData.processes.count })</h4>
+                        <h4 class="text-sm font-semibold text-indigo-400 mb-2">Processes (${ sysinfoData.processes.count })</h4>
                         <table class="w-full text-xs">
                             <thead>
                                 <tr class="text-gray-400 border-b border-border">
                                     <th class="text-left py-1">PID</th>
                                     <th class="text-left py-1">Name</th>
                                     <th class="text-left py-1">Status</th>
-                                    <th class="text-right py-1">${ labels.sysinfo_cpu_label }%</th>
+                                    <th class="text-right py-1">CPU%</th>
                                     <th class="text-right py-1">Mem%</th>
-                                    <th class="text-left py-1">${ labels.sysinfo_start_time }</th>
+                                    <th class="text-left py-1">Start Time</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="(p, idx) in sysinfoData.processes.processes.slice(0, 100)" :key="idx" class="border-b border-border/50">
                                     <td class="py-1 font-mono">${ p.pid }</td>
                                     <td class="py-1 font-mono">${ p.name }</td>
-                                    <td class="py-1">${ p.status ? p.status[0] : labels.sysinfo_na }</td>
-                                    <td class="py-1 text-right">${ p.cpu_percent ? p.cpu_percent.toFixed(1) : labels.sysinfo_na }</td>
-                                    <td class="py-1 text-right">${ p.memory_percent ? p.memory_percent.toFixed(1) : labels.sysinfo_na }</td>
-                                    <td class="py-1 font-mono">${ p.create_time ? new Date(p.create_time * 1000).toLocaleTimeString() : labels.sysinfo_na }</td>
+                                    <td class="py-1">${ p.status ? p.status[0] : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.cpu_percent ? p.cpu_percent.toFixed(1) : 'N/A' }</td>
+                                    <td class="py-1 text-right">${ p.memory_percent ? p.memory_percent.toFixed(1) : 'N/A' }</td>
+                                    <td class="py-1 font-mono">${ p.create_time ? new Date(p.create_time * 1000).toLocaleTimeString() : 'N/A' }</td>
                                 </tr>
                             </tbody>
                         </table>
-                        <div v-if="sysinfoData.processes.count > 100" class="text-center text-gray-400 mt-2">${ labels.sysinfo_processes_showing } ${ sysinfoData.processes.count } ${ labels.sysinfo_processes_count }</div>
+                        <div v-if="sysinfoData.processes.count > 100" class="text-center text-gray-400 mt-2">Showing first 100 of ${ sysinfoData.processes.count } processes</div>
                     </div>
                     <div v-if="Object.keys(sysinfoData).length === 0 && !sysinfoLoading" class="text-center py-10 text-gray-500">
                         ${ labels.sysinfo_no_data }
@@ -441,9 +441,6 @@
     </div>
 
 
-    <script>
-        window.APP_LANG = '{{.lang}}';
-    </script>
     <script src="/static/js/i18n/messages.js"></script>
     <script src="/static/js/utils/format.js"></script>
     <script src="/static/js/utils/path.js"></script>
