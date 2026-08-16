@@ -192,7 +192,8 @@
                                 <td class="px-4 py-2 text-center">
                                     <button @click="showProperties(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-indigo-400 hover:bg-indigo-500/10 transition mr-1">${ labels.fm_action_props }</button>
                                     <button @click="showDeleteFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-red-500 hover:bg-red-500/10 transition mr-1">${ labels.fm_action_delete }</button>
-                                    <button @click="showMoveFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-yellow-500 hover:bg-yellow-500/10 transition">${ labels.fm_action_move_confirm }</button>
+                                    <button @click="showMoveFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-yellow-500 hover:bg-yellow-500/10 transition mr-1">${ labels.fm_action_move_confirm }</button>
+                                    <button @click="showCopyFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-green-500 hover:bg-green-500/10 transition">${ labels.fm_action_copy }</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -227,6 +228,24 @@
                 <div class="flex gap-2">
                     <button @click="fmMoveTarget = null" class="flex-1 px-4 py-2 bg-transparent border border-border hover:bg-surface-2 text-gray-300 text-sm font-medium rounded-lg transition">${ labels.cancel_btn }</button>
                     <button @click="confirmMoveFile" class="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-medium rounded-lg transition">${ labels.fm_action_move_confirm }</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="fmCopyTarget" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="fmCopyTarget = null">
+            <div class="bg-surface border border-border rounded-xl p-6 max-w-md w-[95%]">
+                <h3 class="text-lg font-semibold mb-4">${ labels.fm_copy_title }</h3>
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.fm_copy_origin_label }</label>
+                    <input v-model="fmCopyOrigin" readonly class="w-full px-3.5 py-2 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-400 cursor-not-allowed">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.fm_copy_target_label }</label>
+                    <input v-model="fmCopyDest" @keydown.enter="confirmCopyFile" :placeholder="labels.fm_copy_target_placeholder" class="w-full px-3.5 py-2 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex gap-2">
+                    <button @click="fmCopyTarget = null" class="flex-1 px-4 py-2 bg-transparent border border-border hover:bg-surface-2 text-gray-300 text-sm font-medium rounded-lg transition">${ labels.cancel_btn }</button>
+                    <button @click="confirmCopyFile" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded-lg transition">${ labels.fm_action_copy }</button>
                 </div>
             </div>
         </div>

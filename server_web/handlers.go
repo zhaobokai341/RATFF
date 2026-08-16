@@ -264,3 +264,22 @@ func handleFileDelete(c *gin.Context) {
 
 	sendFileCommand(c, "file_delete", req.ClientID, map[string]interface{}{"path": req.Path})
 }
+
+// handleFileCopy handles POST /api/file/copy
+func handleFileCopy(c *gin.Context) {
+	var req struct {
+		ClientID   string `json:"client_id" binding:"required"`
+		OriginPath string `json:"origin_path" binding:"required"`
+		NewPath    string `json:"new_path" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	sendFileCommand(c, "file_copy", req.ClientID, map[string]interface{}{
+		"origin_path": req.OriginPath,
+		"new_path":    req.NewPath,
+	})
+}

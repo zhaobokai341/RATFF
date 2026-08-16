@@ -57,6 +57,7 @@ func setupRouter() *gin.Engine {
 	r.POST("/api/file/list", handleFileList)
 	r.POST("/api/file/move", handleFileMove)
 	r.POST("/api/file/delete", handleFileDelete)
+	r.POST("/api/file/copy", handleFileCopy)
 
 	r.GET("/:pathPassword", handlePathIndex)
 	r.GET("/:pathPassword/", handlePathIndex)
@@ -67,6 +68,7 @@ func setupRouter() *gin.Engine {
 	r.POST("/:pathPassword/api/file/list", handleFileList)
 	r.POST("/:pathPassword/api/file/move", handleFileMove)
 	r.POST("/:pathPassword/api/file/delete", handleFileDelete)
+	r.POST("/:pathPassword/api/file/copy", handleFileCopy)
 
 	return r
 }

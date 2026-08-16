@@ -41,6 +41,9 @@
                 const fmMoveTarget = ref(false);
                 const fmMoveOrigin = ref('');
                 const fmMoveDest = ref('');
+                const fmCopyTarget = ref(false);
+                const fmCopyOrigin = ref('');
+                const fmCopyDest = ref('');
                 const fmPropertiesTarget = ref(null);
 
                 const statusText = computed(() => clients.value.length > 0 ? labels.status_connected : labels.status_disconnected);
@@ -558,6 +561,38 @@
                     }
                 };
 
+                const showCopyFile = function(f) {
+                    var sep = fmPath.value.includes('\\') ? '\\' : '/';
+                    var fullPath = fmPath.value ? (fmPath.value.endsWith(sep) ? fmPath.value + f.name : fmPath.value + sep + f.name) : f.name;
+                    fmCopyOrigin.value = fullPath;
+                    fmCopyDest.value = '';
+                    fmCopyTarget.value = true;
+                };
+
+                const confirmCopyFile = async function() {
+                    if (!fmCopyDest.value.trim()) return;
+                    var origin = fmCopyOrigin.value;
+                    var dest = fmCopyDest.value.trim();
+                    fmCopyTarget.value = false;
+
+                    dest = resolvePath(fmPath.value, dest);
+
+                    try {
+                        var data = await api('/api/file/copy', {
+                            method: 'POST',
+                            body: JSON.stringify({ client_id: selectedClient.value, origin_path: origin, new_path: dest })
+                        });
+                        if (data.error) {
+                            showToast(labels.fm_copy_failed.replace('{error}', data.error), 'error');
+                        } else {
+                            showToast(labels.fm_copy_success, 'success');
+                            loadFiles();
+                        }
+                    } catch (e) {
+                        showToast(labels.fm_copy_failed.replace('{error}', e.message), 'error');
+                    }
+                };
+
                 const showProperties = function(f) {
                     fmPropertiesTarget.value = f;
                 };
@@ -609,6 +644,9 @@
                     fmMoveTarget: fmMoveTarget,
                     fmMoveOrigin: fmMoveOrigin,
                     fmMoveDest: fmMoveDest,
+                    fmCopyTarget: fmCopyTarget,
+                    fmCopyOrigin: fmCopyOrigin,
+                    fmCopyDest: fmCopyDest,
                     fmPropertiesTarget: fmPropertiesTarget,
                     showFileManagerFor: showFileManagerFor,
                     loadFiles: loadFiles,
@@ -623,6 +661,8 @@
                     confirmDeleteFile: confirmDeleteFile,
                     showMoveFile: showMoveFile,
                     confirmMoveFile: confirmMoveFile,
+                    showCopyFile: showCopyFile,
+                    confirmCopyFile: confirmCopyFile,
                     showProperties: showProperties
                 };
             }

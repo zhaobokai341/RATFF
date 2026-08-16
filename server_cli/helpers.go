@@ -1,8 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/google/shlex"
@@ -78,6 +79,9 @@ func handleConsoleMode(input string, selectedID string) string {
 		return ""
 	case "command":
 		return "enter_command"
+	case "clear":
+		clearScreen()
+		return ""
 	case "cd":
 		if len(args) < 2 {
 			PrintError(T("usage_cd"))
@@ -199,7 +203,15 @@ func printConsoleHelp() {
 
 // clearScreen clears the terminal screen using ANSI escape codes.
 func clearScreen() {
-	fmt.Print("\033[H\033[2J")
+	if runtime.GOOS == "windows" {
+		cmd := exec.Command("cmd", "/c", "cls")
+		cmd.Stdout = os.Stdout
+		cmd.Run()
+	} else {
+		cmd := exec.Command("clear")
+		cmd.Stdout = os.Stdout
+		cmd.Run()
+	}
 }
 
 // handleCommandMode executes a shell command on the selected client.
