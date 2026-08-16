@@ -25,16 +25,26 @@ func uploadFile(id, localPath, remotePath string) {
 	}
 
 	if stat.IsDir() {
-		PrintError(T("upload_dir_not_supported"))
+		uploadDirectory(id, localPath, remotePath)
 		return
 	}
 
+	uploadSingleFile(id, localPath, remotePath)
+}
+
+func uploadSingleFile(id, localPath, remotePath string) {
 	file, err := os.Open(localPath)
 	if err != nil {
 		PrintError(Tf("file_open_failed", localPath, err))
 		return
 	}
 	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		PrintError(Tf("file_open_failed", localPath, err))
+		return
+	}
 
 	fileSize := stat.Size()
 	totalChunks := (fileSize + chunkSize - 1) / chunkSize
@@ -126,4 +136,54 @@ func uploadFile(id, localPath, remotePath string) {
 			PrintSuccess(Tf("upload_success", filename, remotePath))
 		}
 	}
+}
+
+func uploadDirectory(id, localDir, remoteDir string) {
+	dirName := filepath.Base(localDir)
+	if remoteDir == "" || remoteDir == "." {
+		remoteDir = dirName
+	}
+
+	var files []string
+	err := filepath.Walk(localDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			PrintWarn(Tf("upload_dir_walk_error", path, err))
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+		files = append(files, path)
+		return nil
+	})
+	if err != nil {
+		PrintError(Tf("upload_dir_walk_failed", localDir, err))
+		return
+	}
+
+	if len(files) == 0 {
+		PrintInfo(Tf("upload_dir_empty", dirName))
+		return
+	}
+
+	PrintInfo(Tf("upload_dir_starting", dirName, len(files)))
+
+	successCount := 0
+	for i, filePath := range files {
+		relPath, err := filepath.Rel(localDir, filePath)
+		if err != nil {
+			PrintWarn(Tf("upload_dir_relpath_failed", filePath, err))
+			continue
+		}
+
+		remoteFilePath := filepath.Join(remoteDir, relPath)
+		remoteFilePath = filepath.ToSlash(remoteFilePath)
+
+		PrintInfo(Tf("upload_dir_file", i+1, len(files), relPath))
+
+		uploadSingleFile(id, filePath, remoteFilePath)
+		successCount++
+	}
+
+	PrintSuccess(Tf("upload_dir_success", dirName, remoteDir, successCount, len(files)))
 }
