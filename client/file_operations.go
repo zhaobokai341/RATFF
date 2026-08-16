@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -180,7 +181,9 @@ func copyFile(src, dst string) error {
 		return err
 	}
 
-	os.Chmod(dst, srcInfo.Mode())
+	if err := os.Chmod(dst, srcInfo.Mode()); err != nil {
+		return fmt.Errorf("chmod failed: %v", err)
+	}
 	return os.Remove(src)
 }
 

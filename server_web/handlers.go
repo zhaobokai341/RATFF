@@ -108,6 +108,9 @@ func handleExecCommand(c *gin.Context) {
 	select {
 	case msg := <-ch:
 		resp.Body.Close()
+		pendingMu.Lock()
+		delete(pendingCmd, req.ClientID)
+		pendingMu.Unlock()
 		c.JSON(200, gin.H{"status": "completed", "response": msg})
 	case <-time.After(10 * time.Second):
 		resp.Body.Close()
@@ -194,6 +197,9 @@ func sendFileCommand(c *gin.Context, cmdType string, clientID string, cmdPayload
 	select {
 	case msg := <-ch:
 		resp.Body.Close()
+		pendingMu.Lock()
+		delete(pendingCmd, clientID)
+		pendingMu.Unlock()
 		if msg.Payload != nil {
 			if errMsg, ok := msg.Payload["error"].(string); ok {
 				c.JSON(400, gin.H{"error": errMsg})

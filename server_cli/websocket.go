@@ -2,24 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"sync"
 	"time"
 
 	"RATFF/shared"
 
 	"github.com/gorilla/websocket"
 )
-
-var (
-	responseConnMu sync.Mutex
-	responseConn   *websocket.Conn
-)
-
-func setResponseConn(conn *websocket.Conn) {
-	responseConnMu.Lock()
-	responseConn = conn
-	responseConnMu.Unlock()
-}
 
 // connectWS establishes a WebSocket connection to the server.
 func connectWS(wsURL string) (*websocket.Conn, error) {
@@ -53,12 +41,10 @@ func startResponseListener(wsURL string, initialConn *websocket.Conn) {
 				time.Sleep(2 * time.Second)
 				continue
 			}
-			setResponseConn(conn)
 		}
 
 		err := listenResponses(conn)
 		conn.Close()
-		setResponseConn(nil)
 		conn = nil
 		if err == nil {
 			return

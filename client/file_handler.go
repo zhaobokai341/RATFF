@@ -67,6 +67,9 @@ func handleFileUploadStart(msg shared.Message) shared.Message {
 	}
 
 	uploadMu.Lock()
+	if old, exists := uploadSessions[fileID]; exists {
+		old.File.Close()
+	}
 	uploadSessions[fileID] = &UploadSession{
 		FileID:       fileID,
 		RemotePath:   remotePath,
@@ -86,23 +89,23 @@ func handleFileUploadChunk(msg shared.Message) shared.Message {
 	chunkDataB64, _ := msg.Payload["chunk_data"].(string)
 	chunkIndex, _ := msg.Payload["chunk_index"].(float64)
 
-	uploadMu.Lock()
-	session, exists := uploadSessions[fileID]
-	uploadMu.Unlock()
-
-	if !exists {
-		return shared.NewMessage(shared.MsgError, shared.CmdFileUploadChunk, msg.ClientID,
-			map[string]interface{}{"error": "upload session not found"})
-	}
-
 	chunkData, err := base64.StdEncoding.DecodeString(chunkDataB64)
 	if err != nil {
 		return shared.NewMessage(shared.MsgError, shared.CmdFileUploadChunk, msg.ClientID,
 			map[string]interface{}{"error": fmt.Sprintf("decode chunk failed: %v", err)})
 	}
 
+	uploadMu.Lock()
+	session, exists := uploadSessions[fileID]
+	if !exists {
+		uploadMu.Unlock()
+		return shared.NewMessage(shared.MsgError, shared.CmdFileUploadChunk, msg.ClientID,
+			map[string]interface{}{"error": "upload session not found"})
+	}
+
 	n, err := session.File.Write(chunkData)
 	if err != nil {
+		uploadMu.Unlock()
 		return shared.NewMessage(shared.MsgError, shared.CmdFileUploadChunk, msg.ClientID,
 			map[string]interface{}{"error": fmt.Sprintf("write chunk failed: %v", err)})
 	}
@@ -110,6 +113,7 @@ func handleFileUploadChunk(msg shared.Message) shared.Message {
 	session.MD5Hash.Write(chunkData[:n])
 	session.ReceivedSize += int64(n)
 	session.ReceivedChunks++
+	uploadMu.Unlock()
 
 	return shared.NewMessage(shared.MsgResponse, shared.CmdFileUploadChunk, msg.ClientID,
 		map[string]interface{}{
@@ -137,13 +141,16 @@ func handleFileUploadComplete(msg shared.Message) shared.Message {
 			map[string]interface{}{"error": fmt.Sprintf("close file failed: %v", err)})
 	}
 
+	uploadMu.Lock()
+	receivedSize := session.ReceivedSize
 	md5sum := hex.EncodeToString(session.MD5Hash.Sum(nil))
+	uploadMu.Unlock()
 
 	return shared.NewMessage(shared.MsgResponse, shared.CmdFileUploadComplete, msg.ClientID,
 		map[string]interface{}{
 			"status":    "complete",
 			"file_id":   fileID,
-			"file_size": session.ReceivedSize,
+			"file_size": receivedSize,
 			"md5":       md5sum,
 		})
 }
@@ -174,6 +181,9 @@ func handleFileDownloadStart(msg shared.Message) shared.Message {
 	totalChunks := (stat.Size() + chunkSize - 1) / chunkSize
 
 	downloadMu.Lock()
+	if old, exists := downloadSessions[fileID]; exists {
+		old.File.Close()
+	}
 	downloadSessions[fileID] = &DownloadSession{
 		FileID:      fileID,
 		LocalPath:   localPath,
@@ -200,9 +210,8 @@ func handleFileDownloadChunk(msg shared.Message) shared.Message {
 
 	downloadMu.Lock()
 	session, exists := downloadSessions[fileID]
-	downloadMu.Unlock()
-
 	if !exists {
+		downloadMu.Unlock()
 		return shared.NewMessage(shared.MsgError, shared.CmdFileDownloadChunk, msg.ClientID,
 			map[string]interface{}{"error": "download session not found"})
 	}
@@ -212,6 +221,7 @@ func handleFileDownloadChunk(msg shared.Message) shared.Message {
 
 	_, err := session.File.Seek(offset, io.SeekStart)
 	if err != nil {
+		downloadMu.Unlock()
 		return shared.NewMessage(shared.MsgError, shared.CmdFileDownloadChunk, msg.ClientID,
 			map[string]interface{}{"error": fmt.Sprintf("seek file failed: %v", err)})
 	}
@@ -219,6 +229,7 @@ func handleFileDownloadChunk(msg shared.Message) shared.Message {
 	chunk := make([]byte, chunkSize)
 	n, err := session.File.Read(chunk)
 	if err != nil && err != io.EOF {
+		downloadMu.Unlock()
 		return shared.NewMessage(shared.MsgError, shared.CmdFileDownloadChunk, msg.ClientID,
 			map[string]interface{}{"error": fmt.Sprintf("read chunk failed: %v", err)})
 	}
@@ -227,6 +238,7 @@ func handleFileDownloadChunk(msg shared.Message) shared.Message {
 	session.MD5Hash.Write(chunkData)
 	session.SentSize += int64(n)
 	session.SentChunks++
+	downloadMu.Unlock()
 
 	chunkB64 := base64.StdEncoding.EncodeToString(chunkData)
 
@@ -258,13 +270,16 @@ func handleFileDownloadComplete(msg shared.Message) shared.Message {
 			map[string]interface{}{"error": fmt.Sprintf("close file failed: %v", err)})
 	}
 
+	downloadMu.Lock()
+	sentSize := session.SentSize
 	md5sum := hex.EncodeToString(session.MD5Hash.Sum(nil))
+	downloadMu.Unlock()
 
 	return shared.NewMessage(shared.MsgResponse, shared.CmdFileDownloadComplete, msg.ClientID,
 		map[string]interface{}{
 			"status":    "complete",
 			"file_id":   fileID,
-			"file_size": session.SentSize,
+			"file_size": sentSize,
 			"md5":       md5sum,
 		})
 }

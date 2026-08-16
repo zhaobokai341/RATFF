@@ -2,6 +2,7 @@ package main
 
 import (
 	"RATFF/server_cli/output"
+	"RATFF/shared"
 )
 
 // PrintSuccess prints a success message with styled prefix.
@@ -60,4 +61,32 @@ func FormatBytes(b int64) string {
 // formatBytes is an alias for backward compatibility.
 func formatBytes(b int64) string {
 	return output.FormatBytes(b)
+}
+
+// PrintClientTable displays connected clients in a formatted table.
+func PrintClientTable(clients []shared.ClientInfo) {
+	output.PrintClientTable(clients, T, Tf)
+}
+
+// PrintFileTable displays file list in a formatted table.
+func PrintFileTable(currentPath string, files []interface{}) {
+	output.PrintFileTable(currentPath, files, T, Tf)
+}
+
+// formatID formats client ID to fit column width.
+func formatID(id string) string {
+	return output.FormatID(id)
+}
+
+// HelpCommand represents a help command entry with name and description.
+type HelpCommand = output.HelpCommand
+
+// PrintHelp outputs a formatted list of available commands.
+func PrintHelp(commands []HelpCommand) {
+	output.PrintHelp(commands, T)
+}
+
+// printSystemInfoDetail displays system information in a formatted layout.
+func printSystemInfoDetail(payload map[string]interface{}, fields []string) {
+	output.PrintSystemInfoDetail(payload, fields, T, Tf)
 }

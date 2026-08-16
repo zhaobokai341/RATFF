@@ -180,3 +180,27 @@ func FormatDuration(d time.Duration) string {
 	}
 	return fmt.Sprintf("%dh%dm", int(d.Hours()), int(d.Minutes())%60)
 }
+
+var (
+	sysinfoTitleStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#8B5CF6")).
+				MarginBottom(1)
+
+	sysinfoSectionStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#60A5FA")).
+				MarginTop(1).
+				MarginBottom(1)
+
+	sysinfoKeyStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#A78BFA")).
+			Width(18).
+			Align(lipgloss.Right)
+
+	sysinfoValueStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#E5E7EB"))
+
+	sysinfoErrorStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#EF4444"))
+)

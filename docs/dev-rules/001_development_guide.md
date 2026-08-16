@@ -32,12 +32,28 @@ RATFF/
 
 ## 2. Code Standards
 
-### 2.1 File Line Limits
-- **Source code files must not exceed 150 lines**
-- **Test files (`*_test.go`) must not exceed 300 lines**
-- Split into multiple files when exceeded
-- Split by responsibility, not by line count
-- When a function belongs to the same responsibility domain and splitting would reduce readability, the limit can be appropriately relaxed
+### 2.1 File Organization
+
+**核心原则：按职责拆分，而非按行数拆分**
+
+- 每个文件应该有明确的单一职责
+- 当文件包含多个不相关的职责时，应该拆分
+- 当多个文件职责相同或高度相关时，应该合并
+- 行数限制仅供参考：
+  - 源文件建议不超过 150 行（可适当放宽）
+  - 测试文件建议不超过 300 行（可适当放宽）
+
+**判断标准：**
+- ✅ 好：相关文件放在一起，即使超过行数限制
+- ❌ 差：为凑行数而拆分，导致逻辑分散
+- ✅ 好：按功能模块组织文件
+- ❌ 差：创建大量职责单一的短文件（wrapper 反模式）
+
+**反模式警告：**
+- 避免创建大量 < 30 行的 "wrapper" 文件，应合并为单一文件
+- 避免为符合行数限制而拆分紧密相关的函数
+- 避免文件过多导致导航困难
+- 单一职责的文件即使超过行数限制也不应拆分（如 `systeminfo_render.go` 包含 9 个渲染函数，职责统一，不拆分）
 
 ### 2.2 Function Standards
 - Single function should not exceed 50 lines
