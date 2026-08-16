@@ -86,6 +86,9 @@ func handleConsoleMode(input string, selectedID string) string {
 		dir := strings.Join(args[1:], " ")
 		cdClient(selectedID, dir)
 		return ""
+	case "pwd":
+		pwdClient(selectedID)
+		return ""
 	case "upload":
 		if len(args) < 2 {
 			PrintError(T("usage_upload"))
@@ -139,6 +142,15 @@ func handleConsoleMode(input string, selectedID string) string {
 		newPath := strings.Join(args[2:], " ")
 		moveFile(selectedID, originPath, newPath)
 		return ""
+	case "cp":
+		if len(args) < 3 {
+			PrintError(T("usage_cp"))
+			return ""
+		}
+		originPath := args[1]
+		newPath := strings.Join(args[2:], " ")
+		copyRemoteFile(selectedID, originPath, newPath)
+		return ""
 	case "rm":
 		if len(args) < 2 {
 			PrintError(T("usage_rm"))
@@ -170,8 +182,10 @@ func printConsoleHelp() {
 	PrintHelp([]HelpCommand{
 		{Cmd: "command", Desc: T("cmd_command_desc")},
 		{Cmd: "cd <dir>", Desc: T("cmd_cd_console_desc")},
+		{Cmd: "pwd", Desc: T("cmd_pwd_desc")},
 		{Cmd: "ls [path]", Desc: T("cmd_ls_desc")},
 		{Cmd: "mv <origin> <destination>", Desc: T("cmd_mv_desc")},
+		{Cmd: "cp <origin> <destination>", Desc: T("cmd_cp_desc")},
 		{Cmd: "rm <path>", Desc: T("cmd_rm_desc")},
 		{Cmd: "upload <local> [remote]", Desc: T("cmd_upload_desc")},
 		{Cmd: "download <remote> [local]", Desc: T("cmd_download_desc")},

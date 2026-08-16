@@ -52,6 +52,10 @@ func executeCommand(msg shared.Message) shared.Message {
 		return handleFileMove(msg)
 	case shared.CmdFileDelete:
 		return handleFileDelete(msg)
+	case shared.CmdFileCopy:
+		return handleFileCopy(msg)
+	case shared.CmdPwd:
+		return handlePwd(msg)
 	default:
 		return shared.NewMessage(shared.MsgError, msg.Command, msg.ClientID,
 			map[string]interface{}{"error": "unknown command"})
@@ -193,4 +197,22 @@ func handleShellExecBg(msg shared.Message) shared.Message {
 	}
 
 	return shared.NewMessage(shared.MsgResponse, shared.CmdShellExecBg, msg.ClientID, result)
+}
+
+func handlePwd(msg shared.Message) shared.Message {
+	workingMu.RLock()
+	dir := workingDir
+	workingMu.RUnlock()
+
+	if dir == "" {
+		var err error
+		dir, err = os.Getwd()
+		if err != nil {
+			return shared.NewMessage(shared.MsgError, shared.CmdPwd, msg.ClientID,
+				map[string]interface{}{"error": fmt.Sprintf("get working directory failed: %v", err)})
+		}
+	}
+
+	return shared.NewMessage(shared.MsgResponse, shared.CmdPwd, msg.ClientID,
+		map[string]interface{}{"current_dir": dir})
 }

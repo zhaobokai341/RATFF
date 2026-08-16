@@ -279,3 +279,17 @@ func TestHandleServerModeClear(t *testing.T) {
 		t.Errorf("expected empty selectedID, got %q", selectedID)
 	}
 }
+
+func TestHandleConsoleModeCp(t *testing.T) {
+	result := handleConsoleMode("cp", "test-id")
+	if result != "" {
+		t.Errorf("expected empty string for missing args, got %q", result)
+	}
+}
+
+func TestHandleConsoleModePwd(t *testing.T) {
+	result := handleConsoleMode("pwd", "test-id")
+	if result != "" {
+		t.Errorf("expected empty string, got %q", result)
+	}
+}

@@ -308,3 +308,171 @@ func TestHandleFileDownloadComplete(t *testing.T) {
 func newMD5Hash() hash.Hash {
 	return md5.New()
 }
+
+func TestHandleFileCopyFile(t *testing.T) {
+	log = shared.InitLogger("error", "text")
+
+	tmpDir := t.TempDir()
+	srcPath := filepath.Join(tmpDir, "source.txt")
+	if err := os.WriteFile(srcPath, []byte("copy test content"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	dstPath := filepath.Join(tmpDir, "dest.txt")
+
+	msg := shared.NewMessage(shared.MsgCommand, shared.CmdFileCopy, "test-client", map[string]interface{}{
+		"origin_path": srcPath,
+		"new_path":    dstPath,
+	})
+
+	resp := executeCommand(msg)
+
+	if resp.Type != shared.MsgResponse {
+		t.Errorf("Expected response, got %s", resp.Type)
+	}
+
+	if resp.Payload["origin_path"] != srcPath {
+		t.Errorf("Expected origin_path %s, got %v", srcPath, resp.Payload["origin_path"])
+	}
+
+	content, err := os.ReadFile(dstPath)
+	if err != nil {
+		t.Fatalf("Failed to read destination file: %v", err)
+	}
+
+	if string(content) != "copy test content" {
+		t.Errorf("Expected 'copy test content', got %s", string(content))
+	}
+
+	srcContent, err := os.ReadFile(srcPath)
+	if err != nil {
+		t.Fatalf("Source file should still exist: %v", err)
+	}
+
+	if string(srcContent) != "copy test content" {
+		t.Errorf("Source file should not be modified")
+	}
+}
+
+func TestHandleFileCopyToDir(t *testing.T) {
+	log = shared.InitLogger("error", "text")
+
+	tmpDir := t.TempDir()
+	srcPath := filepath.Join(tmpDir, "source.txt")
+	if err := os.WriteFile(srcPath, []byte("copy to dir"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	destDir := filepath.Join(tmpDir, "subdir")
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		t.Fatalf("Failed to create dest dir: %v", err)
+	}
+
+	msg := shared.NewMessage(shared.MsgCommand, shared.CmdFileCopy, "test-client", map[string]interface{}{
+		"origin_path": srcPath,
+		"new_path":    destDir,
+	})
+
+	resp := executeCommand(msg)
+
+	if resp.Type != shared.MsgResponse {
+		t.Errorf("Expected response, got %s", resp.Type)
+	}
+
+	expectedDst := filepath.Join(destDir, "source.txt")
+	content, err := os.ReadFile(expectedDst)
+	if err != nil {
+		t.Fatalf("Failed to read destination file: %v", err)
+	}
+
+	if string(content) != "copy to dir" {
+		t.Errorf("Expected 'copy to dir', got %s", string(content))
+	}
+}
+
+func TestHandleFileCopyDir(t *testing.T) {
+	log = shared.InitLogger("error", "text")
+
+	tmpDir := t.TempDir()
+	srcDir := filepath.Join(tmpDir, "srcdir")
+	if err := os.MkdirAll(srcDir, 0755); err != nil {
+		t.Fatalf("Failed to create src dir: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(srcDir, "a.txt"), []byte("file a"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	if err := os.MkdirAll(filepath.Join(srcDir, "sub"), 0755); err != nil {
+		t.Fatalf("Failed to create sub dir: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(srcDir, "sub", "b.txt"), []byte("file b"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	dstDir := filepath.Join(tmpDir, "dstdir")
+
+	msg := shared.NewMessage(shared.MsgCommand, shared.CmdFileCopy, "test-client", map[string]interface{}{
+		"origin_path": srcDir,
+		"new_path":    dstDir,
+	})
+
+	resp := executeCommand(msg)
+
+	if resp.Type != shared.MsgResponse {
+		t.Errorf("Expected response, got %s", resp.Type)
+	}
+
+	contentA, err := os.ReadFile(filepath.Join(dstDir, "a.txt"))
+	if err != nil {
+		t.Fatalf("Failed to read a.txt: %v", err)
+	}
+
+	if string(contentA) != "file a" {
+		t.Errorf("Expected 'file a', got %s", string(contentA))
+	}
+
+	contentB, err := os.ReadFile(filepath.Join(dstDir, "sub", "b.txt"))
+	if err != nil {
+		t.Fatalf("Failed to read b.txt: %v", err)
+	}
+
+	if string(contentB) != "file b" {
+		t.Errorf("Expected 'file b', got %s", string(contentB))
+	}
+
+	if _, err := os.Stat(srcDir); err != nil {
+		t.Errorf("Source directory should still exist: %v", err)
+	}
+}
+
+func TestHandleFileCopyNotFound(t *testing.T) {
+	log = shared.InitLogger("error", "text")
+
+	msg := shared.NewMessage(shared.MsgCommand, shared.CmdFileCopy, "test-client", map[string]interface{}{
+		"origin_path": "/nonexistent/path/file.txt",
+		"new_path":    "/tmp/dest.txt",
+	})
+
+	resp := executeCommand(msg)
+
+	if resp.Type != shared.MsgError {
+		t.Errorf("Expected error, got %s", resp.Type)
+	}
+}
+
+func TestHandleFileCopyMissingFields(t *testing.T) {
+	log = shared.InitLogger("error", "text")
+
+	msg := shared.NewMessage(shared.MsgCommand, shared.CmdFileCopy, "test-client", map[string]interface{}{
+		"origin_path": "",
+		"new_path":    "",
+	})
+
+	resp := executeCommand(msg)
+
+	if resp.Type != shared.MsgError {
+		t.Errorf("Expected error, got %s", resp.Type)
+	}
+}

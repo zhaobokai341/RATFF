@@ -31,9 +31,11 @@ const (
 	CmdFileDownloadComplete CommandType = "file_download_complete"
 	CmdFileMove             CommandType = "file_move"
 	CmdFileDelete           CommandType = "file_delete"
+	CmdFileCopy             CommandType = "file_copy"
 	CmdSystemInfo           CommandType = "system_info"
 	CmdExit                 CommandType = "exit"
 	CmdCd                   CommandType = "cd"
+	CmdPwd                  CommandType = "pwd"
 )
 
 // Message represents a protocol message exchanged between components.

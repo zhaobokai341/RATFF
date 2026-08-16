@@ -229,3 +229,46 @@ func TestFormatClientID(t *testing.T) {
 		})
 	}
 }
+
+func TestHandlePwd(t *testing.T) {
+	log = shared.InitLogger("error", "text")
+
+	msg := shared.NewMessage(shared.MsgCommand, shared.CmdPwd, "test-client", nil)
+
+	resp := executeCommand(msg)
+
+	if resp.Type != shared.MsgResponse {
+		t.Errorf("Expected response, got %s", resp.Type)
+	}
+
+	if resp.Payload["current_dir"] == nil {
+		t.Error("Expected current_dir in payload")
+	}
+}
+
+func TestHandlePwdWithWorkingDir(t *testing.T) {
+	log = shared.InitLogger("error", "text")
+
+	workingMu.Lock()
+	workingDir = "/tmp"
+	workingMu.Unlock()
+
+	defer func() {
+		workingMu.Lock()
+		workingDir = ""
+		workingMu.Unlock()
+	}()
+
+	msg := shared.NewMessage(shared.MsgCommand, shared.CmdPwd, "test-client", nil)
+
+	resp := executeCommand(msg)
+
+	if resp.Type != shared.MsgResponse {
+		t.Errorf("Expected response, got %s", resp.Type)
+	}
+
+	dir, _ := resp.Payload["current_dir"].(string)
+	if dir != "/tmp" {
+		t.Errorf("Expected /tmp, got %s", dir)
+	}
+}

@@ -220,6 +220,113 @@ func copyDir(src, dst string) error {
 	return os.RemoveAll(src)
 }
 
+func handleFileCopy(msg shared.Message) shared.Message {
+	originPath, _ := msg.Payload["origin_path"].(string)
+	newPath, _ := msg.Payload["new_path"].(string)
+
+	if originPath == "" {
+		return shared.NewMessage(shared.MsgError, shared.CmdFileCopy, msg.ClientID,
+			map[string]interface{}{"error": "origin_path is required"})
+	}
+
+	if newPath == "" {
+		return shared.NewMessage(shared.MsgError, shared.CmdFileCopy, msg.ClientID,
+			map[string]interface{}{"error": "new_path is required"})
+	}
+
+	originPath = filepath.Clean(originPath)
+
+	srcInfo, err := os.Stat(originPath)
+	if err != nil {
+		return shared.NewMessage(shared.MsgError, shared.CmdFileCopy, msg.ClientID,
+			map[string]interface{}{"error": "origin path not found: " + err.Error()})
+	}
+
+	newPath = filepath.Clean(newPath)
+
+	destInfo, err := os.Stat(newPath)
+	if err == nil && destInfo.IsDir() {
+		filename := filepath.Base(originPath)
+		newPath = filepath.Join(newPath, filename)
+	}
+
+	if srcInfo.IsDir() {
+		err = copyDirOnly(originPath, newPath)
+	} else {
+		err = copyFileOnly(originPath, newPath)
+	}
+
+	if err != nil {
+		return shared.NewMessage(shared.MsgError, shared.CmdFileCopy, msg.ClientID,
+			map[string]interface{}{"error": "copy failed: " + err.Error()})
+	}
+
+	return shared.NewMessage(shared.MsgResponse, shared.CmdFileCopy, msg.ClientID,
+		map[string]interface{}{
+			"origin_path": originPath,
+			"new_path":    newPath,
+		})
+}
+
+func copyFileOnly(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	return os.Chmod(dst, srcInfo.Mode())
+}
+
+func copyDirOnly(src, dst string) error {
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(dst, srcInfo.Mode())
+	if err != nil {
+		return err
+	}
+
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+
+		if entry.IsDir() {
+			err = copyDirOnly(srcPath, dstPath)
+		} else {
+			err = copyFileOnly(srcPath, dstPath)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func handleFileDelete(msg shared.Message) shared.Message {
 	path, _ := msg.Payload["path"].(string)
 

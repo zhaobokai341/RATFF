@@ -134,3 +134,50 @@ func deleteFile(id, path string) {
 
 	PrintSuccess(Tf("file_delete_success", path))
 }
+
+func copyRemoteFile(id, originPath, newPath string) {
+	payload := map[string]interface{}{
+		"origin_path": originPath,
+		"new_path":    newPath,
+	}
+
+	msg := waitForCommandResponseWithMsg(id, shared.CmdFileCopy, payload, 10*time.Second)
+	if msg == nil {
+		return
+	}
+
+	if msg.Payload == nil {
+		PrintError(T("file_copy_failed"))
+		return
+	}
+
+	if errMsg, ok := msg.Payload["error"].(string); ok {
+		PrintError(Tf("file_copy_failed_detail", errMsg))
+		return
+	}
+
+	PrintSuccess(Tf("file_copy_success", originPath, newPath))
+}
+
+func pwdClient(id string) {
+	payload := map[string]interface{}{}
+
+	msg := waitForCommandResponseWithMsg(id, shared.CmdPwd, payload, 10*time.Second)
+	if msg == nil {
+		return
+	}
+
+	if msg.Payload == nil {
+		PrintError(T("pwd_failed"))
+		return
+	}
+
+	if errMsg, ok := msg.Payload["error"].(string); ok {
+		PrintError(Tf("pwd_failed_detail", errMsg))
+		return
+	}
+
+	if currentDir, ok := msg.Payload["current_dir"].(string); ok {
+		PrintInfo(currentDir)
+	}
+}
