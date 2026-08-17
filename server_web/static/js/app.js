@@ -45,12 +45,18 @@
                 const fmCopyOrigin = ref('');
                 const fmCopyDest = ref('');
                 const fmPropertiesTarget = ref(null);
+                const transferTask = ref(null);
+                const showUploadMenu = ref(false);
 
                 const statusText = computed(() => clients.value.length > 0 ? labels.status_connected : labels.status_disconnected);
 
                 const api = async (url, opts = {}) => {
                     const fullUrl = basePath + url;
-                    const res = await fetch(fullUrl, { headers: { 'Content-Type': 'application/json' }, ...opts });
+                    const headers = {};
+                    if (!opts.body || !(opts.body instanceof FormData)) {
+                        headers['Content-Type'] = 'application/json';
+                    }
+                    const res = await fetch(fullUrl, { headers: headers, ...opts });
                     return res.json();
                 };
 
@@ -597,6 +603,183 @@
                     fmPropertiesTarget.value = f;
                 };
 
+                const formatTransferProgress = function(current, total) {
+                    return labels.fm_transfer_file_progress.replace('{current}', current).replace('{total}', total);
+                };
+
+                const triggerFileUpload = function() {
+                    if (!selectedClient.value) {
+                        showToast(labels.fm_toast_select_client, 'error');
+                        return;
+                    }
+                    showUploadMenu.value = false;
+                    document.getElementById('fileInput').click();
+                };
+
+                const triggerFolderUpload = function() {
+                    if (!selectedClient.value) {
+                        showToast(labels.fm_toast_select_client, 'error');
+                        return;
+                    }
+                    showUploadMenu.value = false;
+                    document.getElementById('folderInput').click();
+                };
+
+                const handleFileSelect = function(event) {
+                    const files = event.target.files;
+                    if (!files || files.length === 0) return;
+
+                    const clientId = selectedClient.value;
+                    const basePath = fmPath.value || '.';
+                    let uploaded = 0;
+                    let failed = 0;
+
+                    const uploadNext = function(index) {
+                        if (index >= files.length) {
+                            event.target.value = '';
+                            if (failed === 0 && uploaded > 0) {
+                                showToast(labels.fm_upload_success, 'success');
+                                loadFiles();
+                            } else if (uploaded > 0) {
+                                showToast(uploaded + ' uploaded, ' + failed + ' failed', 'warning');
+                                loadFiles();
+                            }
+                            return;
+                        }
+
+                        const file = files[index];
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('client_id', clientId);
+
+                        let remotePath;
+                        if (file.webkitRelativePath) {
+                            const relPath = file.webkitRelativePath;
+                            const slashIdx = relPath.indexOf('/');
+                            if (slashIdx !== -1) {
+                                const relWithoutRoot = relPath.substring(slashIdx + 1);
+                                remotePath = basePath === '.' ? relWithoutRoot : basePath + '/' + relWithoutRoot;
+                            } else {
+                                remotePath = basePath === '.' ? relPath : basePath + '/' + relPath;
+                            }
+                        } else {
+                            remotePath = basePath === '.' ? file.name : basePath + '/' + file.name;
+                        }
+                        formData.append('remote_path', remotePath);
+
+                        transferTask.value = {
+                            type: 'upload',
+                            fileName: file.name,
+                            percent: 0,
+                            fileIndex: index + 1,
+                            fileCount: files.length
+                        };
+
+                        api('/api/file/upload', {
+                            method: 'POST',
+                            body: formData
+                        }).then(function(resp) {
+                            const taskId = resp.task_id;
+                            listenTaskProgress(taskId, 'upload', function() {
+                                uploaded++;
+                                uploadNext(index + 1);
+                            });
+                        }).catch(function(err) {
+                            failed++;
+                            uploadNext(index + 1);
+                        });
+                    };
+
+                    uploadNext(0);
+                };
+
+                const downloadFile = function(f) {
+                    if (!selectedClient.value) {
+                        showToast(labels.fm_toast_select_client, 'error');
+                        return;
+                    }
+
+                    const remotePath = fmPath.value === '.' ? f.name : fmPath.value + '/' + f.name;
+
+                    transferTask.value = {
+                        type: 'download',
+                        fileName: f.name,
+                        percent: 0,
+                        fileIndex: 1,
+                        fileCount: 1
+                    };
+
+                    api('/api/file/download', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            client_id: selectedClient.value,
+                            remote_path: remotePath
+                        })
+                    }).then(function(resp) {
+                        const taskId = resp.task_id;
+                        listenTaskProgress(taskId, 'download', function() {
+                            showToast(labels.fm_download_success, 'success');
+                            loadFiles();
+                        });
+                    }).catch(function(err) {
+                        transferTask.value = null;
+                        showToast(labels.fm_download_failed.replace('{error}', err.message || 'Unknown'), 'error');
+                    });
+                };
+
+                const listenTaskProgress = function(taskId, type, onDone) {
+                    var pollInterval = null;
+                    var pollCount = 0;
+                    var maxPolls = 600;
+
+                    var pollTask = function() {
+                        pollCount++;
+                        if (pollCount > maxPolls) {
+                            clearInterval(pollInterval);
+                            transferTask.value = null;
+                            const msg = type === 'upload' ? labels.fm_upload_failed : labels.fm_download_failed;
+                            showToast(msg.replace('{error}', 'Task timeout'), 'error');
+                            return;
+                        }
+
+                        api('/api/task/status?task_id=' + taskId).then(function(data) {
+                            if (data.status === 'processing' || data.status === 'pending') {
+                                if (transferTask.value) {
+                                    transferTask.value.percent = data.percent || 0;
+                                    transferTask.value.fileName = data.file_name || transferTask.value.fileName;
+                                    transferTask.value.fileIndex = data.file_index || transferTask.value.fileIndex;
+                                    transferTask.value.fileCount = data.file_count || transferTask.value.fileCount;
+                                }
+                            } else if (data.status === 'done') {
+                                clearInterval(pollInterval);
+                                if (type === 'download') {
+                                    window.location.href = basePath + '/api/file/download_result?task_id=' + taskId;
+                                }
+                                if (onDone) onDone();
+                                setTimeout(function() {
+                                    if (transferTask.value && transferTask.value.type === type) {
+                                        transferTask.value = null;
+                                    }
+                                }, 2000);
+                            } else if (data.status === 'error') {
+                                clearInterval(pollInterval);
+                                transferTask.value = null;
+                                const msg = type === 'upload' ? labels.fm_upload_failed : labels.fm_download_failed;
+                                showToast(msg.replace('{error}', data.error || 'Unknown error'), 'error');
+                            }
+                        }).catch(function(err) {
+                            clearInterval(pollInterval);
+                            transferTask.value = null;
+                            const msg = type === 'upload' ? labels.fm_upload_failed : labels.fm_download_failed;
+                            showToast(msg.replace('{error}', err.message || 'Connection lost'), 'error');
+                        });
+                    };
+
+                    pollInterval = setInterval(pollTask, 500);
+                    pollTask();
+                };
+
                 loadClients();
 
                 return {
@@ -648,6 +831,12 @@
                     fmCopyOrigin: fmCopyOrigin,
                     fmCopyDest: fmCopyDest,
                     fmPropertiesTarget: fmPropertiesTarget,
+                    transferTask: transferTask,
+                    showUploadMenu: showUploadMenu,
+                    triggerFileUpload: triggerFileUpload,
+                    triggerFolderUpload: triggerFolderUpload,
+                    handleFileSelect: handleFileSelect,
+                    downloadFile: downloadFile,
                     showFileManagerFor: showFileManagerFor,
                     loadFiles: loadFiles,
                     fmGoBack: fmGoBack,
@@ -663,7 +852,8 @@
                     confirmMoveFile: confirmMoveFile,
                     showCopyFile: showCopyFile,
                     confirmCopyFile: confirmCopyFile,
-                    showProperties: showProperties
+                    showProperties: showProperties,
+                    formatTransferProgress: formatTransferProgress
                 };
             }
         }).mount('#app');

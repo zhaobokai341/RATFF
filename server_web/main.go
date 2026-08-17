@@ -58,6 +58,11 @@ func setupRouter() *gin.Engine {
 	r.POST("/api/file/move", handleFileMove)
 	r.POST("/api/file/delete", handleFileDelete)
 	r.POST("/api/file/copy", handleFileCopy)
+	r.POST("/api/file/upload", handleFileUpload)
+	r.POST("/api/file/download", handleFileDownload)
+	r.GET("/api/task/progress", handleTaskProgress)
+	r.GET("/api/task/status", handleTaskStatus)
+	r.GET("/api/file/download_result", handleDownloadResult)
 
 	r.GET("/:pathPassword", handlePathIndex)
 	r.GET("/:pathPassword/", handlePathIndex)
@@ -69,6 +74,11 @@ func setupRouter() *gin.Engine {
 	r.POST("/:pathPassword/api/file/move", handleFileMove)
 	r.POST("/:pathPassword/api/file/delete", handleFileDelete)
 	r.POST("/:pathPassword/api/file/copy", handleFileCopy)
+	r.POST("/:pathPassword/api/file/upload", handleFileUpload)
+	r.POST("/:pathPassword/api/file/download", handleFileDownload)
+	r.GET("/:pathPassword/api/task/progress", handleTaskProgress)
+	r.GET("/:pathPassword/api/task/status", handleTaskStatus)
+	r.GET("/:pathPassword/api/file/download_result", handleDownloadResult)
 
 	return r
 }

@@ -55,13 +55,16 @@ func handleWebSocketWithPath(c *gin.Context, pathPassword string) {
 	}
 	defer clientConn.Close()
 
+	done := make(chan struct{})
 	go func() {
 		for {
 			_, data, err := clientConn.ReadMessage()
 			if err != nil {
+				close(done)
 				return
 			}
 			if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+				close(done)
 				return
 			}
 		}
@@ -71,6 +74,11 @@ func handleWebSocketWithPath(c *gin.Context, pathPassword string) {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
 			return
+		}
+		select {
+		case <-done:
+			return
+		default:
 		}
 		if err := clientConn.WriteMessage(websocket.TextMessage, data); err != nil {
 			return

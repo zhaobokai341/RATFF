@@ -155,6 +155,17 @@
                     <button @click="loadFiles" :disabled="!selectedClient || fmLoading" class="px-3 py-2 bg-transparent border border-border hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 text-sm font-medium rounded-lg transition">
                         ${ labels.fm_refresh_btn }
                     </button>
+                    <div class="relative">
+                        <button @click="showUploadMenu = !showUploadMenu" :disabled="!selectedClient" class="px-3 py-2 bg-transparent border border-border hover:bg-surface-2 disabled:opacity-50 disabled:cursor-not-allowed text-indigo-400 text-sm font-medium rounded-lg transition">
+                            ${ labels.fm_action_upload }
+                        </button>
+                        <div v-if="showUploadMenu" class="absolute top-full left-0 mt-1 bg-surface border border-border rounded-lg shadow-lg z-50 min-w-[120px]">
+                            <button @click="triggerFileUpload" class="w-full px-3 py-2 text-sm text-left text-gray-300 hover:bg-surface-2 rounded-t-lg transition">${ labels.fm_upload_files }</button>
+                            <button @click="triggerFolderUpload" class="w-full px-3 py-2 text-sm text-left text-gray-300 hover:bg-surface-2 rounded-b-lg transition">${ labels.fm_upload_folder }</button>
+                        </div>
+                    </div>
+                    <input type="file" id="fileInput" multiple style="display:none" @change="handleFileSelect">
+                    <input type="file" id="folderInput" webkitdirectory style="display:none" @change="handleFileSelect">
                     <input v-model="fmPath" @keydown.enter="loadFiles" :placeholder="labels.fm_path_placeholder" class="flex-1 px-3.5 py-2 bg-surface-2 border border-border rounded-lg text-sm font-mono text-gray-200 focus:outline-none focus:border-indigo-500">
                     <button @click="loadFiles" :disabled="!selectedClient || fmLoading" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition">
                         ${ labels.fm_go_btn }
@@ -190,6 +201,7 @@
                                 <td class="px-4 py-2 text-sm text-center font-mono text-gray-400">${ formatModTime(f.mod_time) }</td>
                                 <td class="px-4 py-2 text-sm text-center font-mono text-gray-400">${ f.permissions }</td>
                                 <td class="px-4 py-2 text-center">
+                                    <button @click="downloadFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-blue-400 hover:bg-blue-500/10 transition mr-1">${ labels.fm_action_download }</button>
                                     <button @click="showProperties(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-indigo-400 hover:bg-indigo-500/10 transition mr-1">${ labels.fm_action_props }</button>
                                     <button @click="showDeleteFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-red-500 hover:bg-red-500/10 transition mr-1">${ labels.fm_action_delete }</button>
                                     <button @click="showMoveFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-yellow-500 hover:bg-yellow-500/10 transition mr-1">${ labels.fm_action_move_confirm }</button>
@@ -265,6 +277,23 @@
                 <div class="mt-6">
                     <button @click="fmPropertiesTarget = null" class="w-full px-4 py-2 bg-transparent border border-border hover:bg-surface-2 text-gray-300 text-sm font-medium rounded-lg transition">${ labels.close_btn }</button>
                 </div>
+            </div>
+        </div>
+
+        <div v-if="transferTask" class="fixed bottom-6 right-6 z-50 w-80 bg-surface border border-border rounded-xl shadow-2xl p-4" :class="{'border-indigo-500': transferTask.type === 'upload', 'border-blue-500': transferTask.type === 'download'}">
+            <div class="flex items-center gap-2 mb-2">
+                <svg v-if="transferTask.type === 'upload'" class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <svg v-else class="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span class="text-sm font-medium text-gray-200">${ transferTask.type === 'upload' ? labels.fm_upload_progress : labels.fm_download_progress }</span>
+                <button @click="transferTask = null" class="ml-auto text-gray-500 hover:text-gray-300">&times;</button>
+            </div>
+            <div class="text-xs text-gray-400 mb-1 truncate">${ transferTask.fileName || '' }</div>
+            <div class="w-full bg-surface-2 rounded-full h-2 mb-1">
+                <div class="h-2 rounded-full transition-all duration-300" :class="transferTask.type === 'upload' ? 'bg-indigo-500' : 'bg-blue-500'" :style="{ width: transferTask.percent + '%' }"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500">
+                <span>${ transferTask.percent.toFixed(1) }%</span>
+                <span v-if="transferTask.fileCount > 1">${ formatTransferProgress(transferTask.fileIndex, transferTask.fileCount) }</span>
             </div>
         </div>
 

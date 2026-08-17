@@ -18,7 +18,21 @@ type pendingCommand struct {
 var pendingMu sync.Mutex
 
 // pendingCmd stores pending command responses keyed by client ID.
-var pendingCmd = make(map[string]*pendingCommand)
+// Each client can have multiple pending commands (queue).
+var pendingCmd = make(map[string][]*pendingCommand)
+
+// cleanupPending removes the first pending command for a client (FIFO).
+func cleanupPending(clientID string) {
+	pendingMu.Lock()
+	defer pendingMu.Unlock()
+	queue := pendingCmd[clientID]
+	if len(queue) > 0 {
+		pendingCmd[clientID] = queue[1:]
+		if len(pendingCmd[clientID]) == 0 {
+			delete(pendingCmd, clientID)
+		}
+	}
+}
 
 // connectWS establishes a WebSocket connection to the server for receiving responses.
 func connectWS(pathPassword string) (*websocket.Conn, error) {
@@ -106,12 +120,16 @@ func listenResponses(conn *websocket.Conn) error {
 
 		if msg.Type == shared.MsgResponse || msg.Type == shared.MsgError {
 			pendingMu.Lock()
-			if pc, ok := pendingCmd[msg.ClientID]; ok {
+			if queue, ok := pendingCmd[msg.ClientID]; ok && len(queue) > 0 {
+				pc := queue[0]
+				pendingCmd[msg.ClientID] = queue[1:]
+				if len(pendingCmd[msg.ClientID]) == 0 {
+					delete(pendingCmd, msg.ClientID)
+				}
 				select {
 				case pc.ch <- msg:
 				default:
 				}
-				delete(pendingCmd, msg.ClientID)
 			}
 			pendingMu.Unlock()
 		}
