@@ -48,6 +48,23 @@
                 const transferTask = ref(null);
                 const showUploadMenu = ref(false);
 
+                const screencapTarget = ref(null);
+                const screencapFormat = ref('png');
+                const screencapQuality = ref(90);
+                const screencapDisplay = ref(0);
+                const screencapLoading = ref(false);
+                const screencapImageData = ref('');
+                const screencapImageFormat = ref('png');
+                const screencapWidth = ref(0);
+                const screencapHeight = ref(0);
+                const screencapDisplayIndex = ref(0);
+                const screencapDisplayCount = ref(0);
+                const screencapAutoDownload = ref(false);
+
+                const publicipTarget = ref(null);
+                const publicipData = ref({});
+                const publicipLoading = ref(false);
+
                 const statusText = computed(() => clients.value.length > 0 ? labels.status_connected : labels.status_disconnected);
 
                 const api = async (url, opts = {}) => {
@@ -196,6 +213,168 @@
                     sysinfoTarget.value = id;
                     sysinfoData.value = {};
                     selectedFields.value = [];
+                };
+
+                const showScreenCapture = function(id) {
+                    screencapTarget.value = id;
+                    screencapImageData.value = '';
+                    screencapLoading.value = false;
+                    screencapFormat.value = 'png';
+                    screencapQuality.value = 90;
+                    screencapDisplay.value = 0;
+                    screencapAutoDownload.value = false;
+                };
+
+                const showPublicIP = function(id) {
+                    publicipTarget.value = id;
+                    publicipData.value = {};
+                    publicipLoading.value = false;
+                };
+
+                const extractAPISource = function(url) {
+                    if (url.indexOf('ip-api.com') !== -1) return 'ip-api.com';
+                    if (url.indexOf('ipinfo.io') !== -1) return 'ipinfo.io';
+                    if (url.indexOf('httpbin.org') !== -1) return 'httpbin.org';
+                    return url;
+                };
+
+                const normalizeIPData = function(rawData, apiSource) {
+                    var normalized = {};
+                    var mapping = {};
+
+                    if (apiSource === 'ip-api.com') {
+                        mapping = {
+                            ip: 'query', continent: 'continent', country: 'country',
+                            country_code: 'countryCode', region: 'region', region_name: 'regionName',
+                            city: 'city', district: 'district', zip: 'zip',
+                            latitude: 'lat', longitude: 'lon', timezone: 'timezone',
+                            isp: 'isp', org: 'org', as: 'as'
+                        };
+                    } else if (apiSource === 'ipinfo.io') {
+                        mapping = {
+                            ip: 'ip', country: 'country', country_code: 'country',
+                            region: 'region', city: 'city', zip: 'postal',
+                            timezone: 'timezone', isp: 'org', org: 'org'
+                        };
+                    } else if (apiSource === 'httpbin.org') {
+                        mapping = { ip: 'origin' };
+                    }
+
+                    for (var stdKey in mapping) {
+                        var rawKey = mapping[stdKey];
+                        if (rawData[rawKey] !== undefined) {
+                            normalized[stdKey] = rawData[rawKey];
+                        }
+                    }
+
+                    if (apiSource === 'ipinfo.io' && rawData.loc) {
+                        var parts = rawData.loc.split(',');
+                        if (parts.length === 2) {
+                            normalized.latitude = parseFloat(parts[0]);
+                            normalized.longitude = parseFloat(parts[1]);
+                        }
+                    }
+
+                    return normalized;
+                };
+
+                const fetchPublicIP = async function() {
+                    if (!publicipTarget.value) {
+                        showToast(labels.publicip_failed, 'error');
+                        return;
+                    }
+                    publicipLoading.value = true;
+                    publicipData.value = {};
+                    try {
+                        const data = await api('/api/public-ip', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                client_id: publicipTarget.value
+                            })
+                        });
+                        if (data.error) {
+                            showToast(labels.publicip_failed + ': ' + data.error, 'error');
+                        } else if (data.response) {
+                            var payload = data.response;
+                            if (payload.error) {
+                                showToast(labels.publicip_failed + ': ' + payload.error, 'error');
+                            } else {
+                                var result = {};
+                                for (var apiURL in payload) {
+                                    var apiData = payload[apiURL];
+                                    if (apiData.error) {
+                                        result[apiURL] = { error: apiData.error };
+                                    } else {
+                                        var apiSource = extractAPISource(apiURL);
+                                        result[apiURL] = normalizeIPData(apiData, apiSource);
+                                    }
+                                }
+                                publicipData.value = result;
+                            }
+                        } else {
+                            showToast(labels.publicip_failed, 'error');
+                        }
+                    } catch (e) {
+                        showToast(labels.publicip_failed + ': ' + e.message, 'error');
+                    } finally {
+                        publicipLoading.value = false;
+                    }
+                };
+
+                const captureScreen = async function() {
+                    if (!screencapTarget.value) {
+                        showToast(labels.screencap_failed, 'error');
+                        return;
+                    }
+                    screencapLoading.value = true;
+                    try {
+                        const data = await api('/api/screen/capture', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                client_id: screencapTarget.value,
+                                format: screencapFormat.value,
+                                quality: screencapQuality.value,
+                                display_index: screencapDisplay.value
+                            })
+                        });
+                        if (data.error) {
+                            showToast(labels.screencap_failed + ': ' + data.error, 'error');
+                        } else if (data.response) {
+                            var p = data.response;
+                            if (p.error) {
+                                showToast(labels.screencap_failed + ': ' + p.error, 'error');
+                            } else {
+                                screencapImageData.value = p.image_data || '';
+                                screencapImageFormat.value = p.format || 'png';
+                                screencapWidth.value = p.width || 0;
+                                screencapHeight.value = p.height || 0;
+                                screencapDisplayIndex.value = p.display_index || 0;
+                                screencapDisplayCount.value = p.display_count || 0;
+                                if (screencapAutoDownload.value && screencapImageData.value) {
+                                    saveScreenshot();
+                                }
+                            }
+                        } else {
+                            showToast(labels.screencap_failed, 'error');
+                        }
+                    } catch (e) {
+                        showToast(labels.screencap_failed + ': ' + e.message, 'error');
+                    } finally {
+                        screencapLoading.value = false;
+                    }
+                };
+
+                const saveScreenshot = function() {
+                    if (!screencapImageData.value) return;
+                    try {
+                        var link = document.createElement('a');
+                        link.download = 'screenshot_' + Date.now() + '.' + screencapImageFormat.value;
+                        link.href = 'data:image/' + screencapImageFormat.value + ';base64,' + screencapImageData.value;
+                        link.click();
+                        showToast(labels.screencap_save_success, 'success');
+                    } catch (e) {
+                        showToast(labels.screencap_save_failed, 'error');
+                    }
                 };
 
                 const fetchSysInfo = async function() {
@@ -854,7 +1033,27 @@
                     showCopyFile: showCopyFile,
                     confirmCopyFile: confirmCopyFile,
                     showProperties: showProperties,
-                    formatTransferProgress: formatTransferProgress
+                    formatTransferProgress: formatTransferProgress,
+                    screencapTarget: screencapTarget,
+                    screencapFormat: screencapFormat,
+                    screencapQuality: screencapQuality,
+                    screencapDisplay: screencapDisplay,
+                    screencapLoading: screencapLoading,
+                    screencapImageData: screencapImageData,
+                    screencapImageFormat: screencapImageFormat,
+                    screencapWidth: screencapWidth,
+                    screencapHeight: screencapHeight,
+                    screencapDisplayIndex: screencapDisplayIndex,
+                    screencapDisplayCount: screencapDisplayCount,
+                    screencapAutoDownload: screencapAutoDownload,
+                    showScreenCapture: showScreenCapture,
+                    captureScreen: captureScreen,
+                    saveScreenshot: saveScreenshot,
+                    publicipTarget: publicipTarget,
+                    publicipData: publicipData,
+                    publicipLoading: publicipLoading,
+                    showPublicIP: showPublicIP,
+                    fetchPublicIP: fetchPublicIP
                 };
             }
         }).mount('#app');

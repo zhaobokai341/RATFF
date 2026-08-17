@@ -110,3 +110,33 @@ func TestInitLogger(t *testing.T) {
 		t.Error("logger with invalid level should default to info, not nil")
 	}
 }
+
+func TestInitLoggerAsync(t *testing.T) {
+	logger := InitLoggerAsync("info", "text", true)
+	if logger == nil {
+		t.Error("async logger should not be nil")
+	}
+
+	loggerSync := InitLoggerAsync("info", "text", false)
+	if loggerSync == nil {
+		t.Error("sync logger should not be nil")
+	}
+}
+
+func TestInitLoggerWithWriter(t *testing.T) {
+	logger, writer := InitLoggerWithWriter("info", "text", true)
+	if logger == nil {
+		t.Error("logger should not be nil")
+	}
+	if writer == nil {
+		t.Error("async writer should not be nil when async is true")
+	}
+
+	loggerNoAsync, writerNoAsync := InitLoggerWithWriter("info", "text", false)
+	if loggerNoAsync == nil {
+		t.Error("logger should not be nil")
+	}
+	if writerNoAsync != nil {
+		t.Error("async writer should be nil when async is false")
+	}
+}

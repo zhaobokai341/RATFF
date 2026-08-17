@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -167,6 +168,11 @@ func handleConsoleMode(input string, selectedID string) string {
 		path := strings.Join(args[1:], " ")
 		deleteFile(selectedID, path)
 		return ""
+	case "screencap":
+		return handleScreenCaptureCommand(args, selectedID)
+	case "publicip":
+		publicip(selectedID)
+		return ""
 	default:
 		PrintError(T("invalid_command"))
 		return ""
@@ -199,6 +205,8 @@ func printConsoleHelp() {
 		{Cmd: "download <remote> [local]", Desc: T("cmd_download_desc")},
 		{Cmd: "bg <cmd> [file]", Desc: T("cmd_bg_desc")},
 		{Cmd: "systeminfo [fields...]", Desc: T("cmd_systeminfo_desc")},
+		{Cmd: "screencap [options]", Desc: T("cmd_screencap_desc")},
+		{Cmd: "publicip", Desc: T("cmd_publicip_desc")},
 		{Cmd: "back", Desc: T("cmd_back_desc")},
 		{Cmd: "help", Desc: T("cmd_help_desc")},
 		{Cmd: "exit", Desc: T("cmd_exit_desc")},
@@ -404,4 +412,173 @@ func systeminfo(id string, fields []string) {
 		return
 	}
 	clientManager.SystemInfo(id, fields, printSystemInfoDetail)
+}
+
+// handleScreenCaptureCommand processes screencap command in console mode.
+func handleScreenCaptureCommand(args []string, selectedID string) string {
+	if selectedID == "" {
+		PrintError(T("no_client_selected"))
+		return ""
+	}
+
+	format := "png"
+	quality := 90
+	displayIndex := 0
+	outputPath := ""
+
+	for i := 1; i < len(args); i++ {
+		switch args[i] {
+		case "-f", "--format":
+			if i+1 < len(args) {
+				format = args[i+1]
+				i++
+			}
+		case "-q", "--quality":
+			if i+1 < len(args) {
+				var q int
+				if _, err := fmt.Sscanf(args[i+1], "%d", &q); err == nil {
+					quality = q
+				}
+				i++
+			}
+		case "-d", "--display":
+			if i+1 < len(args) {
+				var d int
+				if _, err := fmt.Sscanf(args[i+1], "%d", &d); err == nil {
+					displayIndex = d
+				}
+				i++
+			}
+		case "-o", "--output":
+			if i+1 < len(args) {
+				outputPath = args[i+1]
+				i++
+			}
+		case "-h", "--help":
+			printScreenCaptureHelp()
+			return ""
+		default:
+			PrintError(Tf("invalid_command_args", args[i]))
+			return ""
+		}
+	}
+
+	captureScreen(selectedID, format, quality, displayIndex, outputPath)
+	return ""
+}
+
+// printScreenCaptureHelp displays usage for screencap command.
+func printScreenCaptureHelp() {
+	PrintInfo(T("screencap_usage"))
+}
+
+// captureScreen captures screen from a client and optionally saves to file.
+func captureScreen(id string, format string, quality int, displayIndex int, outputPath string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.ScreenCapture(id, format, quality, displayIndex, func(imageData string, width, height int, format string, displayIndex, displayCount int) {
+		PrintSuccess(Tf("screen_capture_success", width, height, format, displayIndex, displayCount))
+
+		if outputPath != "" {
+			if err := client.SaveScreenCapture(imageData, format, outputPath); err != nil {
+				PrintError(Tf("screen_capture_save_failed", err))
+				return
+			}
+			PrintSuccess(Tf("screen_capture_saved_to", outputPath))
+		} else {
+			PrintInfo(T("screen_capture_no_output"))
+		}
+	})
+}
+
+// publicip retrieves public IP information from a client.
+func publicip(id string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	if id == "" {
+		PrintError(T("no_client_selected"))
+		return
+	}
+	clientManager.GetPublicIP(id, printPublicIPDetail)
+}
+
+// printPublicIPDetail prints public IP information with styling.
+func printPublicIPDetail(payload map[string]interface{}) {
+	PrintInfo(T("publicip_title"))
+
+	for apiURL, rawData := range payload {
+		PrintInfo(Tf("publicip_api_source", apiURL))
+
+		dataMap, ok := rawData.(map[string]interface{})
+		if !ok {
+			PrintError(Tf("publicip_error", "invalid response format"))
+			continue
+		}
+
+		if errMsg, hasError := dataMap["error"]; hasError {
+			PrintError(Tf("publicip_error", errMsg))
+			continue
+		}
+
+		apiSource := extractAPISource(apiURL)
+		standard := shared.ExtractIPInfo(dataMap, apiSource)
+
+		printStyledIPInfo(standard)
+		printRawData(dataMap)
+	}
+}
+
+// extractAPISource extracts API source name from URL.
+func extractAPISource(url string) string {
+	switch {
+	case strings.Contains(url, "ip-api.com"):
+		return "ip-api.com"
+	case strings.Contains(url, "ipinfo.io"):
+		return "ipinfo.io"
+	case strings.Contains(url, "httpbin.org"):
+		return "httpbin.org"
+	default:
+		return "unknown"
+	}
+}
+
+// printStyledIPInfo prints standardized IP information with styling.
+func printStyledIPInfo(info shared.IPGeoStandard) {
+	if info.IP != "" {
+		PrintInfo(Tf("publicip_ip", info.IP))
+	}
+	if info.Continent != "" {
+		PrintInfo(Tf("publicip_continent", info.Continent))
+	}
+	if info.Country != "" {
+		PrintInfo(Tf("publicip_country", info.Country, info.CountryCode))
+	}
+	if info.RegionName != "" {
+		PrintInfo(Tf("publicip_region", info.RegionName))
+	}
+	if info.City != "" {
+		PrintInfo(Tf("publicip_city", info.City))
+	}
+	if info.ISP != "" {
+		PrintInfo(Tf("publicip_isp", info.ISP))
+	}
+	if info.Timezone != "" {
+		PrintInfo(Tf("publicip_timezone", info.Timezone))
+	}
+	if info.Latitude != 0 && info.Longitude != 0 {
+		PrintInfo(Tf("publicip_location", info.Latitude, info.Longitude))
+	}
+}
+
+// printRawData prints raw API response data.
+func printRawData(data map[string]interface{}) {
+	PrintInfo(T("publicip_raw_data"))
+	for key, value := range data {
+		fmt.Printf("  %s: %v\n", key, value)
+	}
+	fmt.Println()
 }

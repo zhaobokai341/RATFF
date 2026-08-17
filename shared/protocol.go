@@ -33,6 +33,7 @@ const (
 	CmdFileDelete           CommandType = "file_delete"
 	CmdFileCopy             CommandType = "file_copy"
 	CmdSystemInfo           CommandType = "system_info"
+	CmdPublicIP             CommandType = "public_ip"
 	CmdExit                 CommandType = "exit"
 	CmdCd                   CommandType = "cd"
 	CmdPwd                  CommandType = "pwd"

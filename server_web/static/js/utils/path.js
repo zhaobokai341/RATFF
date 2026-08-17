@@ -43,3 +43,6 @@ const normalizePathParts = function(parts, sep) {
         } else {
             stack.push(part);
         }
+    }
+    return stack;
+};
