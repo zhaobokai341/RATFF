@@ -124,5 +124,6 @@
 	"file_header_modified": "Modified",
 	"file_header_permissions": "Permissions",
 	"file_hidden_prefix": ".",
-	"usage_cd": "Usage: cd <directory>"
+	"usage_cd": "Usage: cd <directory>",
+	"client_manager_not_initialized": "Client manager not initialized"
 }

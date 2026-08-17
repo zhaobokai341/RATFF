@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"crypto/md5"
@@ -17,32 +17,33 @@ const (
 	chunkTimeout = 30 * time.Second
 )
 
-func uploadFile(id, localPath, remotePath string) {
+// UploadFile uploads a file or directory to the remote client.
+func (m *Manager) UploadFile(id, localPath, remotePath string, newProgressBar ProgressBarCreator) {
 	stat, err := os.Stat(localPath)
 	if err != nil {
-		PrintError(Tf("file_not_exist", localPath))
+		m.Print.Error(m.Tf("file_not_exist", localPath))
 		return
 	}
 
 	if stat.IsDir() {
-		uploadDirectory(id, localPath, remotePath)
+		m.uploadDirectory(id, localPath, remotePath, newProgressBar)
 		return
 	}
 
-	uploadSingleFile(id, localPath, remotePath)
+	m.uploadSingleFile(id, localPath, remotePath, newProgressBar)
 }
 
-func uploadSingleFile(id, localPath, remotePath string) {
+func (m *Manager) uploadSingleFile(id, localPath, remotePath string, newProgressBar ProgressBarCreator) {
 	file, err := os.Open(localPath)
 	if err != nil {
-		PrintError(Tf("file_open_failed", localPath, err))
+		m.Print.Error(m.Tf("file_open_failed", localPath, err))
 		return
 	}
 	defer file.Close()
 
 	stat, err := file.Stat()
 	if err != nil {
-		PrintError(Tf("file_open_failed", localPath, err))
+		m.Print.Error(m.Tf("file_open_failed", localPath, err))
 		return
 	}
 
@@ -56,7 +57,7 @@ func uploadSingleFile(id, localPath, remotePath string) {
 		remotePath = filename
 	}
 
-	PrintInfo(Tf("upload_starting", filename, formatBytes(fileSize)))
+	m.Print.Info(m.Tf("upload_starting", filename, m.Print.FormatBytes(fileSize)))
 
 	payload := map[string]interface{}{
 		"file_id":      fileID,
@@ -66,11 +67,11 @@ func uploadSingleFile(id, localPath, remotePath string) {
 		"total_chunks": totalChunks,
 	}
 
-	if !waitForCommandResponse(id, shared.CmdFileUploadStart, payload, 10*time.Second) {
+	if !m.WaitForResponse(id, shared.CmdFileUploadStart, payload, 10*time.Second) {
 		return
 	}
 
-	progressBar := NewProgressBar(fileSize, filename)
+	progressBar := newProgressBar(fileSize, filename)
 
 	md5hash := md5.New()
 
@@ -80,7 +81,7 @@ func uploadSingleFile(id, localPath, remotePath string) {
 		if err != nil && err != io.EOF {
 			progressBar.MarkDone()
 			progressBar.Display()
-			PrintError(Tf("file_read_failed", err))
+			m.Print.Error(m.Tf("file_read_failed", err))
 			return
 		}
 
@@ -98,10 +99,10 @@ func uploadSingleFile(id, localPath, remotePath string) {
 			"chunk_data":  chunkB64,
 		}
 
-		if !waitForCommandResponse(id, shared.CmdFileUploadChunk, chunkPayload, chunkTimeout) {
+		if !m.WaitForResponse(id, shared.CmdFileUploadChunk, chunkPayload, chunkTimeout) {
 			progressBar.MarkDone()
 			progressBar.Display()
-			PrintError(Tf("upload_chunk_failed", i))
+			m.Print.Error(m.Tf("upload_chunk_failed", i))
 			return
 		}
 
@@ -113,11 +114,11 @@ func uploadSingleFile(id, localPath, remotePath string) {
 		"file_id": fileID,
 	}
 
-	msg := waitForCommandResponseWithMsg(id, shared.CmdFileUploadComplete, completePayload, 10*time.Second)
+	msg := m.WaitForResponseWithMsg(id, shared.CmdFileUploadComplete, completePayload, 10*time.Second)
 	if msg == nil {
 		progressBar.MarkDone()
 		progressBar.Display()
-		PrintError(T("upload_complete_failed"))
+		m.Print.Error(m.T("upload_complete_failed"))
 		return
 	}
 
@@ -128,17 +129,17 @@ func uploadSingleFile(id, localPath, remotePath string) {
 		if remoteMD5, ok := msg.Payload["md5"].(string); ok {
 			localMD5 := hex.EncodeToString(md5hash.Sum(nil))
 			if remoteMD5 != localMD5 {
-				PrintWarn(Tf("upload_md5_mismatch", localMD5, remoteMD5))
+				m.Print.Warn(m.Tf("upload_md5_mismatch", localMD5, remoteMD5))
 			} else {
-				PrintSuccess(Tf("upload_success", filename, remotePath))
+				m.Print.Success(m.Tf("upload_success", filename, remotePath))
 			}
 		} else {
-			PrintSuccess(Tf("upload_success", filename, remotePath))
+			m.Print.Success(m.Tf("upload_success", filename, remotePath))
 		}
 	}
 }
 
-func uploadDirectory(id, localDir, remoteDir string) {
+func (m *Manager) uploadDirectory(id, localDir, remoteDir string, newProgressBar ProgressBarCreator) {
 	dirName := filepath.Base(localDir)
 	if remoteDir == "" || remoteDir == "." {
 		remoteDir = dirName
@@ -147,7 +148,7 @@ func uploadDirectory(id, localDir, remoteDir string) {
 	var files []string
 	err := filepath.Walk(localDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			PrintWarn(Tf("upload_dir_walk_error", path, err))
+			m.Print.Warn(m.Tf("upload_dir_walk_error", path, err))
 			return nil
 		}
 		if info.IsDir() {
@@ -157,33 +158,33 @@ func uploadDirectory(id, localDir, remoteDir string) {
 		return nil
 	})
 	if err != nil {
-		PrintError(Tf("upload_dir_walk_failed", localDir, err))
+		m.Print.Error(m.Tf("upload_dir_walk_failed", localDir, err))
 		return
 	}
 
 	if len(files) == 0 {
-		PrintInfo(Tf("upload_dir_empty", dirName))
+		m.Print.Info(m.Tf("upload_dir_empty", dirName))
 		return
 	}
 
-	PrintInfo(Tf("upload_dir_starting", dirName, len(files)))
+	m.Print.Info(m.Tf("upload_dir_starting", dirName, len(files)))
 
 	successCount := 0
 	for i, filePath := range files {
 		relPath, err := filepath.Rel(localDir, filePath)
 		if err != nil {
-			PrintWarn(Tf("upload_dir_relpath_failed", filePath, err))
+			m.Print.Warn(m.Tf("upload_dir_relpath_failed", filePath, err))
 			continue
 		}
 
 		remoteFilePath := filepath.Join(remoteDir, relPath)
 		remoteFilePath = filepath.ToSlash(remoteFilePath)
 
-		PrintInfo(Tf("upload_dir_file", i+1, len(files), relPath))
+		m.Print.Info(m.Tf("upload_dir_file", i+1, len(files), relPath))
 
-		uploadSingleFile(id, filePath, remoteFilePath)
+		m.uploadSingleFile(id, filePath, remoteFilePath, newProgressBar)
 		successCount++
 	}
 
-	PrintSuccess(Tf("upload_dir_success", dirName, remoteDir, successCount, len(files)))
+	m.Print.Success(m.Tf("upload_dir_success", dirName, remoteDir, successCount, len(files)))
 }

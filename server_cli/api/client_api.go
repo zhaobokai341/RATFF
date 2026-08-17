@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"bytes"
@@ -9,35 +9,46 @@ import (
 	"RATFF/shared"
 )
 
-// apiGet performs an authenticated GET request to the API.
-func apiGet(path string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", getAPIBaseURL()+"/api"+path, nil)
+// Client handles API requests with authentication.
+type Client struct {
+	baseURL string
+	token   string
+}
+
+// NewClient creates a new API client.
+func NewClient(baseURL, token string) *Client {
+	return &Client{baseURL: baseURL, token: token}
+}
+
+// Get performs an authenticated GET request to the API.
+func (c *Client) Get(path string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", c.baseURL+"/api"+path, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if jwtToken != "" {
-		req.Header.Set("Authorization", "Bearer "+jwtToken)
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
 
 	return http.DefaultClient.Do(req)
 }
 
-// apiPost performs an authenticated POST request to the API.
-func apiPost(path string, payload interface{}) error {
+// Post performs an authenticated POST request to the API.
+func (c *Client) Post(path string, payload interface{}) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", getAPIBaseURL()+"/api"+path, bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", c.baseURL+"/api"+path, bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if jwtToken != "" {
-		req.Header.Set("Authorization", "Bearer "+jwtToken)
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
@@ -59,9 +70,9 @@ func apiPost(path string, payload interface{}) error {
 	return nil
 }
 
-// fetchClients retrieves the list of connected clients from the API.
-func fetchClients() ([]shared.ClientInfo, error) {
-	resp, err := apiGet("/clients")
+// FetchClients retrieves the list of connected clients from the API.
+func (c *Client) FetchClients() ([]shared.ClientInfo, error) {
+	resp, err := c.Get("/clients")
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +92,7 @@ func fetchClients() ([]shared.ClientInfo, error) {
 	return result.Clients, nil
 }
 
-// postCommand sends a command to the server API.
-func postCommand(payload map[string]interface{}) error {
-	return apiPost("/command", payload)
+// PostCommand sends a command to the server API.
+func (c *Client) PostCommand(payload map[string]interface{}) error {
+	return c.Post("/command", payload)
 }

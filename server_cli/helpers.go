@@ -6,6 +6,10 @@ import (
 	"runtime"
 	"strings"
 
+	"RATFF/server_cli/client"
+	"RATFF/server_cli/output"
+	"RATFF/shared"
+
 	"github.com/google/shlex"
 )
 
@@ -206,11 +210,11 @@ func clearScreen() {
 	if runtime.GOOS == "windows" {
 		cmd := exec.Command("cmd", "/c", "cls")
 		cmd.Stdout = os.Stdout
-		cmd.Run()
+		_ = cmd.Run()
 	} else {
 		cmd := exec.Command("clear")
 		cmd.Stdout = os.Stdout
-		cmd.Run()
+		_ = cmd.Run()
 	}
 }
 
@@ -250,7 +254,7 @@ func handleConsoleBgCommand(args []string, selectedID string) string {
 
 	id := selectedID
 	if id == "" {
-		clients, err := fetchClients()
+		clients, err := apiClient.FetchClients()
 		if err != nil {
 			PrintError(Tf("fetch_clients_failed", err))
 			return ""
@@ -266,4 +270,138 @@ func handleConsoleBgCommand(args []string, selectedID string) string {
 
 	sendBgCommand(id, cmd, outputFile)
 	return ""
+}
+
+// listClients retrieves and prints the list of connected clients.
+func listClients() {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.ListClients(func(clients []shared.ClientInfo, t func(string) string, tf func(string, ...interface{}) string) {
+		output.PrintClientTable(clients, t, tf)
+	})
+}
+
+// selectClient checks if a client with the given ID exists.
+func selectClient(id string) bool {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return false
+	}
+	return clientManager.SelectClient(id)
+}
+
+// deleteClient sends an exit command to the specified client.
+func deleteClient(id string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.DeleteClient(id)
+}
+
+// cdClient changes the working directory on the remote client.
+func cdClient(id string, dir string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.CdClient(id, dir)
+}
+
+// pwdClient gets the current working directory on the remote client.
+func pwdClient(id string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.PwdClient(id)
+}
+
+// uploadFile uploads a file or directory to the remote client.
+func uploadFile(id, localPath, remotePath string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.UploadFile(id, localPath, remotePath, func(total int64, filename string) client.ProgressBar {
+		return output.NewProgressBar(total, filename)
+	})
+}
+
+// downloadFile downloads a file or directory from the remote client.
+func downloadFile(id, remotePath, localPath string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.DownloadFile(id, remotePath, localPath, func(total int64, filename string) client.ProgressBar {
+		return output.NewProgressBar(total, filename)
+	})
+}
+
+// listFiles lists files in a remote directory.
+func listFiles(id, path string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.ListFiles(id, path, func(currentPath string, files []interface{}, t func(string) string, tf func(string, ...interface{}) string) {
+		output.PrintFileTable(currentPath, files, t, tf)
+	})
+}
+
+// moveFile moves a file on the remote client.
+func moveFile(id, originPath, newPath string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.MoveFile(id, originPath, newPath)
+}
+
+// copyRemoteFile copies a file on the remote client.
+func copyRemoteFile(id, originPath, newPath string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.CopyRemoteFile(id, originPath, newPath)
+}
+
+// deleteFile deletes a file on the remote client.
+func deleteFile(id, path string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.DeleteFile(id, path)
+}
+
+// sendShellCommand sends a shell command to a client and waits for response.
+func sendShellCommand(id string, cmd string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.ShellCommand(id, cmd, PrintCommandResult)
+}
+
+// sendBgCommand sends a background command to a client with optional output file.
+func sendBgCommand(id string, cmd string, outputFile string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.BgCommand(id, cmd, outputFile)
+}
+
+// systeminfo retrieves system information from a client.
+func systeminfo(id string, fields []string) {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return
+	}
+	clientManager.SystemInfo(id, fields, printSystemInfoDetail)
 }

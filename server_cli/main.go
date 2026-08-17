@@ -1,6 +1,8 @@
 package main
 
 import (
+	"RATFF/server_cli/api"
+	"RATFF/server_cli/client"
 	"RATFF/shared"
 	"bufio"
 	"fmt"
@@ -57,7 +59,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	token, err := loginToAPI(cfg.LoginPassword)
+	token, err := api.LoginToAPI(getAPIBaseURL(), cfg.LoginPassword, T)
 	if err != nil {
 		PrintError(Tf("login_failed", err))
 		os.Exit(1)
@@ -65,16 +67,27 @@ func main() {
 	jwtToken = token
 	PrintSuccess(T("login_success"))
 
-	wsConn, err := connectWS(getWSURL())
+	apiClient = api.NewClient(getAPIBaseURL(), jwtToken)
+
+	wsManager = api.NewWebSocketManager(getWSURL(), func(msg shared.Message) {
+		if clientManager != nil {
+			clientManager.HandleMessage(msg)
+		}
+	})
+
+	conn, err := wsManager.Connect()
 	if err != nil {
 		PrintError(Tf("connect_failed", err))
 		os.Exit(1)
 	}
+	wsConn = conn
 	defer wsConn.Close()
 
 	PrintSuccess(T("connect_success"))
 
-	go startResponseListener(getWSURL(), wsConn)
+	go wsManager.StartResponseListener(wsConn)
+
+	clientManager = client.NewManager(apiClient, T, Tf, initPrintFuncs())
 
 	inputScanner := bufio.NewScanner(os.Stdin)
 	selectedID := ""

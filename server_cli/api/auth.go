@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"bytes"
@@ -9,26 +9,26 @@ import (
 	"net/http"
 )
 
-// loginToAPI logs into server_api and returns a JWT token.
-func loginToAPI(password string) (string, error) {
+// LoginToAPI logs into server_api and returns a JWT token.
+func LoginToAPI(apiBaseURL, password string, t func(string) string) (string, error) {
 	body := map[string]string{"password": password}
 	data, err := json.Marshal(body)
 	if err != nil {
 		return "", err
 	}
 
-	resp, err := http.Post(getAPIBaseURL()+"/verify", "application/json", bytes.NewBuffer(data))
+	resp, err := http.Post(apiBaseURL+"/verify", "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return "", fmt.Errorf("connection failed: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return "", errors.New(T("invalid_path_password"))
+		return "", errors.New(t("invalid_path_password"))
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return "", errors.New(T("invalid_login_password"))
+		return "", errors.New(t("invalid_login_password"))
 	}
 
 	respBody, err := io.ReadAll(resp.Body)

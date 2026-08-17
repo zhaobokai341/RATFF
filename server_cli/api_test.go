@@ -6,6 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"RATFF/server_cli/api"
+	"RATFF/server_cli/client"
+	"RATFF/server_cli/output"
 	"RATFF/shared"
 )
 
@@ -58,9 +61,10 @@ func TestFetchClientsSuccess(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	clients, err := fetchClients()
+	testAPIClient := api.NewClient(server.URL, "")
+	clients, err := testAPIClient.FetchClients()
 	if err != nil {
-		t.Fatalf("fetchClients() error = %v", err)
+		t.Fatalf("FetchClients() error = %v", err)
 	}
 
 	if len(clients) != 2 {
@@ -89,9 +93,10 @@ func TestFetchClientsEmpty(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	clients, err := fetchClients()
+	testAPIClient := api.NewClient(server.URL, "")
+	clients, err := testAPIClient.FetchClients()
 	if err != nil {
-		t.Fatalf("fetchClients() error = %v", err)
+		t.Fatalf("FetchClients() error = %v", err)
 	}
 
 	if len(clients) != 0 {
@@ -109,7 +114,8 @@ func TestFetchClientsServerError(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	_, err := fetchClients()
+	testAPIClient := api.NewClient(server.URL, "")
+	_, err := testAPIClient.FetchClients()
 	if err == nil {
 		t.Fatal("expected error for server error, got nil")
 	}
@@ -127,7 +133,8 @@ func TestFetchClientsInvalidJSON(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	_, err := fetchClients()
+	testAPIClient := api.NewClient(server.URL, "")
+	_, err := testAPIClient.FetchClients()
 	if err == nil {
 		t.Fatal("expected error for invalid JSON, got nil")
 	}
@@ -159,14 +166,15 @@ func TestPostCommandSuccess(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
+	testAPIClient := api.NewClient(server.URL, "")
 	payload := map[string]interface{}{
 		"client_id": "test-001",
 		"command":   "shell_exec",
 	}
 
-	err := postCommand(payload)
+	err := testAPIClient.PostCommand(payload)
 	if err != nil {
-		t.Fatalf("postCommand() error = %v", err)
+		t.Fatalf("PostCommand() error = %v", err)
 	}
 }
 
@@ -180,12 +188,13 @@ func TestPostCommandServerError(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
+	testAPIClient := api.NewClient(server.URL, "")
 	payload := map[string]interface{}{
 		"client_id": "test-001",
 		"command":   "shell_exec",
 	}
 
-	err := postCommand(payload)
+	err := testAPIClient.PostCommand(payload)
 	if err == nil {
 		t.Fatal("expected error for server error, got nil")
 	}
@@ -211,9 +220,9 @@ func TestLoginToAPISuccess(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	token, err := loginToAPI("test-password")
+	token, err := api.LoginToAPI(server.URL, "test-password", func(key string) string { return key })
 	if err != nil {
-		t.Fatalf("loginToAPI() error = %v", err)
+		t.Fatalf("LoginToAPI() error = %v", err)
 	}
 
 	if token != "test-jwt-token" {
@@ -231,7 +240,7 @@ func TestLoginToAPIPathNotFound(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	_, err := loginToAPI("wrong-password")
+	_, err := api.LoginToAPI(server.URL, "wrong-password", func(key string) string { return key })
 	if err == nil {
 		t.Fatal("expected error for wrong path password, got nil")
 	}
@@ -247,7 +256,7 @@ func TestLoginToAPIUnauthorized(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	_, err := loginToAPI("wrong-password")
+	_, err := api.LoginToAPI(server.URL, "wrong-password", func(key string) string { return key })
 	if err == nil {
 		t.Fatal("expected error for wrong login password, got nil")
 	}
@@ -265,7 +274,7 @@ func TestLoginToAPIInvalidResponse(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	_, err := loginToAPI("test-password")
+	_, err := api.LoginToAPI(server.URL, "test-password", func(key string) string { return key })
 	if err == nil {
 		t.Fatal("expected error for invalid response, got nil")
 	}
@@ -287,13 +296,10 @@ func TestAPIGetWithAuth(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	originalToken := jwtToken
-	jwtToken = "test-token"
-	defer func() { jwtToken = originalToken }()
-
-	resp, err := apiGet("/test")
+	testAPIClient := api.NewClient(server.URL, "test-token")
+	resp, err := testAPIClient.Get("/test")
 	if err != nil {
-		t.Fatalf("apiGet() error = %v", err)
+		t.Fatalf("Get() error = %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -323,13 +329,10 @@ func TestAPIPostWithAuth(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	originalToken := jwtToken
-	jwtToken = "test-token"
-	defer func() { jwtToken = originalToken }()
-
-	err := apiPost("/test", map[string]string{"key": "value"})
+	testAPIClient := api.NewClient(server.URL, "test-token")
+	err := testAPIClient.Post("/test", map[string]string{"key": "value"})
 	if err != nil {
-		t.Fatalf("apiPost() error = %v", err)
+		t.Fatalf("Post() error = %v", err)
 	}
 }
 
@@ -343,7 +346,8 @@ func TestAPIPostServerError(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	err := apiPost("/test", map[string]string{"key": "value"})
+	testAPIClient := api.NewClient(server.URL, "")
+	err := testAPIClient.Post("/test", map[string]string{"key": "value"})
 	if err == nil {
 		t.Fatal("expected error for server error, got nil")
 	}
@@ -368,9 +372,11 @@ func TestSelectClientSuccess(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	result := selectClient("test-001")
+	testAPIClient := api.NewClient(server.URL, "")
+	testClientManager := client.NewManager(testAPIClient, T, Tf, initPrintFuncs())
+	result := testClientManager.SelectClient("test-001")
 	if !result {
-		t.Error("expected selectClient to return true")
+		t.Error("expected SelectClient to return true")
 	}
 }
 
@@ -393,9 +399,11 @@ func TestSelectClientNotFound(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	result := selectClient("non-existent")
+	testAPIClient := api.NewClient(server.URL, "")
+	testClientManager := client.NewManager(testAPIClient, T, Tf, initPrintFuncs())
+	result := testClientManager.SelectClient("non-existent")
 	if result {
-		t.Error("expected selectClient to return false for non-existent client")
+		t.Error("expected SelectClient to return false for non-existent client")
 	}
 }
 
@@ -409,9 +417,11 @@ func TestSelectClientFetchError(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	result := selectClient("test-001")
+	testAPIClient := api.NewClient(server.URL, "")
+	testClientManager := client.NewManager(testAPIClient, T, Tf, initPrintFuncs())
+	result := testClientManager.SelectClient("test-001")
 	if result {
-		t.Error("expected selectClient to return false on fetch error")
+		t.Error("expected SelectClient to return false on fetch error")
 	}
 }
 
@@ -443,7 +453,9 @@ func TestDeleteClientSuccess(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	deleteClient("test-001")
+	testAPIClient := api.NewClient(server.URL, "")
+	testClientManager := client.NewManager(testAPIClient, T, Tf, initPrintFuncs())
+	testClientManager.DeleteClient("test-001")
 
 	if callCount != 2 {
 		t.Errorf("expected 2 API calls, got %d", callCount)
@@ -471,7 +483,9 @@ func TestDeleteClientNotFound(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	deleteClient("non-existent")
+	testAPIClient := api.NewClient(server.URL, "")
+	testClientManager := client.NewManager(testAPIClient, T, Tf, initPrintFuncs())
+	testClientManager.DeleteClient("non-existent")
 
 	if callCount != 1 {
 		t.Errorf("expected 1 API call (only fetch), got %d", callCount)
@@ -490,7 +504,9 @@ func TestDeleteClientFetchError(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	deleteClient("test-001")
+	testAPIClient := api.NewClient(server.URL, "")
+	testClientManager := client.NewManager(testAPIClient, T, Tf, initPrintFuncs())
+	testClientManager.DeleteClient("test-001")
 
 	if callCount != 1 {
 		t.Errorf("expected 1 API call, got %d", callCount)
@@ -516,7 +532,11 @@ func TestListClientsSuccess(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	listClients()
+	testAPIClient := api.NewClient(server.URL, "")
+	testClientManager := client.NewManager(testAPIClient, T, Tf, initPrintFuncs())
+	testClientManager.ListClients(func(clients []shared.ClientInfo, t func(string) string, tf func(string, ...interface{}) string) {
+		output.PrintClientTable(clients, t, tf)
+	})
 }
 
 // TestListClientsError tests client list display with error.
@@ -529,5 +549,9 @@ func TestListClientsError(t *testing.T) {
 	cleanup := configureTestServer(server)
 	defer cleanup()
 
-	listClients()
+	testAPIClient := api.NewClient(server.URL, "")
+	testClientManager := client.NewManager(testAPIClient, T, Tf, initPrintFuncs())
+	testClientManager.ListClients(func(clients []shared.ClientInfo, t func(string) string, tf func(string, ...interface{}) string) {
+		output.PrintClientTable(clients, t, tf)
+	})
 }

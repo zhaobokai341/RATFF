@@ -124,5 +124,6 @@
 	"file_header_modified": "修改时间",
 	"file_header_permissions": "权限",
 	"file_hidden_prefix": ".",
-	"usage_cd": "用法: cd <目录>"
+	"usage_cd": "用法: cd <目录>",
+	"client_manager_not_initialized": "客户端管理器未初始化"
 }

@@ -118,21 +118,20 @@ func handleCd(msg shared.Message) shared.Message {
 
 	workingMu.Lock()
 	err := os.Chdir(dir)
-	if err == nil {
-		workingDir = dir
-	}
-	workingMu.Unlock()
-
 	if err != nil {
+		workingMu.Unlock()
 		return shared.NewMessage(shared.MsgError, shared.CmdCd, msg.ClientID,
 			map[string]interface{}{"error": err.Error()})
 	}
 
 	currentDir, wdErr := os.Getwd()
 	if wdErr != nil {
+		workingMu.Unlock()
 		return shared.NewMessage(shared.MsgError, shared.CmdCd, msg.ClientID,
 			map[string]interface{}{"error": fmt.Sprintf("get working directory failed: %v", wdErr)})
 	}
+	workingDir = currentDir
+	workingMu.Unlock()
 
 	return shared.NewMessage(shared.MsgResponse, shared.CmdCd, msg.ClientID,
 		map[string]interface{}{"current_dir": currentDir})

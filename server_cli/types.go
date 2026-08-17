@@ -1,21 +1,35 @@
 package main
 
 import (
-	"sync"
+	"RATFF/server_cli/api"
+	"RATFF/server_cli/client"
+	"RATFF/server_cli/output"
 
-	"RATFF/shared"
+	"github.com/gorilla/websocket"
 )
 
 // jwtToken stores the authenticated JWT token for API requests.
 var jwtToken string
 
-// pendingCommand holds a channel waiting for a command response.
-type pendingCommand struct {
-	ch chan shared.Message
+// apiClient is the global API client instance.
+var apiClient *api.Client
+
+// wsManager is the global WebSocket manager.
+var wsManager *api.WebSocketManager
+
+// wsConn is the current WebSocket connection.
+var wsConn *websocket.Conn
+
+// clientManager is the global client operations manager.
+var clientManager *client.Manager
+
+// initPrintFuncs initializes the print functions for the client manager.
+func initPrintFuncs() client.PrintFuncs {
+	return client.PrintFuncs{
+		Success:     output.PrintSuccess,
+		Error:       output.PrintError,
+		Info:        output.PrintInfo,
+		Warn:        output.PrintWarn,
+		FormatBytes: output.FormatBytes,
+	}
 }
-
-// pendingMu protects the pendingCmd map for concurrent access.
-var pendingMu sync.Mutex
-
-// pendingCmd stores pending command responses keyed by client ID.
-var pendingCmd = make(map[string]*pendingCommand)
