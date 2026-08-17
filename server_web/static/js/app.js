@@ -657,8 +657,9 @@
                             const relPath = file.webkitRelativePath;
                             const slashIdx = relPath.indexOf('/');
                             if (slashIdx !== -1) {
+                                const rootDirName = relPath.substring(0, slashIdx);
                                 const relWithoutRoot = relPath.substring(slashIdx + 1);
-                                remotePath = basePath === '.' ? relWithoutRoot : basePath + '/' + relWithoutRoot;
+                                remotePath = basePath === '.' ? rootDirName + '/' + relWithoutRoot : basePath + '/' + rootDirName + '/' + relWithoutRoot;
                             } else {
                                 remotePath = basePath === '.' ? relPath : basePath + '/' + relPath;
                             }
