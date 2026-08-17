@@ -29,7 +29,7 @@ func buildAPIURL(pathPrefix, endpoint string) string {
 func buildWSURL(pathPrefix string) string {
 	baseURL := cfg.WsURL
 	if baseURL == "" {
-		baseURL = "ws://localhost:6341"
+		baseURL = "ws://127.0.0.1:6341"
 	}
 
 	if pathPrefix != "" {
