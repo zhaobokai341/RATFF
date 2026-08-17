@@ -25,7 +25,8 @@ func handleWebSocket(manager *ClientManager) gin.HandlerFunc {
 		}
 		defer conn.Close()
 
-		shared.SetupHeartbeat(conn)
+		wsConn := shared.NewWSConn(conn)
+		shared.SetupSafeHeartbeat(wsConn)
 
 		var msg shared.Message
 		if err := shared.ReadWSMessage(conn, &msg); err != nil {
@@ -49,11 +50,11 @@ func handleWebSocket(manager *ClientManager) gin.HandlerFunc {
 			info.IP = remoteAddr
 		}
 
-		manager.Register(clientID, conn, info)
+		manager.Register(clientID, wsConn, info)
 		defer manager.Unregister(clientID)
 
 		for {
-			if err := handleMessage(conn, manager, clientID); err != nil {
+			if err := handleMessage(wsConn, manager, clientID); err != nil {
 				return
 			}
 		}
@@ -61,9 +62,9 @@ func handleWebSocket(manager *ClientManager) gin.HandlerFunc {
 }
 
 // handleMessage processes incoming messages from a client connection.
-func handleMessage(conn *websocket.Conn, manager *ClientManager, clientID string) error {
+func handleMessage(wsConn *shared.WSConn, manager *ClientManager, clientID string) error {
 	var msg shared.Message
-	if err := shared.ReadWSMessage(conn, &msg); err != nil {
+	if err := shared.ReadWSMessage(wsConn.Conn, &msg); err != nil {
 		return err
 	}
 
@@ -75,12 +76,12 @@ func handleMessage(conn *websocket.Conn, manager *ClientManager, clientID string
 
 	switch msg.Type {
 	case shared.MsgHeartbeat:
-		return shared.SendWSMessage(conn, shared.NewMessage(shared.MsgHeartbeat, "", "", nil))
+		return shared.SendSafeWSMessage(wsConn, shared.NewMessage(shared.MsgHeartbeat, "", "", nil))
 
 	case shared.MsgCommand:
 		targetID := msg.ClientID
 		if !manager.IsOnline(targetID) {
-			err := shared.SendWSMessage(conn, shared.NewMessage(shared.MsgError, "", "",
+			err := shared.SendSafeWSMessage(wsConn, shared.NewMessage(shared.MsgError, "", "",
 				map[string]interface{}{"error": "client offline"}))
 			if err != nil {
 				log.WithError(err).Error("Failed to send error message")

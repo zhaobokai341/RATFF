@@ -17,9 +17,10 @@ import (
 )
 
 var (
-	log      *logrus.Entry
-	wsConn   *websocket.Conn
-	wsConnMu sync.Mutex
+	log         *logrus.Entry
+	asyncWriter *shared.AsyncWriter
+	wsConn      *websocket.Conn
+	wsConnMu    sync.Mutex
 )
 
 // setupRouter configures the HTTP router with all web endpoints.
@@ -29,7 +30,6 @@ func setupRouter() *gin.Engine {
 
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
-	r.Use(rateLimitMiddleware())
 	r.Use(languageMiddleware())
 
 	r.Static("/static", "./static")
@@ -50,35 +50,56 @@ func setupRouter() *gin.Engine {
 	r.GET("/api/lang", handleGetLanguage)
 	r.POST("/api/lang", handleSetLanguage)
 
-	r.GET("/", handleRoot)
-	r.GET("/ws", handleWebSocketRoot)
-	r.GET("/api/clients", handleAPIClientsRoot)
-	r.POST("/api/command", handleExecCommand)
-	r.POST("/api/file/list", handleFileList)
-	r.POST("/api/file/move", handleFileMove)
-	r.POST("/api/file/delete", handleFileDelete)
-	r.POST("/api/file/copy", handleFileCopy)
-	r.POST("/api/file/upload", handleFileUpload)
-	r.POST("/api/file/download", handleFileDownload)
-	r.GET("/api/task/progress", handleTaskProgress)
-	r.GET("/api/task/status", handleTaskStatus)
-	r.GET("/api/file/download_result", handleDownloadResult)
+	// Non-API endpoints with global rate limiting
+	nonAPI := r.Group("")
+	nonAPI.Use(rateLimitMiddleware())
+	{
+		nonAPI.GET("/", handleRoot)
+		nonAPI.GET("/ws", handleWebSocketRoot)
+		nonAPI.GET("/api/clients", handleAPIClientsRoot)
+	}
 
-	r.GET("/:pathPassword", handlePathIndex)
-	r.GET("/:pathPassword/", handlePathIndex)
-	r.GET("/:pathPassword/index.html", handlePathIndex)
-	r.GET("/:pathPassword/ws", handlePathWebSocket)
-	r.GET("/:pathPassword/api/clients", handlePathAPIClients)
-	r.POST("/:pathPassword/api/command", handleExecCommand)
-	r.POST("/:pathPassword/api/file/list", handleFileList)
-	r.POST("/:pathPassword/api/file/move", handleFileMove)
-	r.POST("/:pathPassword/api/file/delete", handleFileDelete)
-	r.POST("/:pathPassword/api/file/copy", handleFileCopy)
-	r.POST("/:pathPassword/api/file/upload", handleFileUpload)
-	r.POST("/:pathPassword/api/file/download", handleFileDownload)
-	r.GET("/:pathPassword/api/task/progress", handleTaskProgress)
-	r.GET("/:pathPassword/api/task/status", handleTaskStatus)
-	r.GET("/:pathPassword/api/file/download_result", handleDownloadResult)
+	// API endpoints with per-client rate limiting
+	api := r.Group("")
+	api.Use(apiRateLimitMiddleware())
+	{
+		api.POST("/api/command", handleExecCommand)
+		api.POST("/api/file/list", handleFileList)
+		api.POST("/api/file/move", handleFileMove)
+		api.POST("/api/file/delete", handleFileDelete)
+		api.POST("/api/file/copy", handleFileCopy)
+		api.POST("/api/file/upload", handleFileUpload)
+		api.POST("/api/file/download", handleFileDownload)
+		api.GET("/api/task/progress", handleTaskProgress)
+		api.GET("/api/task/status", handleTaskStatus)
+		api.GET("/api/file/download_result", handleDownloadResult)
+	}
+
+	// Path-prefixed routes with global rate limiting
+	pathNonAPI := r.Group("/:pathPassword")
+	pathNonAPI.Use(rateLimitMiddleware())
+	{
+		pathNonAPI.GET("/", handlePathIndex)
+		pathNonAPI.GET("/index.html", handlePathIndex)
+		pathNonAPI.GET("/ws", handlePathWebSocket)
+		pathNonAPI.GET("/api/clients", handlePathAPIClients)
+	}
+
+	// Path-prefixed API endpoints with per-client rate limiting
+	pathAPI := r.Group("/:pathPassword")
+	pathAPI.Use(apiRateLimitMiddleware())
+	{
+		pathAPI.POST("/api/command", handleExecCommand)
+		pathAPI.POST("/api/file/list", handleFileList)
+		pathAPI.POST("/api/file/move", handleFileMove)
+		pathAPI.POST("/api/file/delete", handleFileDelete)
+		pathAPI.POST("/api/file/copy", handleFileCopy)
+		pathAPI.POST("/api/file/upload", handleFileUpload)
+		pathAPI.POST("/api/file/download", handleFileDownload)
+		pathAPI.GET("/api/task/progress", handleTaskProgress)
+		pathAPI.GET("/api/task/status", handleTaskStatus)
+		pathAPI.GET("/api/file/download_result", handleDownloadResult)
+	}
 
 	return r
 }
@@ -128,7 +149,7 @@ func gracefulShutdown(srv *http.Server) {
 }
 
 func main() {
-	log = shared.InitLogger("info", "text")
+	log, asyncWriter = shared.InitLoggerWithWriter("info", "text", true)
 	loadConfig()
 
 	if err := shared.LoadLanguagePacks("lang"); err != nil {
@@ -147,5 +168,10 @@ func main() {
 	log.Info("Starting Web server on " + srv.Addr)
 	if err := srv.ListenAndServe(); err != nil {
 		log.WithError(err).Fatal("Web server failed")
+	}
+
+	// Flush remaining logs before exit
+	if asyncWriter != nil {
+		asyncWriter.Close()
 	}
 }

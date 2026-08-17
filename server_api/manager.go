@@ -14,7 +14,7 @@ import (
 
 // ClientEntry holds a client's WebSocket connection and info.
 type ClientEntry struct {
-	Conn *websocket.Conn
+	Conn *shared.WSConn
 	Info shared.ClientInfo
 }
 
@@ -34,7 +34,7 @@ func NewClientManager() *ClientManager {
 }
 
 // Register adds a client with its connection and info.
-func (m *ClientManager) Register(clientID string, conn *websocket.Conn, info shared.ClientInfo) {
+func (m *ClientManager) Register(clientID string, conn *shared.WSConn, info shared.ClientInfo) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

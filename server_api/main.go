@@ -14,7 +14,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var log *logrus.Entry
+var (
+	log         *logrus.Entry
+	asyncWriter *shared.AsyncWriter
+)
 
 // setupRouter configures the HTTP router with all API endpoints.
 func setupRouter(manager *ClientManager) *gin.Engine {
@@ -92,7 +95,7 @@ func gracefulShutdown(srv *http.Server) {
 }
 
 func main() {
-	log = shared.InitLogger("info", "text")
+	log, asyncWriter = shared.InitLoggerWithWriter("info", "text", true)
 	loadConfig()
 
 	manager := NewClientManager()
@@ -107,4 +110,9 @@ func main() {
 
 	log.Info("Starting server on " + srv.Addr)
 	startServer(srv)
+
+	// Flush remaining logs before exit
+	if asyncWriter != nil {
+		asyncWriter.Close()
+	}
 }

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"RATFF/shared"
@@ -129,6 +130,50 @@ func rateLimitMiddleware() gin.HandlerFunc {
 	limiter := rate.NewLimiter(rate.Every(time.Second), 50)
 
 	return func(c *gin.Context) {
+		if !limiter.Allow() {
+			c.JSON(429, gin.H{"error": "too many requests"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+// perClientRateLimiter manages per-client rate limiters.
+type perClientRateLimiter struct {
+	limiters map[string]*rate.Limiter
+	mu       sync.Mutex
+}
+
+var globalPerClientLimiter = &perClientRateLimiter{
+	limiters: make(map[string]*rate.Limiter),
+}
+
+// getLimiter returns or creates a rate limiter for a client.
+func (p *perClientRateLimiter) getLimiter(clientID string) *rate.Limiter {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	limiter, exists := p.limiters[clientID]
+	if !exists {
+		// 10000 requests per second per client, burst 2000
+		// Supports ~640MB/s file transfer with 64KB chunks
+		limiter = rate.NewLimiter(rate.Every(time.Millisecond/10), 2000)
+		p.limiters[clientID] = limiter
+	}
+
+	return limiter
+}
+
+// apiRateLimitMiddleware applies per-client rate limiting for API endpoints.
+func apiRateLimitMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token, _ := c.Cookie("auth_token")
+		if token == "" {
+			token = c.ClientIP()
+		}
+
+		limiter := globalPerClientLimiter.getLimiter(token)
 		if !limiter.Allow() {
 			c.JSON(429, gin.H{"error": "too many requests"})
 			c.Abort()

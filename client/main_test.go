@@ -125,8 +125,9 @@ func TestRunClientSuccess(t *testing.T) {
 		}
 
 		// Send heartbeat
-		shared.SetupHeartbeat(conn)
-		_ = shared.SendWSMessage(conn, shared.NewMessage(shared.MsgHeartbeat, "", "", nil))
+		wsConn := shared.NewWSConn(conn)
+		shared.SetupSafeHeartbeat(wsConn)
+		_ = shared.SendSafeWSMessage(wsConn, shared.NewMessage(shared.MsgHeartbeat, "", "", nil))
 
 		time.Sleep(100 * time.Millisecond)
 	}))

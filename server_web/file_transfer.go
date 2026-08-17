@@ -187,6 +187,11 @@ func downloadSingleFile(token, pathPrefix, clientID, remotePath, localPath strin
 	totalChunksF, _ := msg.Payload["total_chunks"].(float64)
 	totalChunks := int(totalChunksF)
 
+	if task != nil {
+		task.TotalBytes = fileSize
+		task.SentBytes = 0
+	}
+
 	if err := os.MkdirAll(filepath.Dir(localPath), 0755); err != nil {
 		return fmt.Errorf("create dir: %w", err)
 	}
@@ -336,6 +341,23 @@ func downloadDirectory(token, pathPrefix, clientID, remotePath string, task *Tra
 	}
 
 	task.FileCount = len(files)
+
+	var totalBytes int64
+	for _, remoteFile := range files {
+		fileID := shared.GenerateID()
+		startPayload := map[string]interface{}{
+			"file_id":    fileID,
+			"local_path": remoteFile,
+		}
+		msg, err := sendFileCommandRaw(token, pathPrefix, clientID, shared.CmdFileDownloadStart, startPayload, downloadTimeout)
+		if err == nil && msg != nil && msg.Payload != nil {
+			if fileSizeF, ok := msg.Payload["file_size"].(float64); ok {
+				totalBytes += int64(fileSizeF)
+			}
+		}
+	}
+	task.TotalBytes = totalBytes
+	task.SentBytes = 0
 
 	tmpDir, err := os.MkdirTemp("", "ratff_download_*")
 	if err != nil {
