@@ -351,7 +351,6 @@ func downloadDirectory(token, pathPrefix, clientID, remotePath string, task *Tra
 		localFile := filepath.Join(tmpDir, relPath)
 
 		task.FileIndex = i + 1
-		task.FileName = filepath.Base(remoteFile)
 		task.updateProgress()
 
 		if err := downloadSingleFile(token, pathPrefix, clientID, remoteFile, localFile, task); err != nil {
