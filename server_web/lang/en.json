@@ -17,6 +17,7 @@
 	"header_ip": "IP",
 	"header_hostname": "Hostname",
 	"header_os": "OS",
+	"header_version": "Version",
 	"header_actions": "Actions",
 	"button_delete": "Delete",
 	"no_clients": "No clients connected",

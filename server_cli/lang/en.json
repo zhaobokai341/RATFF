@@ -43,6 +43,7 @@
 	"header_ip": "IP",
 	"header_hostname": "Hostname",
 	"header_os": "OS",
+	"header_version": "Version",
 	"input_read_error": "Error reading input: %v",
 	"invalid_path_password": "Invalid path password",
 	"invalid_login_password": "Invalid login password",

@@ -12,7 +12,11 @@ type ClientInfo struct {
 	IP       string `json:"ip"`
 	Hostname string `json:"hostname"`
 	OSInfo   string `json:"os_info"`
+	Version  string `json:"version"`
 }
+
+// ClientVersion is the current version of the client software.
+const ClientVersion = "v3.0-beta.2"
 
 // BuildClientInfo creates a ClientInfo with system details.
 func BuildClientInfo(id string) ClientInfo {
@@ -25,6 +29,7 @@ func BuildClientInfo(id string) ClientInfo {
 		IP:       "unknown",
 		Hostname: hostname,
 		OSInfo:   osInfo,
+		Version:  ClientVersion,
 	}
 }
 
@@ -44,6 +49,7 @@ func (c ClientInfo) ToPayload() map[string]interface{} {
 		"ip":       c.IP,
 		"hostname": c.Hostname,
 		"os_info":  c.OSInfo,
+		"version":  c.Version,
 	}
 }
 
@@ -61,6 +67,9 @@ func ClientInfoFromPayload(p map[string]interface{}) ClientInfo {
 	}
 	if v, ok := p["os_info"]; ok {
 		info.OSInfo, _ = v.(string)
+	}
+	if v, ok := p["version"]; ok {
+		info.Version, _ = v.(string)
 	}
 	return info
 }

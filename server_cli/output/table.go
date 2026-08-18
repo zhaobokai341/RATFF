@@ -36,7 +36,7 @@ func PrintClientTable(clients []shared.ClientInfo, t func(string) string, tf fun
 	PrintInfo(tf("connected_devices", len(clients)))
 
 	tableData := table.New().
-		Headers(t("header_id"), t("header_ip"), t("header_hostname"), t("header_os")).
+		Headers(t("header_id"), t("header_ip"), t("header_hostname"), t("header_os"), t("header_version")).
 		Border(lipgloss.RoundedBorder()).
 		BorderStyle(borderStyle).
 		StyleFunc(func(row, col int) lipgloss.Style {
@@ -67,6 +67,8 @@ func PrintClientTable(clients []shared.ClientInfo, t func(string) string, tf fun
 					Inline(true)
 			case 1:
 				s = s.Align(lipgloss.Center)
+			case 4:
+				s = s.Align(lipgloss.Center)
 			default:
 				s = s.Align(lipgloss.Left)
 			}
@@ -80,6 +82,7 @@ func PrintClientTable(clients []shared.ClientInfo, t func(string) string, tf fun
 			c.IP,
 			c.Hostname,
 			c.OSInfo,
+			c.Version,
 		)
 	}
 

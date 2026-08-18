@@ -43,6 +43,7 @@
 	"header_ip": "IP",
 	"header_hostname": "主机名",
 	"header_os": "操作系统",
+	"header_version": "版本",
 	"input_read_error": "读取输入时出错: %v",
 	"invalid_path_password": "路径密码无效",
 	"invalid_login_password": "登录密码无效",
