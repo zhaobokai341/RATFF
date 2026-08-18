@@ -89,10 +89,10 @@ func TestGetEnv(t *testing.T) {
 	os.Setenv("TEST_VAR", "testvalue")
 	defer os.Unsetenv("TEST_VAR")
 
-	if getEnv("TEST_VAR", "default") != "testvalue" {
+	if shared.GetEnv("TEST_VAR", "default") != "testvalue" {
 		t.Error("Expected testvalue")
 	}
-	if getEnv("NONEXISTENT_VAR", "default") != "default" {
+	if shared.GetEnv("NONEXISTENT_VAR", "default") != "default" {
 		t.Error("Expected default")
 	}
 }

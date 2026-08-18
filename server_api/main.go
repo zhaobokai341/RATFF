@@ -1,13 +1,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"RATFF/shared"
 
@@ -39,7 +35,7 @@ func setupRouter(manager *ClientManager) *gin.Engine {
 	{
 		// Non-API endpoints with global rate limiting
 		nonAPI := base.Group("")
-		nonAPI.Use(rateLimitMiddleware())
+		nonAPI.Use(shared.GlobalRateLimitMiddleware())
 		{
 			nonAPI.POST("/verify", handleVerify)
 			nonAPI.GET("/ws", handleWebSocket(manager))
@@ -48,7 +44,9 @@ func setupRouter(manager *ClientManager) *gin.Engine {
 		// API endpoints with per-client rate limiting
 		api := base.Group("/api")
 		api.Use(authMiddleware())
-		api.Use(apiRateLimitMiddleware())
+		api.Use(shared.PerClientRateLimitMiddleware(globalPerClientLimiter, func(c *gin.Context) string {
+			return c.GetHeader("Authorization")
+		}))
 		{
 			api.GET("/clients", handleListClients(manager))
 			api.POST("/command", handleSendCommand(manager))
@@ -80,21 +78,6 @@ func startServer(srv *http.Server) {
 	}
 }
 
-// gracefulShutdown handles SIGINT and SIGTERM for clean server shutdown.
-func gracefulShutdown(srv *http.Server) {
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	log.Info("Shutting down server...")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Error("Server forced to shutdown: ", err)
-	}
-}
-
 func main() {
 	fmt.Println(shared.SelectLogo())
 	log, asyncWriter = shared.InitLoggerWithWriter("info", "text", true)
@@ -108,7 +91,7 @@ func main() {
 		Handler: router,
 	}
 
-	go gracefulShutdown(srv)
+	go shared.GracefulShutdown(srv, log)
 
 	log.Info("Starting server on " + srv.Addr)
 	startServer(srv)

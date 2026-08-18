@@ -1,14 +1,19 @@
 package shared
 
 import (
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -187,4 +192,34 @@ func DecryptAES(ciphertext []byte, key []byte) ([]byte, error) {
 	}
 
 	return plaintext, nil
+}
+
+// GetEnv returns the value of an environment variable, or a fallback if not set.
+func GetEnv(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
+}
+
+// IsDebugEnv returns true if running in debug/development environment.
+func IsDebugEnv() bool {
+	env := GetEnv("APP_ENV", "debug")
+	return env == "debug" || env == "development" || env == "dev"
+}
+
+// GracefulShutdown handles SIGINT and SIGTERM for clean server shutdown.
+// It calls the provided shutdown function when a signal is received.
+func GracefulShutdown(srv *http.Server, log *logrus.Entry) {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Info("Shutting down server...")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.WithError(err).Error("Server forced to shutdown")
+	}
 }

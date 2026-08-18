@@ -1,14 +1,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
-	"time"
 
 	"RATFF/shared"
 
@@ -53,7 +48,7 @@ func setupRouter() *gin.Engine {
 
 	// Non-API endpoints with global rate limiting
 	nonAPI := r.Group("")
-	nonAPI.Use(rateLimitMiddleware())
+	nonAPI.Use(shared.GlobalRateLimitMiddleware())
 	{
 		nonAPI.GET("/", handleRoot)
 		nonAPI.GET("/ws", handleWebSocketRoot)
@@ -62,7 +57,10 @@ func setupRouter() *gin.Engine {
 
 	// API endpoints with per-client rate limiting
 	api := r.Group("")
-	api.Use(apiRateLimitMiddleware())
+	api.Use(shared.PerClientRateLimitMiddleware(globalPerClientLimiter, func(c *gin.Context) string {
+		token, _ := c.Cookie("auth_token")
+		return token
+	}))
 	{
 		api.POST("/api/command", handleExecCommand)
 		api.POST("/api/file/list", handleFileList)
@@ -80,7 +78,7 @@ func setupRouter() *gin.Engine {
 
 	// Path-prefixed routes with global rate limiting
 	pathNonAPI := r.Group("/:pathPassword")
-	pathNonAPI.Use(rateLimitMiddleware())
+	pathNonAPI.Use(shared.GlobalRateLimitMiddleware())
 	{
 		pathNonAPI.GET("/", handlePathIndex)
 		pathNonAPI.GET("/index.html", handlePathIndex)
@@ -90,7 +88,10 @@ func setupRouter() *gin.Engine {
 
 	// Path-prefixed API endpoints with per-client rate limiting
 	pathAPI := r.Group("/:pathPassword")
-	pathAPI.Use(apiRateLimitMiddleware())
+	pathAPI.Use(shared.PerClientRateLimitMiddleware(globalPerClientLimiter, func(c *gin.Context) string {
+		token, _ := c.Cookie("auth_token")
+		return token
+	}))
 	{
 		pathAPI.POST("/api/command", handleExecCommand)
 		pathAPI.POST("/api/file/list", handleFileList)
@@ -138,21 +139,6 @@ func handlePathIndex(c *gin.Context) {
 	})
 }
 
-// gracefulShutdown handles SIGINT and SIGTERM for clean server shutdown.
-func gracefulShutdown(srv *http.Server) {
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	log.Info("Shutting down server...")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		log.WithError(err).Error("Server forced to shutdown")
-	}
-}
-
 func main() {
 	fmt.Println(shared.SelectLogo())
 	log, asyncWriter = shared.InitLoggerWithWriter("info", "text", true)
@@ -169,7 +155,7 @@ func main() {
 		Handler: router,
 	}
 
-	go gracefulShutdown(srv)
+	go shared.GracefulShutdown(srv, log)
 
 	log.Info("Starting Web server on " + srv.Addr)
 	if err := srv.ListenAndServe(); err != nil {

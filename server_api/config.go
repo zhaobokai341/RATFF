@@ -3,14 +3,10 @@ package main
 import (
 	"os"
 
+	"RATFF/shared"
+
 	"github.com/sirupsen/logrus"
 )
-
-// isDebugEnv returns true if running in debug/development environment.
-func isDebugEnv() bool {
-	env := getEnv("APP_ENV", "debug")
-	return env == "debug" || env == "development" || env == "dev"
-}
 
 // Config holds the server API configuration values.
 type Config struct {
@@ -27,11 +23,11 @@ var cfg Config
 // Note: Don't change this for a bit improve security, because that it can switch between safety and convenience.
 func loadConfig() {
 	cfg = Config{
-		Host:              getEnv("HOST", "0.0.0.0"),
-		Port:              getEnv("PORT", "6341"),
-		PathPassword:      getEnv("LOGIN_PATH", ""),
-		LoginPasswordHash: getEnv("LOGIN_PASSWORD_HASH", "$2b$12$lfEEs6tTAdp61DYg7xiorOkspqK2iTObW/qK6fOsT6JxBfbRBGjn2"),
-		JWTSecret:         getEnv("JWT_SECRET", "default-jwt-secret-change-in-production"),
+		Host:              shared.GetEnv("HOST", "0.0.0.0"),
+		Port:              shared.GetEnv("PORT", "6341"),
+		PathPassword:      shared.GetEnv("LOGIN_PATH", ""),
+		LoginPasswordHash: shared.GetEnv("LOGIN_PASSWORD_HASH", "$2b$12$lfEEs6tTAdp61DYg7xiorOkspqK2iTObW/qK6fOsT6JxBfbRBGjn2"),
+		JWTSecret:         shared.GetEnv("JWT_SECRET", "default-jwt-secret-change-in-production"),
 	}
 
 	if os.Getenv("LOGIN_PATH") == "" {
@@ -48,16 +44,9 @@ func loadConfig() {
 // logConfigWarning logs configuration warnings based on environment.
 // In debug mode, warnings are logged as info. In production, they are critical errors.
 func logConfigWarning(message string) {
-	if isDebugEnv() {
+	if shared.IsDebugEnv() {
 		logrus.Info("[DEBUG] " + message)
 	} else {
 		logrus.Fatal("[PRODUCTION] CRITICAL: " + message)
 	}
-}
-
-func getEnv(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return fallback
 }

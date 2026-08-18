@@ -3,8 +3,9 @@ package main
 import (
 	"net"
 	"net/http"
-	"os"
 	"time"
+
+	"RATFF/shared"
 )
 
 // Config holds the web server configuration values.
@@ -34,23 +35,10 @@ var httpClient = &http.Client{
 
 func loadConfig() {
 	cfg = Config{
-		Host:         getEnv("HOST", "0.0.0.0"),
-		Port:         getEnv("PORT", "7993"),
-		APIBaseURL:   getEnv("API_URL", "http://127.0.0.1:6341"),
-		WsURL:        getEnv("WS_URL", "ws://127.0.0.1:6341"),
-		CookieSecure: !isDebugEnv(),
+		Host:         shared.GetEnv("HOST", "0.0.0.0"),
+		Port:         shared.GetEnv("PORT", "7993"),
+		APIBaseURL:   shared.GetEnv("API_URL", "http://127.0.0.1:6341"),
+		WsURL:        shared.GetEnv("WS_URL", "ws://127.0.0.1:6341"),
+		CookieSecure: !shared.IsDebugEnv(),
 	}
-}
-
-// isDebugEnv returns true if running in debug/development environment.
-func isDebugEnv() bool {
-	env := getEnv("APP_ENV", "debug")
-	return env == "debug" || env == "development" || env == "dev"
-}
-
-func getEnv(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return fallback
 }

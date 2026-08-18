@@ -63,8 +63,8 @@ func TestGetEnv(t *testing.T) {
 	os.Setenv("TEST_VAR", "testvalue")
 	defer os.Unsetenv("TEST_VAR")
 
-	assert.Equal(t, "testvalue", getEnv("TEST_VAR", "default"))
-	assert.Equal(t, "default", getEnv("NONEXISTENT_VAR", "default"))
+	assert.Equal(t, "testvalue", shared.GetEnv("TEST_VAR", "default"))
+	assert.Equal(t, "default", shared.GetEnv("NONEXISTENT_VAR", "default"))
 }
 
 func TestGenerateJWT(t *testing.T) {

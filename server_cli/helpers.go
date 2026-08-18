@@ -14,6 +14,16 @@ import (
 	"github.com/google/shlex"
 )
 
+// ensureClientManager checks if clientManager is initialized and prints error if not.
+// Returns true if initialized, false otherwise.
+func ensureClientManager() bool {
+	if clientManager == nil {
+		PrintError(T("client_manager_not_initialized"))
+		return false
+	}
+	return true
+}
+
 // buildPrompt generates the CLI prompt based on current mode.
 func buildPrompt(id string, inCommandMode bool) string {
 	return BuildPrompt(id, inCommandMode)
@@ -282,8 +292,7 @@ func handleConsoleBgCommand(args []string, selectedID string) string {
 
 // listClients retrieves and prints the list of connected clients.
 func listClients() {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.ListClients(func(clients []shared.ClientInfo, t func(string) string, tf func(string, ...interface{}) string) {
@@ -293,8 +302,7 @@ func listClients() {
 
 // selectClient checks if a client with the given ID exists.
 func selectClient(id string) bool {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return false
 	}
 	return clientManager.SelectClient(id)
@@ -302,8 +310,7 @@ func selectClient(id string) bool {
 
 // deleteClient sends an exit command to the specified client.
 func deleteClient(id string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.DeleteClient(id)
@@ -311,8 +318,7 @@ func deleteClient(id string) {
 
 // cdClient changes the working directory on the remote client.
 func cdClient(id string, dir string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.CdClient(id, dir)
@@ -320,8 +326,7 @@ func cdClient(id string, dir string) {
 
 // pwdClient gets the current working directory on the remote client.
 func pwdClient(id string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.PwdClient(id)
@@ -329,8 +334,7 @@ func pwdClient(id string) {
 
 // uploadFile uploads a file or directory to the remote client.
 func uploadFile(id, localPath, remotePath string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.UploadFile(id, localPath, remotePath, func(total int64, filename string) client.ProgressBar {
@@ -340,8 +344,7 @@ func uploadFile(id, localPath, remotePath string) {
 
 // downloadFile downloads a file or directory from the remote client.
 func downloadFile(id, remotePath, localPath string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.DownloadFile(id, remotePath, localPath, func(total int64, filename string) client.ProgressBar {
@@ -351,8 +354,7 @@ func downloadFile(id, remotePath, localPath string) {
 
 // listFiles lists files in a remote directory.
 func listFiles(id, path string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.ListFiles(id, path, func(currentPath string, files []interface{}, t func(string) string, tf func(string, ...interface{}) string) {
@@ -362,8 +364,7 @@ func listFiles(id, path string) {
 
 // moveFile moves a file on the remote client.
 func moveFile(id, originPath, newPath string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.MoveFile(id, originPath, newPath)
@@ -371,8 +372,7 @@ func moveFile(id, originPath, newPath string) {
 
 // copyRemoteFile copies a file on the remote client.
 func copyRemoteFile(id, originPath, newPath string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.CopyRemoteFile(id, originPath, newPath)
@@ -380,8 +380,7 @@ func copyRemoteFile(id, originPath, newPath string) {
 
 // deleteFile deletes a file on the remote client.
 func deleteFile(id, path string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.DeleteFile(id, path)
@@ -389,8 +388,7 @@ func deleteFile(id, path string) {
 
 // sendShellCommand sends a shell command to a client and waits for response.
 func sendShellCommand(id string, cmd string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.ShellCommand(id, cmd, PrintCommandResult)
@@ -398,8 +396,7 @@ func sendShellCommand(id string, cmd string) {
 
 // sendBgCommand sends a background command to a client with optional output file.
 func sendBgCommand(id string, cmd string, outputFile string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.BgCommand(id, cmd, outputFile)
@@ -407,8 +404,7 @@ func sendBgCommand(id string, cmd string, outputFile string) {
 
 // systeminfo retrieves system information from a client.
 func systeminfo(id string, fields []string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.SystemInfo(id, fields, printSystemInfoDetail)
@@ -474,8 +470,7 @@ func printScreenCaptureHelp() {
 
 // captureScreen captures screen from a client and optionally saves to file.
 func captureScreen(id string, format string, quality int, displayIndex int, outputPath string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	clientManager.ScreenCapture(id, format, quality, displayIndex, func(imageData string, width, height int, format string, displayIndex, displayCount int) {
@@ -495,8 +490,7 @@ func captureScreen(id string, format string, quality int, displayIndex int, outp
 
 // publicip retrieves public IP information from a client.
 func publicip(id string) {
-	if clientManager == nil {
-		PrintError(T("client_manager_not_initialized"))
+	if !ensureClientManager() {
 		return
 	}
 	if id == "" {
