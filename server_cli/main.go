@@ -35,6 +35,8 @@ func readPassword() (string, error) {
 }
 
 func main() {
+	fmt.Println(shared.SelectLogo())
+
 	if err := shared.LoadLanguagePacks("lang"); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: failed to load language packs: %v\n", err)
 	}
