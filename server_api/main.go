@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -95,6 +96,7 @@ func gracefulShutdown(srv *http.Server) {
 }
 
 func main() {
+	fmt.Println(shared.SelectLogo())
 	log, asyncWriter = shared.InitLoggerWithWriter("info", "text", true)
 	loadConfig()
 
