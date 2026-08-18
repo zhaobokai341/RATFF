@@ -4,10 +4,25 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"time"
 
 	"RATFF/shared"
 )
+
+// httpClient is a shared HTTP client with configured timeouts to prevent goroutine leaks.
+var httpClient = &http.Client{
+	Timeout: 30 * time.Second,
+	Transport: &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 20 * time.Second,
+	},
+}
 
 // Client handles API requests with authentication.
 type Client struct {
@@ -31,7 +46,7 @@ func (c *Client) Get(path string) (*http.Response, error) {
 		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
 
-	return http.DefaultClient.Do(req)
+	return httpClient.Do(req)
 }
 
 // Post performs an authenticated POST request to the API.
@@ -51,7 +66,7 @@ func (c *Client) Post(path string, payload interface{}) error {
 		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}

@@ -388,8 +388,11 @@ func getShortcutTarget(path string) string {
 		return ""
 	}
 
+	// Escape single quotes to prevent command injection
+	escapedPath := strings.ReplaceAll(path, "'", "''")
+
 	cmd := exec.Command("powershell", "-Command",
-		"(New-Object -ComObject WScript.Shell).CreateShortcut('"+path+"').TargetPath")
+		"(New-Object -ComObject WScript.Shell).CreateShortcut('"+escapedPath+"').TargetPath")
 
 	output, err := cmd.Output()
 	if err != nil {

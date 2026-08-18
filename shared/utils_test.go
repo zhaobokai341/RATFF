@@ -109,3 +109,57 @@ func TestCalculateBackoffNegative(t *testing.T) {
 		t.Errorf("Negative attempt should not produce negative duration, got %v", d)
 	}
 }
+
+func TestEncryptAESInvalidKeySize(t *testing.T) {
+	plaintext := []byte("test data")
+
+	invalidKeySizes := []int{0, 1, 8, 15, 20, 30, 33, 64}
+
+	for _, size := range invalidKeySizes {
+		key := make([]byte, size)
+		_, err := EncryptAES(plaintext, key)
+		if err == nil {
+			t.Errorf("EncryptAES with key size %d should fail, but got no error", size)
+		}
+	}
+}
+
+func TestDecryptAESInvalidKeySize(t *testing.T) {
+	invalidKeySizes := []int{0, 1, 8, 15, 20, 30, 33, 64}
+
+	for _, size := range invalidKeySizes {
+		key := make([]byte, size)
+		_, err := DecryptAES([]byte("test"), key)
+		if err == nil {
+			t.Errorf("DecryptAES with key size %d should fail, but got no error", size)
+		}
+	}
+}
+
+func TestEncryptDecryptAESValidKeySizes(t *testing.T) {
+	validKeySizes := []int{16, 24, 32}
+	plaintext := []byte("test data for valid key sizes")
+
+	for _, size := range validKeySizes {
+		key := make([]byte, size)
+		for i := range key {
+			key[i] = byte(i)
+		}
+
+		ciphertext, err := EncryptAES(plaintext, key)
+		if err != nil {
+			t.Errorf("EncryptAES with key size %d failed: %v", size, err)
+			continue
+		}
+
+		decrypted, err := DecryptAES(ciphertext, key)
+		if err != nil {
+			t.Errorf("DecryptAES with key size %d failed: %v", size, err)
+			continue
+		}
+
+		if string(decrypted) != string(plaintext) {
+			t.Errorf("Key size %d: expected %s, got %s", size, plaintext, decrypted)
+		}
+	}
+}

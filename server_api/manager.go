@@ -74,7 +74,12 @@ func (m *ClientManager) Broadcast(msg shared.Message, excludeID string) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	data, _ := json.Marshal(msg)
+	data, err := json.Marshal(msg)
+	if err != nil {
+		m.log.WithError(err).Error("Failed to marshal broadcast message")
+		return
+	}
+
 	for id, entry := range m.clients {
 		if id == excludeID {
 			continue

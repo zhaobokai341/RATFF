@@ -143,6 +143,8 @@ func (m *Manager) uploadDirectory(id, localDir, remoteDir string, newProgressBar
 	dirName := filepath.Base(localDir)
 	if remoteDir == "" || remoteDir == "." {
 		remoteDir = dirName
+	} else {
+		remoteDir = filepath.Join(remoteDir, dirName)
 	}
 
 	var files []string

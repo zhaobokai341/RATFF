@@ -114,7 +114,7 @@ func handleAPIProxyWithPath(c *gin.Context, pathPassword, subPath string) {
 
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.WithError(err).Error("Proxy request failed")
 		c.JSON(500, gin.H{"error": err.Error()})

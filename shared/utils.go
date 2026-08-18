@@ -4,6 +4,8 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -18,6 +20,7 @@ type AsyncWriter struct {
 	done chan struct{}
 	wg   sync.WaitGroup
 	out  io.Writer
+	mu   sync.Mutex
 }
 
 // NewAsyncWriter creates a new AsyncWriter with the specified buffer size.
@@ -38,12 +41,20 @@ func (aw *AsyncWriter) run() {
 	for {
 		select {
 		case data := <-aw.ch:
-			_, _ = aw.out.Write(data)
+			aw.mu.Lock()
+			if _, err := aw.out.Write(data); err != nil {
+				fmt.Fprintf(os.Stderr, "AsyncWriter write error: %v\n", err)
+			}
+			aw.mu.Unlock()
 		case <-aw.done:
 			// Flush remaining messages
 			for len(aw.ch) > 0 {
 				data := <-aw.ch
-				_, _ = aw.out.Write(data)
+				aw.mu.Lock()
+				if _, err := aw.out.Write(data); err != nil {
+					fmt.Fprintf(os.Stderr, "AsyncWriter flush error: %v\n", err)
+				}
+				aw.mu.Unlock()
 			}
 			return
 		}
@@ -60,7 +71,9 @@ func (aw *AsyncWriter) Write(p []byte) (n int, err error) {
 	case aw.ch <- data:
 		return len(p), nil
 	default:
-		// Channel is full, write directly to avoid blocking
+		// Channel is full, write directly with lock to avoid blocking
+		aw.mu.Lock()
+		defer aw.mu.Unlock()
 		return aw.out.Write(p)
 	}
 }
@@ -120,7 +133,12 @@ func GenerateID() string {
 }
 
 // EncryptAES encrypts plaintext using AES-GCM with a random nonce.
+// Key must be 16, 24, or 32 bytes for AES-128, AES-192, or AES-256.
 func EncryptAES(plaintext []byte, key []byte) ([]byte, error) {
+	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
+		return nil, fmt.Errorf("invalid key size: %d bytes, must be 16, 24, or 32 bytes", len(key))
+	}
+
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -140,8 +158,13 @@ func EncryptAES(plaintext []byte, key []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-// DecryptAES decrypts ciphertext using AES-GCM. Returns nil, nil for short ciphertext.
+// DecryptAES decrypts ciphertext using AES-GCM.
+// Key must be 16, 24, or 32 bytes for AES-128, AES-192, or AES-256.
 func DecryptAES(ciphertext []byte, key []byte) ([]byte, error) {
+	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
+		return nil, fmt.Errorf("invalid key size: %d bytes, must be 16, 24, or 32 bytes", len(key))
+	}
+
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -154,7 +177,7 @@ func DecryptAES(ciphertext []byte, key []byte) ([]byte, error) {
 
 	nonceSize := aesGCM.NonceSize()
 	if len(ciphertext) < nonceSize {
-		return nil, nil
+		return nil, errors.New("ciphertext too short")
 	}
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]

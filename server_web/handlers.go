@@ -95,7 +95,7 @@ func handleExecCommand(c *gin.Context) {
 		httpReq.Header.Set("Authorization", "Bearer "+token)
 	}
 
-	resp, err := http.DefaultClient.Do(httpReq)
+	resp, err := httpClient.Do(httpReq)
 	if err != nil {
 		cleanupPending(req.ClientID)
 		c.JSON(500, gin.H{"error": err.Error()})
@@ -139,14 +139,50 @@ func rateLimitMiddleware() gin.HandlerFunc {
 	}
 }
 
-// perClientRateLimiter manages per-client rate limiters.
+// rateLimiterEntry holds a rate limiter with its last access time for cleanup.
+type rateLimiterEntry struct {
+	limiter  *rate.Limiter
+	lastUsed time.Time
+}
+
+// perClientRateLimiter manages per-client rate limiters with automatic cleanup.
 type perClientRateLimiter struct {
-	limiters map[string]*rate.Limiter
+	limiters map[string]*rateLimiterEntry
 	mu       sync.Mutex
 }
 
+// cleanupInterval is how often to run the cleanup goroutine.
+const cleanupInterval = 10 * time.Minute
+
+// staleThreshold is the time after which an unused limiter is removed.
+const staleThreshold = 30 * time.Minute
+
 var globalPerClientLimiter = &perClientRateLimiter{
-	limiters: make(map[string]*rate.Limiter),
+	limiters: make(map[string]*rateLimiterEntry),
+}
+
+// init starts the background cleanup goroutine for stale rate limiters.
+func init() {
+	go func() {
+		ticker := time.NewTicker(cleanupInterval)
+		defer ticker.Stop()
+		for range ticker.C {
+			globalPerClientLimiter.cleanup()
+		}
+	}()
+}
+
+// cleanup removes rate limiters that have not been used for longer than staleThreshold.
+func (p *perClientRateLimiter) cleanup() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	now := time.Now()
+	for id, entry := range p.limiters {
+		if now.Sub(entry.lastUsed) > staleThreshold {
+			delete(p.limiters, id)
+		}
+	}
 }
 
 // getLimiter returns or creates a rate limiter for a client.
@@ -154,15 +190,20 @@ func (p *perClientRateLimiter) getLimiter(clientID string) *rate.Limiter {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	limiter, exists := p.limiters[clientID]
+	entry, exists := p.limiters[clientID]
 	if !exists {
 		// 10000 requests per second per client, burst 2000
 		// Supports ~640MB/s file transfer with 64KB chunks
-		limiter = rate.NewLimiter(rate.Every(time.Millisecond/10), 2000)
-		p.limiters[clientID] = limiter
+		limiter := rate.NewLimiter(rate.Every(time.Millisecond/10), 2000)
+		p.limiters[clientID] = &rateLimiterEntry{
+			limiter:  limiter,
+			lastUsed: time.Now(),
+		}
+		return limiter
 	}
 
-	return limiter
+	entry.lastUsed = time.Now()
+	return entry.limiter
 }
 
 // apiRateLimitMiddleware applies per-client rate limiting for API endpoints.
@@ -220,7 +261,7 @@ func sendFileCommand(c *gin.Context, cmdType string, clientID string, cmdPayload
 		httpReq.Header.Set("Authorization", "Bearer "+token)
 	}
 
-	resp, err := http.DefaultClient.Do(httpReq)
+	resp, err := httpClient.Do(httpReq)
 	if err != nil {
 		cleanupPending(clientID)
 		c.JSON(500, gin.H{"error": err.Error()})

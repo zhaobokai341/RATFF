@@ -89,8 +89,8 @@ func TestDecryptAESWrongKey(t *testing.T) {
 func TestDecryptAESShortCiphertext(t *testing.T) {
 	key := make([]byte, 32)
 	_, err := DecryptAES([]byte("short"), key)
-	if err != nil {
-		t.Errorf("short ciphertext should return nil, got error: %v", err)
+	if err == nil {
+		t.Error("short ciphertext should return an error")
 	}
 }
 

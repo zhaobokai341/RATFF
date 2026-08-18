@@ -55,7 +55,7 @@ func sendFileCommandRaw(token, pathPrefix, clientID string, cmdType shared.Comma
 		httpReq.Header.Set("Authorization", "Bearer "+token)
 	}
 
-	resp, err := http.DefaultClient.Do(httpReq)
+	resp, err := httpClient.Do(httpReq)
 	if err != nil {
 		cleanupPending(clientID)
 		return nil, fmt.Errorf("send command: %w", err)

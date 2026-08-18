@@ -1,6 +1,11 @@
 package main
 
-import "os"
+import (
+	"net"
+	"net/http"
+	"os"
+	"time"
+)
 
 // Config holds the web server configuration values.
 type Config struct {
@@ -13,6 +18,19 @@ type Config struct {
 
 // cfg is the active configuration instance.
 var cfg Config
+
+// httpClient is a shared HTTP client with configured timeouts to prevent goroutine leaks.
+var httpClient = &http.Client{
+	Timeout: 30 * time.Second,
+	Transport: &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 20 * time.Second,
+	},
+}
 
 func loadConfig() {
 	cfg = Config{

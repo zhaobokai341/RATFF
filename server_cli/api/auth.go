@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 // LoginToAPI logs into server_api and returns a JWT token.
@@ -17,7 +18,8 @@ func LoginToAPI(apiBaseURL, password string, t func(string) string) (string, err
 		return "", err
 	}
 
-	resp, err := http.Post(apiBaseURL+"/verify", "application/json", bytes.NewBuffer(data))
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Post(apiBaseURL+"/verify", "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return "", fmt.Errorf("connection failed: %v", err)
 	}
