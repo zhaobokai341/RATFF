@@ -276,7 +276,7 @@
                     <div class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_modified }:</span><span class="text-sm font-mono">${ formatModTime(fmPropertiesTarget.mod_time) }</span></div>
                     <div class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_permissions }:</span><span class="text-sm font-mono">${ fmPropertiesTarget.permissions }</span></div>
                     <div v-if="fmPropertiesTarget.link_target" class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_link_target }:</span><span class="text-sm font-mono text-indigo-400">${ fmPropertiesTarget.link_target }</span></div>
-                    <div v-if="fmPropertiesTarget.hidden" class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_hidden }:</span><span class="text-sm text-yellow-400">${ labels.sysinfo_na }</span></div>
+                    <div class="flex justify-between"><span class="text-sm text-gray-400">${ labels.fm_prop_hidden }:</span><span class="text-sm">${ fmPropertiesTarget.hidden ? labels.fm_prop_hidden_yes : labels.fm_prop_hidden_no }</span></div>
                 </div>
                 <div class="mt-6">
                     <button @click="fmPropertiesTarget = null" class="w-full px-4 py-2 bg-transparent border border-border hover:bg-surface-2 text-gray-300 text-sm font-medium rounded-lg transition">${ labels.close_btn }</button>
@@ -636,7 +636,7 @@
     <script>
         window.APP_LANG = '{{.lang}}';
     </script>
-    <script src="/static/js/i18n/messages.js"></script>
+    <script src="/static/js/i18n/messages.js?v=2"></script>
     <script src="/static/js/utils/format.js"></script>
     <script src="/static/js/utils/path.js"></script>
     <script src="/static/js/app.js"></script>
