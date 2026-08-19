@@ -342,11 +342,11 @@ func pwdClient(id string) {
 }
 
 // uploadFile uploads a file or directory to the remote client.
-func uploadFile(id, localPath, remotePath string) {
+func uploadFile(id, localPath, remotePath string) bool {
 	if !ensureClientManager() {
-		return
+		return false
 	}
-	clientManager.UploadFile(id, localPath, remotePath, func(total int64, filename string) client.ProgressBar {
+	return clientManager.UploadFile(id, localPath, remotePath, func(total int64, filename string) client.ProgressBar {
 		return output.NewProgressBar(total, filename)
 	})
 }
@@ -601,7 +601,10 @@ func updateClient(id, localFilePath string) {
 	tempRemotePath := generateTempRemotePath(localFilePath)
 
 	PrintInfo(Tf("update_uploading", localFilePath))
-	uploadFile(id, localFilePath, tempRemotePath)
+	if !uploadFile(id, localFilePath, tempRemotePath) {
+		PrintError(T("update_upload_failed"))
+		return
+	}
 
 	PrintInfo(Tf("update_starting", id))
 	sendUpdateCommand(id, tempRemotePath)

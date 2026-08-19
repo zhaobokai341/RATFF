@@ -155,5 +155,6 @@
 	"update_starting": "Updating client %s...",
 	"update_success": "Client %s updated and restarting",
 	"update_failed": "Update failed: %v",
-	"update_not_executable": "File is not a valid executable: %s"
+	"update_not_executable": "File is not a valid executable: %s",
+	"update_upload_failed": "File upload failed, update cancelled"
 }

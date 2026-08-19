@@ -459,7 +459,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(p, idx) in sysinfoData.processes.processes.slice(0, 100)" :key="idx" class="border-b border-border/50">
+                                <tr v-for="(p, idx) in sysinfoData.processes.processes" :key="idx" class="border-b border-border/50">
                                     <td class="py-1 font-mono">${ p.pid }</td>
                                     <td class="py-1 font-mono">${ p.name }</td>
                                     <td class="py-1">${ p.status ? p.status[0] : labels.sysinfo_na }</td>
@@ -469,7 +469,6 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <div v-if="sysinfoData.processes.count > 100" class="text-center text-gray-400 mt-2">${ labels.sysinfo_processes_showing } ${ sysinfoData.processes.count } ${ labels.sysinfo_processes_count }</div>
                     </div>
                     <div v-if="Object.keys(sysinfoData).length === 0 && !sysinfoLoading" class="text-center py-10 text-gray-500">
                         ${ labels.sysinfo_no_data }

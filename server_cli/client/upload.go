@@ -18,33 +18,32 @@ const (
 )
 
 // UploadFile uploads a file or directory to the remote client.
-func (m *Manager) UploadFile(id, localPath, remotePath string, newProgressBar ProgressBarCreator) {
+func (m *Manager) UploadFile(id, localPath, remotePath string, newProgressBar ProgressBarCreator) bool {
 	stat, err := os.Stat(localPath)
 	if err != nil {
 		m.Print.Error(m.Tf("file_not_exist", localPath))
-		return
+		return false
 	}
 
 	if stat.IsDir() {
-		m.uploadDirectory(id, localPath, remotePath, newProgressBar)
-		return
+		return m.uploadDirectory(id, localPath, remotePath, newProgressBar)
 	}
 
-	m.uploadSingleFile(id, localPath, remotePath, newProgressBar)
+	return m.uploadSingleFile(id, localPath, remotePath, newProgressBar)
 }
 
-func (m *Manager) uploadSingleFile(id, localPath, remotePath string, newProgressBar ProgressBarCreator) {
+func (m *Manager) uploadSingleFile(id, localPath, remotePath string, newProgressBar ProgressBarCreator) bool {
 	file, err := os.Open(localPath)
 	if err != nil {
 		m.Print.Error(m.Tf("file_open_failed", localPath, err))
-		return
+		return false
 	}
 	defer file.Close()
 
 	stat, err := file.Stat()
 	if err != nil {
 		m.Print.Error(m.Tf("file_open_failed", localPath, err))
-		return
+		return false
 	}
 
 	fileSize := stat.Size()
@@ -68,7 +67,7 @@ func (m *Manager) uploadSingleFile(id, localPath, remotePath string, newProgress
 	}
 
 	if !m.WaitForResponse(id, shared.CmdFileUploadStart, payload, 10*time.Second) {
-		return
+		return false
 	}
 
 	progressBar := newProgressBar(fileSize, filename)
@@ -82,7 +81,7 @@ func (m *Manager) uploadSingleFile(id, localPath, remotePath string, newProgress
 			progressBar.MarkDone()
 			progressBar.Display()
 			m.Print.Error(m.Tf("file_read_failed", err))
-			return
+			return false
 		}
 
 		if n == 0 {
@@ -103,7 +102,7 @@ func (m *Manager) uploadSingleFile(id, localPath, remotePath string, newProgress
 			progressBar.MarkDone()
 			progressBar.Display()
 			m.Print.Error(m.Tf("upload_chunk_failed", i))
-			return
+			return false
 		}
 
 		progressBar.Add(int64(n))
@@ -119,7 +118,7 @@ func (m *Manager) uploadSingleFile(id, localPath, remotePath string, newProgress
 		progressBar.MarkDone()
 		progressBar.Display()
 		m.Print.Error(m.T("upload_complete_failed"))
-		return
+		return false
 	}
 
 	progressBar.MarkDone()
@@ -137,9 +136,11 @@ func (m *Manager) uploadSingleFile(id, localPath, remotePath string, newProgress
 			m.Print.Success(m.Tf("upload_success", filename, remotePath))
 		}
 	}
+
+	return true
 }
 
-func (m *Manager) uploadDirectory(id, localDir, remoteDir string, newProgressBar ProgressBarCreator) {
+func (m *Manager) uploadDirectory(id, localDir, remoteDir string, newProgressBar ProgressBarCreator) bool {
 	dirName := filepath.Base(localDir)
 	if remoteDir == "" || remoteDir == "." {
 		remoteDir = dirName
@@ -161,12 +162,12 @@ func (m *Manager) uploadDirectory(id, localDir, remoteDir string, newProgressBar
 	})
 	if err != nil {
 		m.Print.Error(m.Tf("upload_dir_walk_failed", localDir, err))
-		return
+		return false
 	}
 
 	if len(files) == 0 {
 		m.Print.Info(m.Tf("upload_dir_empty", dirName))
-		return
+		return true
 	}
 
 	m.Print.Info(m.Tf("upload_dir_starting", dirName, len(files)))
@@ -184,9 +185,11 @@ func (m *Manager) uploadDirectory(id, localDir, remoteDir string, newProgressBar
 
 		m.Print.Info(m.Tf("upload_dir_file", i+1, len(files), relPath))
 
-		m.uploadSingleFile(id, filePath, remoteFilePath, newProgressBar)
-		successCount++
+		if m.uploadSingleFile(id, filePath, remoteFilePath, newProgressBar) {
+			successCount++
+		}
 	}
 
 	m.Print.Success(m.Tf("upload_dir_success", dirName, remoteDir, successCount, len(files)))
+	return successCount == len(files)
 }

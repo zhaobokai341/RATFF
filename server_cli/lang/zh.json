@@ -155,5 +155,6 @@
 	"update_starting": "正在更新客户端 %s...",
 	"update_success": "客户端 %s 已更新并重启",
 	"update_failed": "更新失败: %v",
-	"update_not_executable": "文件不是有效的可执行文件: %s"
+	"update_not_executable": "文件不是有效的可执行文件: %s",
+	"update_upload_failed": "文件上传失败，已取消更新"
 }

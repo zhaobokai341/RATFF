@@ -1,8 +1,8 @@
 package shared
 
 import (
-	"encoding/json"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
