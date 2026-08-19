@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"net/http"
 	"sync"
@@ -11,6 +12,9 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
+
+//go:embed lang/*.json
+var langFS embed.FS
 
 var (
 	log         *logrus.Entry
@@ -71,6 +75,7 @@ func setupRouter() *gin.Engine {
 		api.POST("/api/file/download", handleFileDownload)
 		api.POST("/api/screen/capture", handleScreenCapture)
 		api.POST("/api/public-ip", handleGetPublicIP)
+		api.POST("/api/service/update", handleServiceUpdate)
 		api.GET("/api/task/progress", handleTaskProgress)
 		api.GET("/api/task/status", handleTaskStatus)
 		api.GET("/api/file/download_result", handleDownloadResult)
@@ -102,6 +107,7 @@ func setupRouter() *gin.Engine {
 		pathAPI.POST("/api/file/download", handleFileDownload)
 		pathAPI.POST("/api/screen/capture", handleScreenCapture)
 		pathAPI.POST("/api/public-ip", handleGetPublicIP)
+		pathAPI.POST("/api/service/update", handleServiceUpdate)
 		pathAPI.GET("/api/task/progress", handleTaskProgress)
 		pathAPI.GET("/api/task/status", handleTaskStatus)
 		pathAPI.GET("/api/file/download_result", handleDownloadResult)
@@ -144,7 +150,7 @@ func main() {
 	log, asyncWriter = shared.InitLoggerWithWriter("info", "text", true)
 	loadConfig()
 
-	if err := shared.LoadLanguagePacks("lang"); err != nil {
+	if err := shared.LoadEmbeddedLanguagePacks(langFS, "lang"); err != nil {
 		log.WithError(err).Warn("Failed to load language packs")
 	}
 

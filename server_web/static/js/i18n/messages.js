@@ -203,7 +203,19 @@ const messages = {
         publicip_location: '经纬度',
         publicip_raw_data: '原始数据',
         publicip_error: '错误',
-        publicip_no_data: '点击"获取"按钮获取公网 IP 信息'
+        publicip_no_data: '点击"获取"按钮获取公网 IP 信息',
+        button_service_update: '更新服务',
+        button_more: '更多',
+        update_title: '更新服务',
+        update_select_file: '选择可执行文件',
+        update_uploading: '上传中...',
+        update_success: '服务已更新并重启',
+        update_failed: '更新失败: {error}',
+        update_confirm: '确定要更新客户端 {id} 吗？',
+        update_confirm_warning: '这将替换可执行文件并重启客户端。',
+        update_btn_update: '更新',
+        update_toast_select_file: '请先选择文件',
+        update_toast_select_client: '请先选择客户端'
     },
     en: {
         page_title: 'Remote Control',
@@ -409,6 +421,18 @@ const messages = {
         publicip_location: 'Location',
         publicip_raw_data: 'Raw Data',
         publicip_error: 'Error',
-        publicip_no_data: 'Click "Fetch" button to get public IP information'
+        publicip_no_data: 'Click "Fetch" button to get public IP information',
+        button_service_update: 'Update Service',
+        button_more: 'More',
+        update_title: 'Update Service',
+        update_select_file: 'Select Executable File',
+        update_uploading: 'Uploading...',
+        update_success: 'Service updated and restarting',
+        update_failed: 'Update failed: {error}',
+        update_confirm: 'Are you sure you want to update client {id}?',
+        update_confirm_warning: 'This will replace the executable and restart the client.',
+        update_btn_update: 'Update',
+        update_toast_select_file: 'Select a file first',
+        update_toast_select_client: 'Select a client first'
     }
 };

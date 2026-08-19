@@ -147,5 +147,13 @@
 	"publicip_timezone": "时区: %s",
 	"publicip_location": "经纬度: %.4f, %.4f",
 	"publicip_raw_data": "原始数据:",
-	"publicip_fetch_failed": "获取公网 IP 失败: %v"
+	"publicip_fetch_failed": "获取公网 IP 失败: %v",
+	"usage_update": "用法: update <本地可执行文件路径>",
+	"cmd_update_desc": "更新客户端可执行文件并重启",
+	"update_file_not_exist": "文件不存在: %s",
+	"update_uploading": "正在上传文件: %s",
+	"update_starting": "正在更新客户端 %s...",
+	"update_success": "客户端 %s 已更新并重启",
+	"update_failed": "更新失败: %v",
+	"update_not_executable": "文件不是有效的可执行文件: %s"
 }

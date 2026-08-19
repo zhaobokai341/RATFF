@@ -15,8 +15,8 @@ var cfg Config
 
 func loadConfig() {
 	cfg = Config{
-		ServerHost:   shared.GetEnv("SERVER_HOST", "localhost"),
-		ServerPort:   shared.GetEnv("SERVER_PORT", "6341"),
+		ServerHost:   shared.GetEnv("HOST", "localhost"),
+		ServerPort:   shared.GetEnv("PORT", "6341"),
 		PathPassword: shared.GetEnv("PATH_PASSWORD", ""),
 		ClientID:     "",
 	}

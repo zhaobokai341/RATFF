@@ -37,6 +37,7 @@ const (
 	CmdExit                 CommandType = "exit"
 	CmdCd                   CommandType = "cd"
 	CmdPwd                  CommandType = "pwd"
+	CmdServiceUpdate        CommandType = "service_update"
 )
 
 // Message represents a protocol message exchanged between components.

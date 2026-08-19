@@ -453,3 +453,83 @@ func handleGetPublicIP(c *gin.Context) {
 
 	sendFileCommand(c, "public_ip", req.ClientID, map[string]interface{}{})
 }
+
+// handleServiceUpdate handles POST /api/service/update
+func handleServiceUpdate(c *gin.Context) {
+	clientID := c.PostForm("client_id")
+	if clientID == "" {
+		c.JSON(400, gin.H{"error": "missing client_id"})
+		return
+	}
+
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(400, gin.H{"error": "missing file"})
+		return
+	}
+	defer file.Close()
+
+	tmpDir, err := os.MkdirTemp("", "ratff_update_*")
+	if err != nil {
+		c.JSON(500, gin.H{"error": "create temp dir: " + err.Error()})
+		return
+	}
+	defer os.RemoveAll(tmpDir)
+
+	tmpFile := filepath.Join(tmpDir, header.Filename)
+	out, err := os.Create(tmpFile)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "create temp file: " + err.Error()})
+		return
+	}
+
+	_, err = io.Copy(out, file)
+	if closeErr := out.Close(); closeErr != nil && err == nil {
+		os.RemoveAll(tmpDir)
+		c.JSON(500, gin.H{"error": "close temp file: " + closeErr.Error()})
+		return
+	}
+	if err != nil {
+		os.RemoveAll(tmpDir)
+		c.JSON(500, gin.H{"error": "save temp file: " + err.Error()})
+		return
+	}
+
+	fileInfo, err := os.Stat(tmpFile)
+	if err != nil {
+		os.RemoveAll(tmpDir)
+		c.JSON(500, gin.H{"error": "stat temp file: " + err.Error()})
+		return
+	}
+	fileSize := fileInfo.Size()
+
+	ext := filepath.Ext(header.Filename)
+	tempRemotePath := "/tmp/ratff_update_" + shared.GenerateID() + ext
+
+	taskID := shared.GenerateID()
+	task := taskManager.Create(taskID, "update", 1, fileSize)
+	task.FileName = header.Filename
+
+	token, pathPrefix := getAuthInfo(c)
+
+	c.JSON(200, gin.H{"task_id": taskID})
+
+	go func() {
+		defer os.RemoveAll(tmpDir)
+
+		err := uploadSingleFile(token, pathPrefix, clientID, tmpFile, tempRemotePath, task)
+		if err != nil {
+			task.SetError(err)
+			return
+		}
+
+		_, err = sendFileCommandRaw(token, pathPrefix, clientID, shared.CmdServiceUpdate,
+			map[string]interface{}{"temp_path": tempRemotePath}, 10*time.Second)
+
+		if err != nil {
+			task.SetError(err)
+		} else {
+			task.SetDone("updated")
+		}
+	}()
+}

@@ -60,6 +60,8 @@ func executeCommand(msg shared.Message) shared.Message {
 		return handleScreenCapture(msg)
 	case shared.CmdPublicIP:
 		return handlePublicIP(msg)
+	case shared.CmdServiceUpdate:
+		return handleServiceUpdate(msg)
 	default:
 		return shared.NewMessage(shared.MsgError, msg.Command, msg.ClientID,
 			map[string]interface{}{"error": "unknown command"})

@@ -5,12 +5,16 @@ import (
 	"RATFF/server_cli/client"
 	"RATFF/shared"
 	"bufio"
+	"embed"
 	"fmt"
 	"os"
 	"strings"
 
 	"golang.org/x/term"
 )
+
+//go:embed lang/*.json
+var langFS embed.FS
 
 // readPassword reads a password from stdin, using terminal raw mode if available.
 func readPassword() (string, error) {
@@ -36,8 +40,9 @@ func readPassword() (string, error) {
 
 func main() {
 	fmt.Println(shared.SelectLogo())
+	loadConfig()
 
-	if err := shared.LoadLanguagePacks("lang"); err != nil {
+	if err := shared.LoadEmbeddedLanguagePacks(langFS, "lang"); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: failed to load language packs: %v\n", err)
 	}
 

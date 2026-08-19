@@ -2,6 +2,7 @@ package shared
 
 import (
 	"encoding/json"
+	"embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -44,6 +45,45 @@ func LoadLanguagePacks(langDir string) error {
 		var translations map[string]string
 		if err := json.Unmarshal(data, &translations); err != nil {
 			return fmt.Errorf("failed to parse language file %s: %w", filePath, err)
+		}
+
+		langPacks[langCode] = translations
+	}
+
+	return nil
+}
+
+// LoadEmbeddedLanguagePacks loads language packs from an embedded filesystem.
+// The langDir should be the directory name inside the embedded FS (e.g., "lang").
+func LoadEmbeddedLanguagePacks(fs embed.FS, langDir string) error {
+	langPacks = make(map[string]map[string]string)
+
+	entries, err := fs.ReadDir(langDir)
+	if err != nil {
+		return fmt.Errorf("failed to read embedded lang directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		ext := filepath.Ext(entry.Name())
+		if ext != ".json" {
+			continue
+		}
+
+		langCode := entry.Name()[:len(entry.Name())-len(ext)]
+		filePath := filepath.Join(langDir, entry.Name())
+
+		data, err := fs.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to read embedded language file %s: %w", filePath, err)
+		}
+
+		var translations map[string]string
+		if err := json.Unmarshal(data, &translations); err != nil {
+			return fmt.Errorf("failed to parse embedded language file %s: %w", filePath, err)
 		}
 
 		langPacks[langCode] = translations

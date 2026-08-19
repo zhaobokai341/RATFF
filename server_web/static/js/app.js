@@ -65,6 +65,14 @@
                 const publicipData = ref({});
                 const publicipLoading = ref(false);
 
+                const updateTarget = ref(null);
+                const updateSelectedFile = ref(null);
+                const updateLoading = ref(false);
+
+                const moreMenuId = ref(null);
+                const moreMenuTop = ref(0);
+                const moreMenuLeft = ref(0);
+
                 const statusText = computed(() => clients.value.length > 0 ? labels.status_connected : labels.status_disconnected);
 
                 const api = async (url, opts = {}) => {
@@ -209,6 +217,17 @@
 
                 const showDelete = function(id) { deleteTarget.value = id; };
 
+                const toggleMoreMenu = function(id, event) {
+                    if (moreMenuId.value === id) {
+                        moreMenuId.value = null;
+                    } else {
+                        moreMenuId.value = id;
+                        var rect = event.target.getBoundingClientRect();
+                        moreMenuTop.value = rect.bottom + 4;
+                        moreMenuLeft.value = rect.right - 160;
+                    }
+                };
+
                 const showSysInfo = function(id) {
                     sysinfoTarget.value = id;
                     sysinfoData.value = {};
@@ -318,6 +337,48 @@
                         showToast(labels.publicip_failed + ': ' + e.message, 'error');
                     } finally {
                         publicipLoading.value = false;
+                    }
+                };
+
+                const showServiceUpdate = function(id) {
+                    updateTarget.value = id;
+                    updateSelectedFile.value = null;
+                    updateLoading.value = false;
+                };
+
+                const onUpdateFileSelected = function(event) {
+                    updateSelectedFile.value = event.target.files[0];
+                };
+
+                const confirmServiceUpdate = async function() {
+                    if (!updateTarget.value) {
+                        showToast(labels.update_toast_select_client, 'error');
+                        return;
+                    }
+                    if (!updateSelectedFile.value) {
+                        showToast(labels.update_toast_select_file, 'error');
+                        return;
+                    }
+                    updateLoading.value = true;
+                    try {
+                        const formData = new FormData();
+                        formData.append('client_id', updateTarget.value);
+                        formData.append('file', updateSelectedFile.value);
+                        const data = await api('/api/service/update', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        if (data.error) {
+                            showToast(labels.update_failed.replace('{error}', data.error), 'error');
+                        } else if (data.task_id) {
+                            showToast(labels.update_success, 'success');
+                            updateTarget.value = null;
+                            updateSelectedFile.value = null;
+                        }
+                    } catch (e) {
+                        showToast(labels.update_failed.replace('{error}', e.message), 'error');
+                    } finally {
+                        updateLoading.value = false;
                     }
                 };
 
@@ -1053,7 +1114,17 @@
                     publicipData: publicipData,
                     publicipLoading: publicipLoading,
                     showPublicIP: showPublicIP,
-                    fetchPublicIP: fetchPublicIP
+                    fetchPublicIP: fetchPublicIP,
+                    updateTarget: updateTarget,
+                    updateSelectedFile: updateSelectedFile,
+                    updateLoading: updateLoading,
+                    showServiceUpdate: showServiceUpdate,
+                    onUpdateFileSelected: onUpdateFileSelected,
+                    confirmServiceUpdate: confirmServiceUpdate,
+                    moreMenuId: moreMenuId,
+                    moreMenuTop: moreMenuTop,
+                    moreMenuLeft: moreMenuLeft,
+                    toggleMoreMenu: toggleMoreMenu
                 };
             }
         }).mount('#app');

