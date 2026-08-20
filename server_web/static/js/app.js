@@ -212,7 +212,7 @@
 
                 const selectAndInfo = function(id) {
                     selectedClient.value = id;
-                    sendCommand(id, 'system_info', {});
+                    sendCommand(id, 'system_info', { fields: availableFields });
                 };
 
                 const showDelete = function(id) { deleteTarget.value = id; };
