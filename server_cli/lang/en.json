@@ -156,5 +156,9 @@
 	"update_success": "Client %s updated and restarting",
 	"update_failed": "Update failed: %v",
 	"update_not_executable": "File is not a valid executable: %s",
-	"update_upload_failed": "File upload failed, update cancelled"
+	"update_upload_failed": "File upload failed, update cancelled",
+	"ip_info_card_title": "Public IP Information",
+	"ip_info_api_source": "API Source",
+	"ip_info_error": "Query Failed",
+	"ip_info_raw_data": "Raw API Response"
 }

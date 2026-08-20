@@ -156,5 +156,9 @@
 	"update_success": "客户端 %s 已更新并重启",
 	"update_failed": "更新失败: %v",
 	"update_not_executable": "文件不是有效的可执行文件: %s",
-	"update_upload_failed": "文件上传失败，已取消更新"
+	"update_upload_failed": "文件上传失败，已取消更新",
+	"ip_info_card_title": "公网 IP 信息",
+	"ip_info_api_source": "API 来源",
+	"ip_info_error": "查询失败",
+	"ip_info_raw_data": "原始 API 响应"
 }

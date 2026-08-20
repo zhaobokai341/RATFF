@@ -2,6 +2,9 @@ package output
 
 import (
 	"fmt"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 )
 
 func printHostInfo(payload map[string]interface{}) {
@@ -79,9 +82,41 @@ func printPartitionInfo(payload map[string]interface{}) {
 	}
 
 	fmt.Println(sysinfoSectionStyle.Render("=== Partitions ==="))
-	fmt.Printf("  %-20s %-20s %-10s %10s %10s %10s %s\n",
-		"Device", "Mountpoint", "Type", "Total", "Used", "Free", "Use%")
-	fmt.Println()
+
+	tableData := table.New().
+		Headers("Device", "Mountpoint", "Type", "Total", "Used", "Free", "Use%").
+		Border(lipgloss.RoundedBorder()).
+		BorderStyle(borderStyle).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			if row == table.HeaderRow {
+				return headerStyle.Padding(0, 1).Align(lipgloss.Center)
+			}
+
+			var s lipgloss.Style
+			if row%2 == 0 {
+				s = evenRowStyle
+			} else {
+				s = oddRowStyle
+			}
+			s = s.Padding(0, 1)
+
+			switch col {
+			case 0:
+				s = s.Width(20).MaxWidth(20).Align(lipgloss.Left)
+			case 1:
+				s = s.Width(20).MaxWidth(20).Align(lipgloss.Left)
+			case 2:
+				s = s.Width(10).MaxWidth(10).Align(lipgloss.Center)
+			case 3, 4, 5:
+				s = s.Width(10).MaxWidth(10).Align(lipgloss.Right)
+			case 6:
+				s = s.Align(lipgloss.Center)
+			default:
+				s = s.Align(lipgloss.Left)
+			}
+
+			return s
+		})
 
 	for _, pData := range partitions {
 		if pMap, ok := pData.(map[string]interface{}); ok {
@@ -90,19 +125,27 @@ func printPartitionInfo(payload map[string]interface{}) {
 			fstype := ToString(pMap["fstype"])
 
 			if errMsg, hasError := pMap["usage_error"]; hasError {
-				fmt.Printf("  %-20s %-20s %-10s %s\n",
-					device, mountpoint, fstype, sysinfoErrorStyle.Render(ToString(errMsg)))
+				tableData.Row(
+					device,
+					mountpoint,
+					fstype,
+					"",
+					"",
+					"",
+					sysinfoErrorStyle.Render(ToString(errMsg)),
+				)
 			} else {
 				total := FormatBytesCompact(pMap["total"])
 				used := FormatBytesCompact(pMap["used"])
 				free := FormatBytesCompact(pMap["free"])
 				usedPercent := fmt.Sprintf("%.1f%%", ToFloat64(pMap["used_percent"]))
 
-				fmt.Printf("  %-20s %-20s %-10s %10s %10s %10s %s\n",
-					device, mountpoint, fstype, total, used, free, usedPercent)
+				tableData.Row(device, mountpoint, fstype, total, used, free, usedPercent)
 			}
 		}
 	}
+
+	fmt.Println(tableData)
 	fmt.Println()
 }
 
@@ -189,9 +232,40 @@ func printProcessesInfo(payload map[string]interface{}) {
 		return
 	}
 
-	fmt.Printf("  %-8s %-30s %-10s %10s %10s %s\n",
-		"PID", "Name", "Status", "CPU%", "Mem%", "Start Time")
-	fmt.Println()
+	tableData := table.New().
+		Headers("PID", "Name", "Status", "CPU%", "Mem%", "Start Time").
+		Border(lipgloss.RoundedBorder()).
+		BorderStyle(borderStyle).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			if row == table.HeaderRow {
+				return headerStyle.Padding(0, 1).Align(lipgloss.Center)
+			}
+
+			var s lipgloss.Style
+			if row%2 == 0 {
+				s = evenRowStyle
+			} else {
+				s = oddRowStyle
+			}
+			s = s.Padding(0, 1)
+
+			switch col {
+			case 0:
+				s = s.Width(8).MaxWidth(8).Align(lipgloss.Center)
+			case 1:
+				s = s.Width(30).MaxWidth(30).Align(lipgloss.Left)
+			case 2:
+				s = s.Width(10).MaxWidth(10).Align(lipgloss.Center)
+			case 3, 4:
+				s = s.Width(10).MaxWidth(10).Align(lipgloss.Right)
+			case 5:
+				s = s.Align(lipgloss.Center)
+			default:
+				s = s.Align(lipgloss.Left)
+			}
+
+			return s
+		})
 
 	for _, pData := range procs {
 		if pMap, ok := pData.(map[string]interface{}); ok {
@@ -205,15 +279,18 @@ func printProcessesInfo(payload map[string]interface{}) {
 			memPercent := fmt.Sprintf("%.1f", ToFloat64(pMap["memory_percent"]))
 			createTime := ToString(pMap["create_time"])
 
-			fmt.Printf("  %-8s %-30s %-10s %10s %10s %s\n",
-				pid, name, status, cpuPercent, memPercent, createTime)
+			tableData.Row(pid, name, status, cpuPercent, memPercent, createTime)
 		}
 	}
+
+	fmt.Println(tableData)
 	fmt.Println()
 }
 
 func printKeyValue(key string, value interface{}) {
-	fmt.Printf("  %s: %v\n", sysinfoKeyStyle.Render(key), sysinfoValueStyle.Render(fmt.Sprintf("%v", value)))
+	keyStr := sysinfoKeyStyle.Render(key + ":")
+	valueStr := sysinfoValueStyle.Render(fmt.Sprintf("%v", value))
+	fmt.Println(lipgloss.JoinHorizontal(lipgloss.Top, "  ", keyStr, " ", valueStr))
 }
 
 func FormatBytesValue(v interface{}) string {

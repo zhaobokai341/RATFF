@@ -16,6 +16,12 @@ var (
 	styleDebug   = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 	styleWarn    = lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
 	stylePrompt  = lipgloss.NewStyle().Foreground(lipgloss.Color("14"))
+
+	progressBarStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#22C55E"))
+	progressPercentStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#60A5FA")).Bold(true)
+	progressSpeedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#FBBF24"))
+	progressETAStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#A78BFA"))
+	progressFilenameStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#E5E7EB")).Bold(true)
 )
 
 func PrintSuccess(msg string) {
@@ -133,6 +139,7 @@ func (p *ProgressBar) Display() {
 
 	filled := int(percent / 100 * float64(p.width))
 	bar := strings.Repeat("█", filled) + strings.Repeat("░", p.width-filled)
+	barStyled := progressBarStyle.Render(bar)
 
 	elapsed := time.Since(p.startTime).Seconds()
 	speed := float64(p.current) / 1024 / 1024 / elapsed
@@ -140,14 +147,19 @@ func (p *ProgressBar) Display() {
 	remaining := float64(p.total-p.current) / (float64(p.current) / elapsed)
 	eta := time.Duration(remaining * float64(time.Second))
 
-	line := fmt.Sprintf("\r[%s] %s %.1f%% | %s/%s | %.2f MB/s | ETA: %s",
-		bar,
-		p.filename,
-		percent,
+	percentStr := progressPercentStyle.Render(fmt.Sprintf("%.1f%%", percent))
+	speedStr := progressSpeedStyle.Render(fmt.Sprintf("%.2f MB/s", speed))
+	etaStr := progressETAStyle.Render(fmt.Sprintf("ETA: %s", FormatDuration(eta)))
+	filenameStr := progressFilenameStyle.Render(p.filename)
+
+	line := fmt.Sprintf("\r[%s] %s %s | %s/%s | %s | %s",
+		barStyled,
+		filenameStr,
+		percentStr,
 		FormatBytes(p.current),
 		FormatBytes(p.total),
-		speed,
-		FormatDuration(eta),
+		speedStr,
+		etaStr,
 	)
 
 	if p.done {
@@ -203,4 +215,74 @@ var (
 
 	sysinfoErrorStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#EF4444"))
+
+	IpInfoCardStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#60A5FA")).
+			Padding(1, 2).
+			Width(50)
+
+	IpInfoTitleStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#8B5CF6")).
+				MarginBottom(1)
+
+	IpInfoKeyStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#A78BFA")).
+			Width(16).
+			Align(lipgloss.Right)
+
+	IpInfoValueStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#E5E7EB"))
+
+	IpInfoErrorStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#EF4444")).
+				Bold(true)
 )
+
+// PrintIPInfoCard prints public IP information in a styled card.
+func PrintIPInfoCard(ip, continent, country, countryCode, region, city, isp, timezone string, lat, lon float64) {
+	var lines []string
+
+	lines = append(lines, IpInfoTitleStyle.Render("Public IP Information"))
+	lines = append(lines, "")
+
+	if ip != "" {
+		lines = append(lines, formatIPInfoLine("IP:", ip))
+	}
+	if continent != "" {
+		lines = append(lines, formatIPInfoLine("Continent:", continent))
+	}
+	if country != "" {
+		countryText := country
+		if countryCode != "" {
+			countryText += fmt.Sprintf(" (%s)", countryCode)
+		}
+		lines = append(lines, formatIPInfoLine("Country:", countryText))
+	}
+	if region != "" {
+		lines = append(lines, formatIPInfoLine("Region:", region))
+	}
+	if city != "" {
+		lines = append(lines, formatIPInfoLine("City:", city))
+	}
+	if isp != "" {
+		lines = append(lines, formatIPInfoLine("ISP:", isp))
+	}
+	if timezone != "" {
+		lines = append(lines, formatIPInfoLine("Timezone:", timezone))
+	}
+	if lat != 0 && lon != 0 {
+		lines = append(lines, formatIPInfoLine("Location:", fmt.Sprintf("%.4f, %.4f", lat, lon)))
+	}
+
+	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
+	fmt.Println(IpInfoCardStyle.Render(content))
+	fmt.Println()
+}
+
+func formatIPInfoLine(key, value string) string {
+	keyStr := IpInfoKeyStyle.Render(key)
+	valueStr := IpInfoValueStyle.Render(value)
+	return lipgloss.JoinHorizontal(lipgloss.Top, "  ", keyStr, " ", valueStr)
+}

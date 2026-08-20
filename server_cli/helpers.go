@@ -551,35 +551,24 @@ func extractAPISource(url string) string {
 
 // printStyledIPInfo prints standardized IP information with styling.
 func printStyledIPInfo(info shared.IPGeoStandard) {
-	if info.IP != "" {
-		PrintInfo(Tf("publicip_ip", info.IP))
-	}
-	if info.Continent != "" {
-		PrintInfo(Tf("publicip_continent", info.Continent))
-	}
-	if info.Country != "" {
-		PrintInfo(Tf("publicip_country", info.Country, info.CountryCode))
-	}
-	if info.RegionName != "" {
-		PrintInfo(Tf("publicip_region", info.RegionName))
-	}
-	if info.City != "" {
-		PrintInfo(Tf("publicip_city", info.City))
-	}
-	if info.ISP != "" {
-		PrintInfo(Tf("publicip_isp", info.ISP))
-	}
-	if info.Timezone != "" {
-		PrintInfo(Tf("publicip_timezone", info.Timezone))
-	}
-	if info.Latitude != 0 && info.Longitude != 0 {
-		PrintInfo(Tf("publicip_location", info.Latitude, info.Longitude))
-	}
+	output.PrintIPInfoCard(
+		info.IP,
+		info.Continent,
+		info.Country,
+		info.CountryCode,
+		info.RegionName,
+		info.City,
+		info.ISP,
+		info.Timezone,
+		info.Latitude,
+		info.Longitude,
+	)
 }
 
 // printRawData prints raw API response data.
 func printRawData(data map[string]interface{}) {
 	PrintInfo(T("publicip_raw_data"))
+	fmt.Println()
 	for key, value := range data {
 		fmt.Printf("  %s: %v\n", key, value)
 	}
