@@ -4,32 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.title}}</title>
-    <script src="/static/js/tailwind.min.js"></script>
+    <link href="/static/css/tailwind.min.css" rel="stylesheet">
     <script src="/static/js/vue.global.prod.js"></script>
     <script src="/static/js/lang-switcher.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        dark: {
-                            50: '#f9fafb',
-                            100: '#f3f4f6',
-                            200: '#e5e7eb',
-                            300: '#d1d5db',
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827',
-                            950: '#030712',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
 </head>
 <body class="bg-dark-950 min-h-screen flex items-center justify-center">
     <div id="app">

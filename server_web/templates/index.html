@@ -4,24 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.title}}</title>
-    <script src="/static/js/tailwind.min.js"></script>
+    <link href="/static/css/tailwind.min.css" rel="stylesheet">
     <script src="/static/js/vue.global.prod.js"></script>
     <script src="/static/js/lang-switcher.js"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        bg: '#0f0f0f',
-                        surface: '#1a1a1a',
-                        'surface-2': '#242424',
-                        border: '#2a2a2a',
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         [v-cloak] { display: none; }
         .font-mono { font-family: 'SF Mono', 'Consolas', 'Monaco', monospace; }

@@ -2,3 +2,5 @@ debug/
 .env
 *.bak
 bin/
+tailwindcss-linux-x64
+generater.css
