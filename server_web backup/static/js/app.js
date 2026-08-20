@@ -32,7 +32,6 @@
                 const sysinfoLoading = ref(false);
                 const selectedFields = ref([]);
                 const availableFields = ['host', 'cpu', 'memory', 'swap_memory', 'partition', 'io_disk', 'interfaces', 'io_network', 'processes'];
-                const showAllProcesses = ref(false);
 
                 const showFileManager = ref(false);
                 const fmPath = ref('');
@@ -233,7 +232,6 @@
                     sysinfoTarget.value = id;
                     sysinfoData.value = {};
                     selectedFields.value = [];
-                    showAllProcesses.value = false;
                 };
 
                 const showScreenCapture = function(id) {
@@ -1058,7 +1056,6 @@
                     sysinfoLoading: sysinfoLoading,
                     selectedFields: selectedFields,
                     availableFields: availableFields,
-                    showAllProcesses: showAllProcesses,
                     showSysInfo: showSysInfo,
                     fetchSysInfo: fetchSysInfo,
                     formatBytes: formatBytes,
