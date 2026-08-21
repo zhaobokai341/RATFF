@@ -181,7 +181,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="f in fmFiles" :key="f.name" class="border-b border-border hover:bg-surface-2 transition">
+                            <tr v-for="f in fmFiles" :key="f.name" class="border-b border-border hover:bg-surface-2 transition" @contextmenu.prevent="showContextMenu(f, $event)">
                                 <td class="px-4 py-2 text-sm">${ getFileTypeIcon(f) }</td>
                                 <td class="px-4 py-2">
                                     <span class="text-sm cursor-pointer hover:text-indigo-400 transition" :class="f.is_dir ? 'text-indigo-400 font-medium' : 'text-gray-200'" @click="handleFileClick(f)">${ getDisplayName(f) }</span>
@@ -190,16 +190,38 @@
                                 <td class="px-4 py-2 text-sm text-center font-mono text-gray-400">${ formatModTime(f.mod_time) }</td>
                                 <td class="px-4 py-2 text-sm text-center font-mono text-gray-400">${ f.permissions }</td>
                                 <td class="px-4 py-2 text-center">
-                                    <button @click="downloadFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-blue-400 hover:bg-blue-500/10 transition mr-1">${ labels.fm_action_download }</button>
-                                    <button @click="showProperties(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-indigo-400 hover:bg-indigo-500/10 transition mr-1">${ labels.fm_action_props }</button>
-                                    <button @click="showDeleteFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-red-500 hover:bg-red-500/10 transition mr-1">${ labels.fm_action_delete }</button>
-                                    <button @click="showMoveFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-yellow-500 hover:bg-yellow-500/10 transition mr-1">${ labels.fm_action_move_confirm }</button>
-                                    <button @click="showCopyFile(f)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-green-500 hover:bg-green-500/10 transition">${ labels.fm_action_copy }</button>
+                                    <button @click="showContextMenu(f, $event)" class="px-2 py-1 text-xs bg-transparent border border-border rounded text-gray-400 hover:bg-surface-2 hover:text-gray-200 transition">⋯</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <div v-if="fmContextMenuVisible" class="fixed inset-0 z-50" @click="hideContextMenu" @contextmenu.prevent="hideContextMenu">
+            <div class="absolute bg-surface border border-border rounded-lg shadow-xl py-1 min-w-[160px]" :style="{ left: fmContextMenuX + 'px', top: fmContextMenuY + 'px' }" @click.stop @contextmenu.stop>
+                <button @click="contextMenuDownload" class="w-full px-4 py-2 text-sm text-left text-blue-400 hover:bg-surface-2 transition flex items-center gap-2">
+                    <span class="w-4 text-center">↓</span>
+                    ${ labels.fm_action_download }
+                </button>
+                <button @click="contextMenuProperties" class="w-full px-4 py-2 text-sm text-left text-indigo-400 hover:bg-surface-2 transition flex items-center gap-2">
+                    <span class="w-4 text-center">ℹ</span>
+                    ${ labels.fm_action_props }
+                </button>
+                <div class="border-t border-border my-1"></div>
+                <button @click="contextMenuDelete" class="w-full px-4 py-2 text-sm text-left text-red-500 hover:bg-surface-2 transition flex items-center gap-2">
+                    <span class="w-4 text-center">✕</span>
+                    ${ labels.fm_action_delete }
+                </button>
+                <button @click="contextMenuMove" class="w-full px-4 py-2 text-sm text-left text-yellow-500 hover:bg-surface-2 transition flex items-center gap-2">
+                    <span class="w-4 text-center">↔</span>
+                    ${ labels.fm_action_move }
+                </button>
+                <button @click="contextMenuCopy" class="w-full px-4 py-2 text-sm text-left text-green-500 hover:bg-surface-2 transition flex items-center gap-2">
+                    <span class="w-4 text-center">⧉</span>
+                    ${ labels.fm_action_copy }
+                </button>
             </div>
         </div>
 

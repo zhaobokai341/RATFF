@@ -48,6 +48,11 @@
                 const fmPropertiesTarget = ref(null);
                 const transferTask = ref(null);
                 const showUploadMenu = ref(false);
+                const fmContextMenuVisible = ref(false);
+                const fmContextMenuX = ref(0);
+                const fmContextMenuY = ref(0);
+                const fmContextMenuFile = ref(null);
+                let contextMenuJustOpened = false;
 
                 const screencapTarget = ref(null);
                 const screencapFormat = ref('png');
@@ -855,6 +860,66 @@
                     fmPropertiesTarget.value = f;
                 };
 
+                const showContextMenu = function(f, event) {
+                    event.preventDefault();
+                    fmContextMenuFile.value = f;
+                    var x = event.clientX;
+                    var y = event.clientY;
+                    var menuWidth = 160;
+                    var menuHeight = 200;
+                    var windowWidth = window.innerWidth;
+                    var windowHeight = window.innerHeight;
+                    if (x + menuWidth > windowWidth) {
+                        x = windowWidth - menuWidth - 10;
+                    }
+                    if (y + menuHeight > windowHeight) {
+                        y = windowHeight - menuHeight - 10;
+                    }
+                    fmContextMenuX.value = Math.max(10, x);
+                    fmContextMenuY.value = Math.max(10, y);
+                    fmContextMenuVisible.value = true;
+                };
+
+                const hideContextMenu = function() {
+                    fmContextMenuVisible.value = false;
+                    fmContextMenuFile.value = null;
+                };
+
+                const contextMenuDownload = function() {
+                    if (fmContextMenuFile.value) {
+                        downloadFile(fmContextMenuFile.value);
+                    }
+                    hideContextMenu();
+                };
+
+                const contextMenuProperties = function() {
+                    if (fmContextMenuFile.value) {
+                        showProperties(fmContextMenuFile.value);
+                    }
+                    hideContextMenu();
+                };
+
+                const contextMenuDelete = function() {
+                    if (fmContextMenuFile.value) {
+                        showDeleteFile(fmContextMenuFile.value);
+                    }
+                    hideContextMenu();
+                };
+
+                const contextMenuMove = function() {
+                    if (fmContextMenuFile.value) {
+                        showMoveFile(fmContextMenuFile.value);
+                    }
+                    hideContextMenu();
+                };
+
+                const contextMenuCopy = function() {
+                    if (fmContextMenuFile.value) {
+                        showCopyFile(fmContextMenuFile.value);
+                    }
+                    hideContextMenu();
+                };
+
                 const formatTransferProgress = function(current, total) {
                     return labels.fm_transfer_file_progress.replace('{current}', current).replace('{total}', total);
                 };
@@ -1089,6 +1154,17 @@
                     fmPropertiesTarget: fmPropertiesTarget,
                     transferTask: transferTask,
                     showUploadMenu: showUploadMenu,
+                    fmContextMenuVisible: fmContextMenuVisible,
+                    fmContextMenuX: fmContextMenuX,
+                    fmContextMenuY: fmContextMenuY,
+                    fmContextMenuFile: fmContextMenuFile,
+                    showContextMenu: showContextMenu,
+                    hideContextMenu: hideContextMenu,
+                    contextMenuDownload: contextMenuDownload,
+                    contextMenuProperties: contextMenuProperties,
+                    contextMenuDelete: contextMenuDelete,
+                    contextMenuMove: contextMenuMove,
+                    contextMenuCopy: contextMenuCopy,
                     triggerFileUpload: triggerFileUpload,
                     triggerFolderUpload: triggerFolderUpload,
                     handleFileSelect: handleFileSelect,
