@@ -374,7 +374,8 @@ func handleFileDownload(c *gin.Context) {
 	go func() {
 		isDir, err := isRemoteDirectory(token, pathPrefix, req.ClientID, req.RemotePath)
 		if err != nil {
-			if strings.Contains(err.Error(), "not a directory") || strings.Contains(err.Error(), "不是目录") {
+			if strings.Contains(err.Error(), "not a directory") || strings.Contains(err.Error(), "不是目录") ||
+				strings.Contains(err.Error(), "cannot find the path") || strings.Contains(err.Error(), "系统找不到") {
 				isDir = false
 			} else {
 				task.SetError(err)

@@ -744,12 +744,12 @@
                     var isWindows = target.includes(':') || (base && base.includes(':'));
                     var sep = isWindows ? '\\' : '/';
 
-                    if (isWindows && target.includes(':') && target[1] === ':') {
+                    if (/^[a-zA-Z]:[\/\\]/.test(target)) {
                         var resolved = normalizePathParts(target.split(/[\/\\]/), sep);
                         return resolved.join(sep);
                     }
 
-                    if (target.startsWith('/') || (isWindows && target.startsWith('\\'))) {
+                    if (target.startsWith('/') || target.startsWith('\\')) {
                         var resolved = normalizePathParts(target.split(/[\/\\]/), sep);
                         return isWindows ? resolved.join(sep) : sep + resolved.join(sep);
                     }
@@ -757,14 +757,22 @@
                     var basePath = base || '';
                     var baseParts = basePath.split(/[\/\\]/).filter(function(p) { return p; });
                     var targetParts = target.split(/[\/\\]/).filter(function(p) { return p; });
+
+                    if (isWindows && /^[a-zA-Z]:$/.test(baseParts[0])) {
+                        baseParts = baseParts.slice(1);
+                    }
+
                     var allParts = baseParts.concat(targetParts);
                     var resolved = normalizePathParts(allParts, sep);
 
                     if (!isWindows && basePath.startsWith('/')) {
                         return sep + resolved.join(sep);
                     }
-                    if (isWindows && basePath.includes(':')) {
+                    if (isWindows && /^[a-zA-Z]:/.test(basePath)) {
                         var drive = basePath.substring(0, 2);
+                        if (resolved.length > 0 && resolved[0].includes(':')) {
+                            return resolved.join(sep);
+                        }
                         return drive + sep + resolved.join(sep);
                     }
                     return resolved.join(sep);
@@ -944,7 +952,8 @@
                         return;
                     }
 
-                    const remotePath = fmPath.value === '.' ? f.name : fmPath.value + '/' + f.name;
+                    var sep = fmPath.value.includes('\\') ? '\\' : '/';
+                    const remotePath = fmPath.value === '.' ? f.name : fmPath.value + sep + f.name;
 
                     transferTask.value = {
                         type: 'download',
@@ -997,16 +1006,17 @@
                                     transferTask.value.fileCount = data.file_count || transferTask.value.fileCount;
                                 }
                             } else if (data.status === 'done') {
-                                clearInterval(pollInterval);
-                                if (type === 'download') {
-                                    window.location.href = basePath + '/api/file/download_result?task_id=' + taskId;
+                                if (transferTask.value) {
+                                    transferTask.value.percent = 100;
                                 }
-                                if (onDone) onDone();
+                                clearInterval(pollInterval);
                                 setTimeout(function() {
-                                    if (transferTask.value && transferTask.value.type === type) {
-                                        transferTask.value = null;
+                                    transferTask.value = null;
+                                    if (type === 'download') {
+                                        window.location.href = basePath + '/api/file/download_result?task_id=' + taskId;
                                     }
-                                }, 2000);
+                                    if (onDone) onDone();
+                                }, 500);
                             } else if (data.status === 'error') {
                                 clearInterval(pollInterval);
                                 transferTask.value = null;

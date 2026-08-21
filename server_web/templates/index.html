@@ -624,7 +624,7 @@
             <button @click="showServiceUpdate(moreMenuId); moreMenuId = null" class="w-full text-left px-3 py-2 text-xs text-orange-400 hover:bg-surface-2 transition rounded-b-lg">${ labels.button_service_update }</button>
         </div>
 
-        <div class="fixed bottom-6 right-6 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 translate-y-[100px] opacity-0" :class="[toastType, toast ? 'translate-y-0 opacity-100' : '']">${ toast }</div>
+        <div class="fixed bottom-6 right-6 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300" :class="[toastType, toast ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none']">${ toast }</div>
     </div>
 
 
