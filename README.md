@@ -6,10 +6,12 @@ A WebSocket-based remote control software framework consisting of a client (cont
 
 ## 功能 / Features
 
-- **远程 Shell 执行** - 在远程客户端上执行 Shell 命令
-- **文件管理** - 浏览、上传、下载、移动、复制和删除文件
+- **远程 Shell 执行** - 在远程客户端上执行 Shell 命令（同步/后台）
+- **文件管理** - 浏览、上传、下载、移动、复制和删除文件，支持文件夹传输
 - **屏幕截图** - 从远程客户端捕获屏幕截图
 - **系统信息** - 查看已连接客户端的详细系统信息
+- **公网 IP 查询** - 获取被控端公网 IP 及地理位置信息
+- **远程更新** - 远程更新被控端客户端程序
 - **多控制端** - 通过 Web 界面或 CLI 进行控制
 - **跨平台** - 支持 Linux、macOS 和 Windows
 - **安全** - TLS/WSS 传输加密、JWT 认证、路径密码保护、速率限制
@@ -17,10 +19,12 @@ A WebSocket-based remote control software framework consisting of a client (cont
 
 | Feature | Description |
 |---------|-------------|
-| **Remote Shell Execution** | Execute shell commands on remote clients |
-| **File Management** | Browse, upload, download, move, copy, and delete files |
+| **Remote Shell Execution** | Execute shell commands on remote clients (sync/background) |
+| **File Management** | Browse, upload, download, move, copy, and delete files with folder support |
 | **Screen Capture** | Capture screenshots from remote clients |
 | **System Information** | View detailed system info of connected clients |
+| **Public IP Lookup** | Get public IP and geolocation of controlled endpoints |
+| **Remote Update** | Remotely update client agent programs |
 | **Multi-Controller** | Control via Web interface or CLI |
 | **Cross-Platform** | Supports Linux, macOS, and Windows |
 | **Secure** | TLS/WSS transport, JWT authentication, path password protection, rate limiting |
@@ -93,26 +97,28 @@ You will be prompted for the path password and login password.
 
 ```bash
 # 连接本地服务器 / Connect to local server
-SERVER_HOST=127.0.0.1 SERVER_PORT=6341 ./bin/client
+HOST=127.0.0.1 PORT=6341 ./bin/client
 
 # 带路径密码连接 / Connect with path password
-SERVER_HOST=127.0.0.1 SERVER_PORT=6341 PATH_PASSWORD=mypath ./bin/client
+HOST=127.0.0.1 PORT=6341 PATH_PASSWORD=mypath ./bin/client
 ```
 
 ### 环境变量 / Environment Variables
 
 | 变量 / Variable | 组件 / Component | 默认值 / Default | 说明 / Description |
 |-----------------|------------------|------------------|-------------------|
-| `HOST` | server_api, server_web | `0.0.0.0` | 绑定地址 / Bind address |
+| `HOST` | server_api, server_web, server_cli, client | `0.0.0.0` (server) / `localhost` (client) | 绑定地址 / Bind address |
 | `PORT` | server_api | `6341` | API 服务器端口 / API server port |
 | `PORT` | server_web | `7993` | Web 服务器端口 / Web server port |
-| `PATH_PASSWORD` | server_api, client | `` | URL 路径密码 / URL path password |
+| `LOGIN_PATH` | server_api | `` | URL 路径密码 / URL path password |
+| `PATH_PASSWORD` | client | `` | URL 路径密码 / URL path password |
 | `LOGIN_PASSWORD_HASH` | server_api | (default) | Bcrypt 加密的登录密码 / Bcrypt-hashed login password |
 | `JWT_SECRET` | server_api | (default) | JWT 签名密钥 / JWT signing secret |
 | `API_URL` | server_web | `http://127.0.0.1:6341` | 后端 API 地址 / Backend API URL |
 | `WS_URL` | server_web | `ws://127.0.0.1:6341` | 后端 WebSocket 地址 / Backend WebSocket URL |
 | `TLS_CERT` | server_api | `` | TLS 证书路径 / TLS certificate path |
 | `TLS_KEY` | server_api | `` | TLS 密钥路径 / TLS key path |
+| `LANGUAGE` | server_cli | `en` | 界面语言（en/zh）/ UI language |
 | `APP_ENV` | all | `debug` | 运行环境（debug/production）/ Environment |
 
 ## 架构 / Architecture

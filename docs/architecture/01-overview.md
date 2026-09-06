@@ -76,13 +76,20 @@ All components communicate via JSON-formatted messages:
 | `screen_capture` | 屏幕截图 / Screen capture |
 | `file_list` | 列出目录文件 / List directory files |
 | `file_upload` | 上传文件（分块）/ Upload file (chunked) |
+| `file_upload_start` | 初始化文件上传 / Initialize file upload |
+| `file_upload_chunk` | 上传文件分块 / Upload file chunk |
+| `file_upload_complete` | 完成文件上传 / Complete file upload |
 | `file_download` | 下载文件（分块）/ Download file (chunked) |
+| `file_download_start` | 初始化文件下载 / Initialize file download |
+| `file_download_chunk` | 下载文件分块 / Download file chunk |
+| `file_download_complete` | 完成文件下载 / Complete file download |
 | `file_move` | 移动文件 / Move file |
 | `file_copy` | 复制文件 / Copy file |
 | `file_delete` | 删除文件 / Delete file |
 | `cd` | 切换工作目录 / Change working directory |
 | `pwd` | 获取当前目录 / Get current directory |
-| `public_ip` | 获取公网 IP / Get public IP address |
+| `public_ip` | 获取公网 IP 及地理位置 / Get public IP and geolocation |
+| `service_update` | 远程更新客户端 / Remote update client |
 | `exit` | 退出客户端 / Exit client |
 
 ### 2.4 心跳机制 / Heartbeat Mechanism
@@ -91,8 +98,9 @@ All components communicate via JSON-formatted messages:
 |------------------|-----------|
 | **Ping 间隔 / Ping Interval** | 30 秒 / 30 seconds |
 | **Pong 超时 / Pong Timeout** | 60 秒 / 60 seconds |
-| **实现 / Implementation** | `gorilla/websocket` 内置 Ping/Pong / Built-in Ping/Pong |
-| **并发安全 / Concurrency Safety** | `sync.Mutex` 保证写入安全 / `sync.Mutex` for write safety |
+| **实现 / Implementation** | 自定义心跳：`SetupSafeHeartbeat` 使用 `time.Ticker` 定时发送 Ping / Custom heartbeat: `SetupSafeHeartbeat` uses `time.Ticker` to send Ping |
+| **并发安全 / Concurrency Safety** | `WSConn.WriteMessage` 使用 `sync.Mutex` 保证写入安全 / `WSConn.WriteMessage` uses `sync.Mutex` for write safety |
+| **超时处理 / Timeout Handling** | PongHandler 重置 ReadDeadline，超时自动断开连接 / PongHandler resets ReadDeadline, timeout auto-disconnects |
 
 ## 3. 安全架构 / Security Architecture
 
@@ -100,14 +108,32 @@ All components communicate via JSON-formatted messages:
 
 ```mermaid
 graph LR
-    A[第一层 / Layer 1<br/>路径密码<br/>PATH_PASSWORD] --> B[URL 路径前缀保护<br/>如 /mypath/ws<br/>URL path prefix protection]
-    C[第二层 / Layer 2<br/>登录密码<br/>LOGIN_PASSWORD] --> D[Bcrypt 哈希存储<br/>签发 JWT Token<br/>Bcrypt hash + JWT Token]
+    A[第一层 / Layer 1<br/>路径密码<br/>LOGIN_PATH / PATH_PASSWORD] --> B[URL 路径前缀保护<br/>如 /mypath/ws<br/>URL path prefix protection]
+    C[第二层 / Layer 2<br/>登录密码<br/>LOGIN_PASSWORD_HASH] --> D[Bcrypt 哈希存储<br/>签发 JWT Token<br/>Bcrypt hash + JWT Token]
 ```
 
 | 层级 / Layer | 机制 / Mechanism | 说明 / Description |
 |--------------|-----------------|-------------------|
-| **第一层 / Layer 1** | 路径密码 / Path Password | URL 路径前缀保护，客户端 WebSocket 连接时必须携带 / URL path prefix, required for client WebSocket connection |
-| **第二层 / Layer 2** | 登录密码 / Login Password | Bcrypt 哈希存储，登录成功后签发 JWT Token / Bcrypt hashed, JWT Token issued after login |
+| **第一层 / Layer 1** | 路径密码 / Path Password | URL 路径前缀保护，通过 `LOGIN_PATH`（server_api）或 `PATH_PASSWORD`（client）配置 / URL path prefix, configured via `LOGIN_PATH` (server_api) or `PATH_PASSWORD` (client) |
+| **第二层 / Layer 2** | 登录密码 / Login Password | Bcrypt 哈希存储，通过 `LOGIN_PASSWORD_HASH` 配置，登录成功后签发 JWT Token / Bcrypt hashed via `LOGIN_PASSWORD_HASH`, JWT Token issued after login |
+
+**各组件认证方式 / Authentication Methods by Component**：
+
+| 组件 / Component | 认证方式 / Auth Method | 说明 / Description |
+|------------------|----------------------|-------------------|
+| **client** | 路径密码 | 通过 `PATH_PASSWORD` 环境变量配置，连接时附加到 URL / Via `PATH_PASSWORD` env var, appended to URL on connect |
+| **server_cli** | 终端输入 | 启动时通过 `term.ReadPassword` 交互式输入路径密码和登录密码 / Interactive input via `term.ReadPassword` on startup |
+| **server_web** | Cookie + 路径密码 | 通过 Cookie 存储 JWT Token，路径密码通过 URL 前缀或 Cookie 传递 / JWT Token in Cookie, path password via URL prefix or Cookie |
+
+**环境变量配置 / Environment Variables**：
+
+| 变量 / Variable | 组件 / Component | 默认值 / Default | 说明 / Description |
+|-----------------|------------------|------------------|-------------------|
+| `LOGIN_PATH` | server_api | `` | URL 路径密码 / URL path password |
+| `PATH_PASSWORD` | client | `` | URL 路径密码 / URL path password |
+| `LOGIN_PASSWORD_HASH` | server_api | (default) | Bcrypt 加密的登录密码 / Bcrypt-hashed login password |
+| `JWT_SECRET` | server_api | (default) | JWT 签名密钥 / JWT signing secret |
+| `LANGUAGE` | server_cli | `en` | 界面语言（en/zh）/ UI language |
 
 ### 3.2 认证流程 / Authentication Flow
 
@@ -129,14 +155,20 @@ sequenceDiagram
 
 | 类型 / Type | 速率 / Rate | 适用范围 / Scope |
 |-------------|------------|-----------------|
-| **全局限流 / Global Rate Limit** | 20 req/s | 非 API 端点（WebSocket 升级、静态资源）/ Non-API endpoints (WS upgrade, static resources) |
-| **客户端限流 / Per-Client Rate Limit** | 10 req/s | API 端点（命令执行、文件操作）/ API endpoints (command execution, file operations) |
+| **全局限流 / Global Rate Limit** | 50 req/s | 非 API 端点（WebSocket 升级、验证端点）/ Non-API endpoints (WS upgrade, verify) |
+| **客户端限流 / Per-Client Rate Limit** | 10000 req/s，burst 2000 | API 端点（命令执行、文件操作）/ API endpoints (command execution, file operations) |
+
+**设计说明 / Design Notes**：
+- 全局限流使用 `rate.NewLimiter(rate.Every(time.Second), 50)` / Global uses `rate.NewLimiter(rate.Every(time.Second), 50)`
+- 客户端限流使用 `rate.NewLimiter(rate.Every(time.Millisecond/10), 2000)`，支持约 640MB/s 文件传输（64KB 分块）/ Per-client uses `rate.NewLimiter(rate.Every(time.Millisecond/10), 2000)`, supports ~640MB/s file transfer (64KB chunks)
+- 自动清理：30 分钟未使用的限流器会被移除 / Auto-cleanup: limiters unused for 30 minutes are removed
 
 ### 3.4 TLS 支持 / TLS Support
 
-- 通过环境变量 `TLS_CERT` 和 `TLS_KEY` 启用 / Enable via environment variables
+- **server_api** 支持 TLS：通过环境变量 `TLS_CERT` 和 `TLS_KEY` 启用 / **server_api** supports TLS: Enable via environment variables
 - 无证书时自动降级为普通 WebSocket 并记录警告 / Auto-degrade to plain WebSocket with warning if no certificate
 - 生产环境下未配置 TLS 将拒绝启动 / Production environment refuses to start without TLS
+- **server_web** 不支持 TLS（建议通过反向代理配置）/ **server_web** does not support TLS (recommend configuring via reverse proxy)
 
 ## 4. 各模块详细设计 / Module Design Details
 
@@ -148,10 +180,12 @@ sequenceDiagram
 |-------------|----------------------|
 | `protocol.go` | 消息结构体、类型枚举、消息工厂函数 / Message struct, type enums, factory functions |
 | `ws_utils.go` | WebSocket 连接封装、心跳机制、安全读写 / WebSocket wrapper, heartbeat, safe read/write |
-| `utils.go` | 日志初始化、UUID 生成、客户端 ID 生成 / Logger init, UUID generation, client ID generation |
-| `client_info.go` | 客户端信息收集（OS、主机名、IP）/ Client info collection (OS, hostname, IP) |
-| `ip_geo.go` | 公网 IP 地理位置查询 / Public IP geolocation lookup |
-| `translations.go` | i18n 多语言支持 / i18n multi-language support |
+| `utils.go` | 日志初始化（支持异步）、UUID 生成、AES-GCM 加密、优雅关闭 / Logger init (async support), UUID generation, AES-GCM encryption, graceful shutdown |
+| `client_info.go` | 客户端信息收集（OS、主机名、IP）、重连退避计算 / Client info collection (OS, hostname, IP), reconnect backoff calculation |
+| `ip_geo.go` | 公网 IP 地理位置查询（智能字段映射）/ Public IP geolocation lookup (smart field mapping) |
+| `translations.go` | i18n 多语言支持（嵌入文件系统）/ i18n multi-language support (embedded filesystem) |
+| `logo_selector.go` | Logo 选择器（根据环境选择不同 Logo）/ Logo selector (selects different logos based on environment) |
+| `rate_limiter.go` | 全局限流、每客户端限流、自动清理 / Global rate limiting, per-client rate limiting, auto-cleanup |
 
 ### 4.2 client（受控端 / Client Agent）
 
@@ -166,9 +200,17 @@ sequenceDiagram
 | `file_operations.go` | 文件列表、移动、复制、删除操作 / File list, move, copy, delete operations |
 | `screen_capture.go` | 屏幕截图功能 / Screen capture functionality |
 | `systeminfo_handler.go` | 系统信息收集 / System information collection |
-| `public_ip_handler.go` | 公网 IP 查询 / Public IP lookup |
+| `public_ip_handler.go` | 公网 IP 及地理位置查询 / Public IP and geolocation lookup |
+| `service_update.go` | 远程更新客户端（自动检测文件类型、替换并重启）/ Remote client update (auto-detect file type, replace and restart) |
 
-**重连策略 / Reconnect Strategy**：指数退避算法，初始 1 秒，最大 60 秒 / Exponential backoff, initial 1s, max 60s
+**重连策略 / Reconnect Strategy**：指数退避算法，初始 1 秒，最大 30 秒 / Exponential backoff, initial 1s, max 30s
+
+**远程更新机制 / Remote Update Mechanism**：
+- 通过 `service_update` 命令触发 / Triggered via `service_update` command
+- 自动检测文件类型（ELF/PE/Mach-O）/ Auto-detect file type (ELF/PE/Mach-O)
+- 仅支持可执行文件 / Only executable files supported
+- 响应成功后替换二进制并重启 / Replace binary and restart after success response
+- Windows 使用批处理脚本，Unix 使用直接替换 / Windows uses batch script, Unix uses direct replacement
 
 ### 4.3 server_api（核心 API 服务器 / Core API Server）
 
@@ -190,8 +232,8 @@ sequenceDiagram
 | 中间件 / Middleware | 功能 / Function |
 |---------------------|----------------|
 | `authMiddleware` | JWT Token 验证 / JWT Token verification |
-| `rateLimitMiddleware` | 全局速率限制 / Global rate limiting |
-| `apiRateLimitMiddleware` | 每客户端速率限制 / Per-client rate limiting |
+| `GlobalRateLimitMiddleware` | 全局限流 50 req/s / Global rate limiting 50 req/s |
+| `PerClientRateLimitMiddleware` | 每客户端限流 10000 req/s，burst 2000 / Per-client rate limiting 10000 req/s, burst 2000 |
 
 ### 4.4 server_web（Web 控制端 / Web Controller）
 
@@ -199,14 +241,14 @@ sequenceDiagram
 
 | 文件 / File | 职责 / Responsibility |
 |-------------|----------------------|
-| `main.go` | Gin 路由配置、静态资源、模板渲染 / Gin routing, static resources, template rendering |
+| `main.go` | Gin 路由配置（支持路径密码前缀）、静态资源、模板渲染 / Gin routing (with path password prefix support), static resources, template rendering |
 | `config.go` | 环境变量配置加载 / Environment variable configuration loading |
-| `handlers.go` | 登录页面、API 代理、文件操作代理 / Login page, API proxy, file operation proxy |
-| `auth.go` | Cookie 认证中间件、登录/登出 / Cookie auth middleware, login/logout |
+| `handlers.go` | HTTP 处理器：登录、API 代理、文件操作代理、路径密码前缀路由 / Login, API proxy, file operation proxy, path password prefix routing |
+| `auth.go` | Cookie 认证、通过 server_api 验证密码、登录/登出 / Cookie auth, password verification via server_api, login/logout |
 | `websocket.go` | WebSocket 代理（连接 server_api）/ WebSocket proxy (connects to server_api) |
 | `websocket_proxy.go` | WebSocket 双向消息转发 / WebSocket bidirectional message forwarding |
-| `file_transfer.go` | 文件上传/下载代理 / File upload/download proxy |
-| `task_manager.go` | 异步任务管理（进度跟踪）/ Async task management (progress tracking) |
+| `file_transfer.go` | 文件上传/下载代理、分块传输、MD5 校验 / File upload/download proxy, chunked transfer, MD5 verification |
+| `task_manager.go` | 异步任务管理（进度跟踪、SSE 推送）/ Async task management (progress tracking, SSE push) |
 | `translator.go` | i18n 翻译中间件 / i18n translation middleware |
 
 **端口 / Port**：默认 7993 / Default 7993
@@ -225,15 +267,15 @@ sequenceDiagram
 
 | 文件/目录 / File/Directory | 职责 / Responsibility |
 |---------------------------|----------------------|
-| `main.go` | 主循环、密码输入、模式切换 / Main loop, password input, mode switching |
-| `config.go` | 配置加载 / Configuration loading |
+| `main.go` | 主循环、终端密码输入（`term.ReadPassword`）、模式切换 / Main loop, terminal password input (`term.ReadPassword`), mode switching |
+| `config.go` | 配置加载（HOST、PORT、LANGUAGE）/ Configuration loading (HOST, PORT, LANGUAGE) |
 | `translator.go` | i18n 翻译 / i18n translation |
 | `types.go` | 类型定义 / Type definitions |
 | `wrappers.go` | 打印函数封装 / Print function wrappers |
 | `helpers.go` | 提示符构建、模式处理 / Prompt building, mode handling |
-| `api/` | API 客户端封装（认证、WebSocket、请求）/ API client wrapper (auth, WebSocket, requests) |
-| `client/` | 客户端操作（列表、选择、命令执行）/ Client operations (list, select, command execution) |
-| `output/` | 格式化输出（表格、系统信息渲染、样式）/ Formatted output (tables, system info rendering, styles) |
+| `api/` | API 客户端封装（认证、WebSocket、HTTP 请求）/ API client wrapper (auth, WebSocket, HTTP requests) |
+| `client/` | 客户端操作（列表、选择、命令执行、文件传输、屏幕截图、系统信息、公网 IP、远程更新）/ Client operations (list, select, command execution, file transfer, screen capture, system info, public IP, remote update) |
+| `output/` | 格式化输出（表格、系统信息渲染、样式、帮助）/ Formatted output (tables, system info rendering, styles, help) |
 | `lang/` | 语言包（en.json, zh.json）/ Language packs |
 
 **交互模式 / Interaction Modes**：
@@ -244,24 +286,33 @@ sequenceDiagram
 | **Console 模式** | `(<id>)(console) >>` | command, cd, bg, exit, back |
 | **Command 模式** | `(<id>)(command) >>` | 直接输入命令执行 / Direct command input |
 
+**语言配置 / Language Configuration**：
+- 通过 `LANGUAGE` 环境变量设置，默认 `en` / Set via `LANGUAGE` env var, default `en`
+- 支持 `en`（英文）和 `zh`（中文）/ Supports `en` (English) and `zh` (Chinese)
+
+**密码输入方式 / Password Input Method**：
+- 启动时通过 `term.ReadPassword` 交互式输入路径密码和登录密码 / Interactive input via `term.ReadPassword` on startup
+- 密码不通过环境变量传递，确保安全性 / Passwords not passed via env vars for security
+
 ## 5. 文件结构 / File Structure
 
 ```
 RATFF/
-├── client/                    # 受控端（被控设备运行）/ Client agent (runs on target device)
+├── client/                   # 受控端（被控设备运行）/ Client agent (runs on target device)
 │   ├── main.go               # 入口：连接、注册、消息循环、重连 / Entry: connect, register, message loop, reconnect
-│   ├── config.go             # 配置：SERVER_HOST, SERVER_PORT, PATH_PASSWORD / Config
+│   ├── config.go             # 配置：HOST, PORT, PATH_PASSWORD / Config
 │   ├── handler.go            # 命令路由：shell_exec, cd, pwd, exit / Command routing
 │   ├── file_handler.go       # 文件上传/下载分块处理 / File upload/download chunk handling
 │   ├── file_operations.go    # 文件操作：list, move, copy, delete / File operations
 │   ├── screen_capture.go     # 屏幕截图 / Screen capture
 │   ├── systeminfo_handler.go # 系统信息收集 / System info collection
-│   ├── public_ip_handler.go  # 公网 IP 查询 / Public IP lookup
+│   ├── public_ip_handler.go  # 公网 IP 及地理位置查询 / Public IP and geolocation lookup
+│   ├── service_update.go     # 远程更新客户端 / Remote client update
 │   └── *_test.go             # 单元测试 / Unit tests
 │
 ├── server_api/               # 核心 API 服务器 / Core API server
 │   ├── main.go               # 入口：Gin 路由、TLS、优雅关闭 / Entry: Gin routing, TLS, graceful shutdown
-│   ├── config.go             # 配置：HOST, PORT, PATH_PASSWORD, JWT_SECRET / Config
+│   ├── config.go             # 配置：HOST, PORT, LOGIN_PATH, LOGIN_PASSWORD_HASH, JWT_SECRET / Config
 │   ├── manager.go            # 客户端管理器：注册、注销、发送命令 / Client manager: register, unregister, send commands
 │   ├── handler.go            # WebSocket 处理、HTTP API 端点 / WebSocket handling, HTTP API endpoints
 │   ├── auth.go               # JWT 认证、密码验证 / JWT auth, password verification
@@ -269,14 +320,14 @@ RATFF/
 │   └── *_test.go             # 单元测试 / Unit tests
 │
 ├── server_web/               # Web 控制端 / Web controller
-│   ├── main.go               # 入口：Gin 路由、静态资源、模板 / Entry: Gin routing, static resources, templates
+│   ├── main.go               # 入口：Gin 路由（支持路径密码前缀）、静态资源、模板 / Entry: Gin routing (with path prefix support), static resources, templates
 │   ├── config.go             # 配置：HOST, PORT, API_URL, WS_URL / Config
-│   ├── handlers.go           # HTTP 处理器：登录、API 代理 / HTTP handlers: login, API proxy
-│   ├── auth.go               # Cookie 认证、登录/登出 / Cookie auth, login/logout
+│   ├── handlers.go           # HTTP 处理器：登录、API 代理、文件操作、路径密码路由 / HTTP handlers: login, API proxy, file ops, path prefix routing
+│   ├── auth.go               # Cookie 认证、通过 server_api 验证密码、登录/登出 / Cookie auth, password verification via server_api, login/logout
 │   ├── websocket.go          # WebSocket 代理 / WebSocket proxy
 │   ├── websocket_proxy.go    # WebSocket 双向转发 / WebSocket bidirectional forwarding
-│   ├── file_transfer.go      # 文件传输代理 / File transfer proxy
-│   ├── task_manager.go       # 异步任务管理 / Async task management
+│   ├── file_transfer.go      # 文件传输代理、分块传输、MD5 校验 / File transfer proxy, chunked transfer, MD5 verification
+│   ├── task_manager.go       # 异步任务管理、SSE 进度推送 / Async task management, SSE progress push
 │   ├── translator.go         # i18n 翻译中间件 / i18n translation middleware
 │   ├── static/               # 静态资源 / Static resources
 │   │   └── js/               # Vue 3, Tailwind, i18n 消息 / i18n messages
@@ -287,8 +338,8 @@ RATFF/
 │   └── *_test.go             # 单元测试 / Unit tests
 │
 ├── server_cli/               # CLI 控制端 / CLI controller
-│   ├── main.go               # 入口：密码输入、交互循环 / Entry: password input, interactive loop
-│   ├── config.go             # 配置 / Config
+│   ├── main.go               # 入口：终端密码输入、交互循环 / Entry: terminal password input, interactive loop
+│   ├── config.go             # 配置：HOST, PORT, LANGUAGE / Config
 │   ├── translator.go         # i18n 翻译 / i18n translation
 │   ├── types.go              # 类型定义 / Type definitions
 │   ├── wrappers.go           # 打印函数封装 / Print function wrappers
@@ -301,13 +352,16 @@ RATFF/
 │   │   ├── mgmt.go           # 客户端管理（列表、选择、删除）/ Client management (list, select, delete)
 │   │   ├── operations.go     # 命令执行 / Command execution
 │   │   ├── shell.go          # Shell 交互 / Shell interaction
-│   │   ├── transfer.go       # 文件传输 / File transfer
+│   │   ├── upload.go         # 文件/文件夹上传 / File/folder upload
+│   │   ├── download.go       # 文件/文件夹下载 / File/folder download
 │   │   ├── screen_capture.go # 屏幕截图 / Screen capture
 │   │   ├── systeminfo.go     # 系统信息 / System info
-│   │   └── public_ip.go      # 公网 IP / Public IP
+│   │   ├── public_ip.go      # 公网 IP 及地理位置 / Public IP and geolocation
+│   │   └── update.go         # 远程更新客户端 / Remote client update
 │   ├── output/               # 格式化输出 / Formatted output
 │   │   ├── table.go          # 表格渲染 / Table rendering
 │   │   ├── styles.go         # 样式定义（lipgloss）/ Style definitions (lipgloss)
+│   │   ├── help.go           # 帮助信息输出 / Help information output
 │   │   └── systeminfo_render.go # 系统信息渲染 / System info rendering
 │   └── lang/                 # 语言包（en.json, zh.json）/ Language packs
 │
@@ -318,6 +372,8 @@ RATFF/
 │   ├── client_info.go        # 客户端信息 / Client info
 │   ├── ip_geo.go             # IP 地理位置 / IP geolocation
 │   ├── translations.go       # i18n 翻译 / i18n translation
+│   ├── logo_selector.go      # Logo 选择器 / Logo selector
+│   ├── rate_limiter.go       # 速率限制器 / Rate limiter
 │   └── *_test.go             # 单元测试 / Unit tests
 │
 ├── docs/                     # 文档 / Documentation
@@ -420,9 +476,9 @@ sequenceDiagram
 
 ### 7.3 文件传输（分块机制）/ File Transfer (Chunked Mechanism)
 
-文件上传和下载采用分块传输机制，避免大文件占用过多内存：
+文件上传和下载采用分块传输机制，避免大文件占用过多内存，支持文件夹递归传输：
 
-File upload and download use chunked transfer mechanism to avoid large files consuming too much memory:
+File upload and download use chunked transfer mechanism to avoid large files consuming too much memory, with folder recursive transfer support:
 
 **上传流程 / Upload Flow**：
 
@@ -454,6 +510,15 @@ sequenceDiagram
 | 2 | `file_download_chunk` | 分块读取文件数据 / Read file data in chunks |
 | 3 | `file_download_complete` | 完成下载，清理资源 / Complete download, cleanup resources |
 
+**文件夹传输 / Folder Transfer**：
+
+| 方向 / Direction | 实现方式 / Implementation |
+|------------------|--------------------------|
+| **上传文件夹 / Upload Folder** | CLI 层使用 `filepath.Walk` 递归遍历，对每个文件调用单文件上传 / CLI uses `filepath.Walk` to recursively traverse, calls single file upload for each file |
+| **下载文件夹 / Download Folder** | CLI 层先探测远程路径类型，递归遍历远程目录，逐个下载 / CLI detects remote path type first, recursively traverses remote directory, downloads each file |
+| **Web 上传文件夹 / Web Upload Folder** | 使用 `webkitRelativePath` 保留目录结构 / Uses `webkitRelativePath` to preserve directory structure |
+| **Web 下载文件夹 / Web Download Folder** | 递归下载并打包为 ZIP / Recursively downloads and packages as ZIP |
+
 ### 7.4 并发安全 / Concurrency Safety
 
 | 资源 / Resource | 保护机制 / Protection |
@@ -462,6 +527,45 @@ sequenceDiagram
 | 客户端注册表 / Client registry | `sync.RWMutex` |
 | 工作目录 / Working directory | `sync.RWMutex` |
 | Channel 发送 / Channel sends | `select { default: }` 防止阻塞 / Prevent blocking |
+
+### 7.4.1 远程更新机制 / Remote Update Mechanism
+
+远程更新允许通过控制端更新被控端的客户端程序：
+
+Remote update allows updating the client agent on the controlled endpoint via controllers:
+
+```mermaid
+sequenceDiagram
+    participant C as 控制端 / Controller
+    participant A as server_api
+    participant T as client
+
+    C->>A: 发送 service_update 命令 / Send service_update command
+    A->>T: 转发命令（含临时文件路径）/ Forward command with temp_path
+    T->>T: 检测文件类型（ELF/PE/Mach-O）/ Detect file type
+    T->>T: 响应成功消息 / Respond with success message
+    T->>T: 替换二进制文件并重启 / Replace binary and restart
+```
+
+**文件类型检测 / File Type Detection**：
+
+| 类型 / Type | 魔数 / Magic Number | 平台 / Platform |
+|-------------|---------------------|-----------------|
+| **PE** | `MZ` (0x4D, 0x5A) | Windows |
+| **ELF** | `0x7f ELF` | Linux |
+| **Mach-O** | `0xFEEDFACF` / `0xCEFAEDFE` | macOS |
+
+**重启策略 / Restart Strategy**：
+
+| 平台 / Platform | 方法 / Method |
+|-----------------|--------------|
+| **Windows** | 批处理脚本：等待进程退出 → 替换文件 → 启动新进程 / Batch script: wait for process exit → replace file → start new process |
+| **Linux/macOS** | Unix 方法：`os.Rename` 替换 → `exec.Command` 重启 / Unix method: `os.Rename` to replace → `exec.Command` to restart |
+
+**安全限制 / Security Constraints**：
+- 仅接受可执行文件 / Only executable files accepted
+- 响应成功后才替换二进制 / Binary replacement only after success response
+- 后台异步执行替换和重启 / Replacement and restart executed asynchronously in background
 
 ### 7.5 优雅关闭 / Graceful Shutdown
 
@@ -476,6 +580,8 @@ graph LR
 - 使用 `context.WithTimeout` 设置关闭超时 / Use `context.WithTimeout` for shutdown timeout
 - 调用 `http.Server.Shutdown()` 优雅关闭 HTTP 服务 / Call `http.Server.Shutdown()` for graceful shutdown
 - 客户端收到 `exit` 命令后调用 `os.Exit(0)` 退出 / Client calls `os.Exit(0)` on `exit` command
+- **server_api** 和 **server_web** 使用 `shared.GracefulShutdown` / **server_api** and **server_web** use `shared.GracefulShutdown`
+- **client** 使用独立的信号处理器 / **client** uses independent signal handler
 
 ### 7.6 日志系统 / Logging System
 
@@ -483,8 +589,10 @@ graph LR
 |----------------|-------------------|
 | **框架 / Framework** | `logrus` 结构化日志 / Structured logging |
 | **级别 / Levels** | `info`, `warn`, `error`, `debug` |
-| **异步写入 / Async Write** | `AsyncWriter` 实现异步日志 / Async log writing |
-| **格式 / Format** | 生产环境 JSON，开发环境文本 / JSON for production, text for development |
+| **异步写入 / Async Write** | `AsyncWriter` 实现异步日志，缓冲区 10000 条消息 / Async log writing with 10000 message buffer |
+| **格式 / Format** | 所有组件默认使用 `text` 格式 / All components default to `text` format |
+| **初始化 / Initialization** | `InitLoggerWithWriter` 统一初始化，返回 logger 和 asyncWriter / Unified init via `InitLoggerWithWriter`, returns logger and asyncWriter |
+| **关闭处理 / Shutdown** | `asyncWriter.Close()` 刷新剩余日志 / `asyncWriter.Close()` flushes remaining logs |
 
 ## 8. 工程规范 / Engineering Standards
 

